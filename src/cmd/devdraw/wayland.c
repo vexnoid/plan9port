@@ -534,10 +534,12 @@ void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t seria
 		qunlock(&wayland_lock);
 		return;
 	}
+	int abort_compose = 0;
 	if (button == BTN_LEFT) {
 		if (wl->ctl) {
 			mask = 1 << CTL_BUTTON;
 		} else if (wl->alt) {
+			abort_compose = 1;
 			mask = 1 << ALT_BUTTON;
 		}
 	}
@@ -558,6 +560,10 @@ void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t seria
 	int b = wl->buttons;
 
 	qunlock(&wayland_lock);
+	if (abort_compose) {
+		DEBUG("wl_pointer_button: gfx_abortcompose()\n");
+		gfx_abortcompose(c);
+	}
 	DEBUG("wl_pointer_button: gfx_trackmouse(x=%d, y=%d, b=%d)\n", x, y, b);
 	gfx_mousetrack(c, x, y, b, (uint) time);
 }
@@ -643,6 +649,7 @@ void wl_keyboard_leave(void *data, struct wl_keyboard *wl_keyboard,
 	wl->repeat_rune = 0;
 
 	qunlock(&wayland_lock);
+	gfx_abortcompose(c);
 }
 
 void wl_keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
@@ -760,8 +767,9 @@ void wl_keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
 				&wl_callback_key_repeat_listener, c);
 	}
 	qunlock(&wayland_lock);
-	if (state == WL_KEYBOARD_KEY_STATE_PRESSED && rune != 0)
+	if (state == WL_KEYBOARD_KEY_STATE_PRESSED && rune != 0) {
 		gfx_keystroke(c, rune);
+	}
 }
 
 void wl_keyboard_modifiers(void *data, struct wl_keyboard *wl_keyboard,
