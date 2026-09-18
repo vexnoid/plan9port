@@ -455,8 +455,8 @@ parsetag(Window *w, int extra, int *len)
 	pipe = runestrstr(r, Lspacepipe);
 	if((p = runestrstr(r, Ltabpipe)) != nil && (pipe == nil || p < pipe))
 		pipe = p;
-	if((p = runestrstr(r, Ldelsnarf)) != nil && (pipe == nil || p < pipe))
-		i = p - r;
+	if(pipe != nil)
+		i = pipe - r;
 	else {
 		for(i=0; i<w->tag.file->b.nc; i++)
 			if(r[i]==' ' || r[i]=='\t')
