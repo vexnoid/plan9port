@@ -14,7 +14,15 @@
 #include "dat.h"
 #include "fns.h"
 
-Buffer	snarfbuf;
+File	snarffile;
+Text	snarftext;
+
+void
+snarfinit(void)
+{
+	snarftext.file = &snarffile;
+	snarftext.what = Body;
+}
 
 /*
  * These functions get called as:
@@ -25,7 +33,7 @@ Buffer	snarfbuf;
  *
  *	et: the Text* in which the executing event (click) occurred
  *	t: the Text* containing the current selection (Edit)
- *	argt: the Text* containing the argument for a 2-1 click.
+ *	argt: the Text* containing the argument for a 2-1 or 2-3 click.
  *	e->flag: from Exectab entry
  *	s: the command line remainder (e.g., "x" if executing "Dump x")
  *	n: length of s  (s is *not* NUL-terminated)
@@ -897,14 +905,14 @@ cut(Text *t, int dosnarf, int docut)
 	if(dosnarf){
 		q0 = t->q0;
 		q1 = t->q1;
-		bufdelete(&snarfbuf, 0, snarfbuf.nc);
+		bufdelete(&snarffile.b, 0, snarffile.b.nc);
 		r = fbufalloc();
 		while(q0 < q1){
 			n = q1 - q0;
 			if(n > RBUFSIZE)
 				n = RBUFSIZE;
 			bufread(&t->file->b, q0, r, n);
-			bufinsert(&snarfbuf, snarfbuf.nc, r, n);
+			bufinsert(&snarffile.b, snarffile.b.nc, r, n);
 			q0 += n;
 		}
 		fbuffree(r);
@@ -930,7 +938,7 @@ paste(Text *t, int selectall)
 		return;
 
 	acmegetsnarf();
-	if(t==nil || snarfbuf.nc==0)
+	if(t==nil || snarffile.b.nc==0)
 		return;
 	if(t->what == Body && t->q0 == t->q1){
 		seq++;
@@ -939,7 +947,7 @@ paste(Text *t, int selectall)
 	cut(t, FALSE, TRUE);
 	q = 0;
 	q0 = t->q0;
-	q1 = t->q0+snarfbuf.nc;
+	q1 = t->q0+snarffile.b.nc;
 	r = fbufalloc();
 	while(q0 < q1){
 		n = q1 - q0;
@@ -947,7 +955,7 @@ paste(Text *t, int selectall)
 			n = RBUFSIZE;
 		if(r == nil)
 			r = runemalloc(n);
-		bufread(&snarfbuf, q, r, n);
+		bufread(&snarffile.b, q, r, n);
 		textinsert(t, q0, r, n, TRUE);
 		q += n;
 		q0 += n;
