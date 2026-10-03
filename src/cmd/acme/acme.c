@@ -20,14 +20,12 @@ void	keyboardthread(void*);
 void	waitthread(void*);
 void	xfidallocthread(void*);
 void	newwindowthread(void*);
-void	plumbproc(void*);
 int	timefmt(Fmt*);
 
 Reffont	**fontcache;
 int		nfontcache;
 char		wdir[512] = ".";
 Reffont	*reffonts[2];
-int		snarffd = -1;
 int		mainpid;
 int		swapscrollbuttons = FALSE;
 char		*mtpt;
@@ -46,7 +44,6 @@ char		*fontnames[2] =
 
 Command *command;
 
-void	shutdownthread(void*);
 void	acmeerrorinit(void);
 void	readfile(Column*, char*);
 static int	shutdown(void*, char*);
@@ -148,22 +145,7 @@ threadmain(int argc, char *argv[])
 	if(loadfile)
 		rowloadfonts(loadfile);
 	putenv("font", fontnames[0]);
-	snarffd = open("/dev/snarf", OREAD|OCEXEC);
-/*
-	if(cputype){
-		sprint(buf, "/acme/bin/%s", cputype);
-		bind(buf, "/bin", MBEFORE);
-	}
-	bind("/acme/bin", "/bin", MBEFORE);
-*/
 	getwd(wdir, sizeof wdir);
-
-/*
-	if(geninitdraw(nil, derror, fontnames[0], "acme", nil, Refnone) < 0){
-		fprint(2, "acme: can't open display: %r\n");
-		threadexitsall("geninitdraw");
-	}
-*/
 	if(initdraw(derror, fontnames[0], "acme") < 0){
 		fprint(2, "acme: can't open display: %r\n");
 		threadexitsall("initdraw");
@@ -171,8 +153,6 @@ threadmain(int argc, char *argv[])
 
 	d = display;
 	font = d->defaultfont;
-/*assert(font); */
-
 	reffont.f = font;
 	reffonts[0] = &reffont;
 	incref(&reffont.ref);	/* one to hold up 'font' variable */
@@ -222,16 +202,6 @@ threadmain(int argc, char *argv[])
 	}
 	mainpid = getpid();
 	startplumbing();
-/*
-	plumbeditfd = plumbopen("edit", OREAD|OCEXEC);
-	if(plumbeditfd < 0)
-		fprint(2, "acme: can't initialize plumber: %r\n");
-	else{
-		cplumb = chancreate(sizeof(Plumbmsg*), 0);
-		threadcreate(plumbproc, nil, STACK);
-	}
-	plumbsendfd = plumbopen("send", OWRITE|OCEXEC);
-*/
 
 	fsysinit();
 
@@ -275,7 +245,6 @@ threadmain(int argc, char *argv[])
 	threadcreate(waitthread, nil, STACK);
 	threadcreate(xfidallocthread, nil, STACK);
 	threadcreate(newwindowthread, nil, STACK);
-/*	threadcreate(shutdownthread, nil, STACK); */
 	threadnotify(shutdown, 1);
 	recvul(cexit);
 	killprocs();
@@ -349,30 +318,12 @@ shutdown(void *v, char *msg)
 	return 0;
 }
 
-/*
-void
-shutdownthread(void *v)
-{
-	char *msg;
-	Channel *c;
-
-	USED(v);
-
-	threadsetname("shutdown");
-	c = threadnotechan();
-	while((msg = recvp(c)) != nil)
-		shutdown(nil, msg);
-}
-*/
-
 void
 killprocs(void)
 {
 	Command *c;
 
 	fsysclose();
-/*	if(display) */
-/*		flushimage(display, 1); */
 
 	for(c=command; c; c=c->next)
 		postnote(PNGROUP, c->pid, "hangup");
@@ -428,23 +379,6 @@ acmeerrorinit(void)
 		error("can't re-open acmeerror file");
 	proccreate(acmeerrorproc, nil, STACK);
 }
-
-/*
-void
-plumbproc(void *v)
-{
-	Plumbmsg *m;
-
-	USED(v);
-	threadsetname("plumbproc");
-	for(;;){
-		m = threadplumbrecv(plumbeditfd);
-		if(m == nil)
-			threadexits(nil);
-		sendp(cplumb, m);
-	}
-}
-*/
 
 void
 keyboardthread(void *v)
@@ -1098,11 +1032,6 @@ iconinit(void)
 	but2col = allocimage(display, r, screen->chan, 1, 0xAA0000FF);
 	but3col = allocimage(display, r, screen->chan, 1, 0x006600FF);
 }
-
-/*
- * /dev/snarf updates when the file is closed, so we must open our own
- * fd here rather than use snarffd
- */
 
 void
 acmeputsnarf(void)
