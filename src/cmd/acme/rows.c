@@ -652,6 +652,7 @@ rowload(Row *row, char *file, int initing)
 					break;
 			textdelete(&row->col[i]->tag, 0, row->col[i]->tag.file->b.nc, TRUE);
 			textinsert(&row->col[i]->tag, 0, r+n+1, nr-(n+1), TRUE);
+			textsetselect(&row->col[i]->tag, row->col[i]->tag.file->b.nc, row->col[i]->tag.file->b.nc);
 			free(r);
 			break;
 		case 'w':
@@ -662,6 +663,7 @@ rowload(Row *row, char *file, int initing)
 					break;
 			textdelete(&row->tag, 0, row->tag.file->b.nc, TRUE);
 			textinsert(&row->tag, 0, r, nr, TRUE);
+			textsetselect(&row->tag, row->tag.file->b.nc, row->tag.file->b.nc);
 			free(r);
 			break;
 		default:

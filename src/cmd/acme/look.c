@@ -675,7 +675,6 @@ openfile(Text *t, Expand *e)
 		t->w->dirty = FALSE;
 		wininittag(w);
 		winsettag(w);
-		textsetselect(&t->w->tag, t->w->tag.file->b.nc, t->w->tag.file->b.nc);
 		if(ow != nil){
 			for(i=ow->nincl; --i>=0; ){
 				n = runestrlen(ow->incl[i]);
