@@ -425,13 +425,13 @@ rowdump1(Row *row, Biobuf *b)
 			m = min(RBUFSIZE, w->tag.file->b.nc);
 			bufread(&w->tag.file->b, 0, r, m);
 			n = 0;
-			while(n<m) {
+			while(n<m){
 				start = n;
 				while(n<m && r[n]!='\n')
 					n++;
 				Bprint(b, "%.*S", n-start, r+start);
-				if(n<m) {
-					Bputc(b, 0xff); // \n in tag becomes 0xff byte (invalid UTF)
+				if(n<m){
+					Bputc(b, 0xff); /* \n in tag becomes 0xff byte (invalid UTF) */
 					n++;
 				}
 			}
@@ -501,10 +501,9 @@ rowdump(Row *row, char *file)
 		free(od);
 	}
 	p = strrchr(file, '/');
-	d.name = p != nil ? p+1 : file;
-	if(dirwstat(tmp, &d) < 0){
+	d.name= p!=nil? p+1 : file;
+	if(dirwstat(tmp, &d) < 0)
 		warning(nil, "can't rename %s to %s: %r\n", tmp, file);
-	}
 
    Rescue:
    	free(tmp);

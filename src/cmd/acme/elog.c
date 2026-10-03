@@ -213,6 +213,7 @@ elogdelete(File *f, int q0, int q1)
 }
 
 #define tracelog 0
+
 void
 elogapply(File *f)
 {

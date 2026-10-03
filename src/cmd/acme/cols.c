@@ -198,7 +198,7 @@ colclose(Column *c, Window *w, int dofree)
 		r.max.y = w->r.max.y;
 	}
 	draw(screen, r, textcols[BACK], nil, ZP);
-	if(c->safe) {
+	if(c->safe){
 		if(!didmouse && up)
 			w->showdel = TRUE;
 		winresize(w, r, FALSE, TRUE);
