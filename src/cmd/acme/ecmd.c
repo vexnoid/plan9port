@@ -233,7 +233,7 @@ d_cmd(Text *t, Cmd *cp)
 void
 D1(Text *t)
 {
-	if(t->w->body.file->ntext>1 || winclean(t->w, FALSE))
+	if(t->w->body.file->ntext>1 || winclean(t->w))
 		colclose(t->col, t->w, TRUE);
 }
 
@@ -307,7 +307,7 @@ e_cmd(Text *t, Cmd *cp)
 	q0 = addr.r.q0;
 	q1 = addr.r.q1;
 	if(cp->cmdc == 'e'){
-		if(winclean(t->w, TRUE)==FALSE)
+		if(winclean(t->w)==FALSE)
 			editerror("");	/* winclean generated message already */
 		q0 = 0;
 		q1 = f->b.nc;

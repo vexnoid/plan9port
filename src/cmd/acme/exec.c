@@ -397,7 +397,7 @@ del(Text *et, Text *_0, Text *_1, int flag1, int _2, Rune *_3, int _4)
 
 	if(et->col==nil || et->w == nil)
 		return;
-	if(flag1 || et->w->body.file->ntext>1 || winclean(et->w, FALSE))
+	if(flag1 || et->w->body.file->ntext>1 || winclean(et->w))
 		colclose(et->col, et->w, TRUE);
 }
 
@@ -589,7 +589,7 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 	if(flag1)
 		if(et==nil || et->w==nil)
 			return;
-	if(!et->w->isdir && (et->w->body.file->b.nc>0 && !winclean(et->w, TRUE)))
+	if(!et->w->isdir && (et->w->body.file->b.nc>0 && !winclean(et->w)))
 		return;
 	w = et->w;
 	t = &w->body;
