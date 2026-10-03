@@ -1329,8 +1329,8 @@ textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 	int buts;
 
 	*tp = nil;
-	buts = textselect23(t, q0, q1, but2col, 4);
-	if(buts & 4)
+	buts = textselect23(t, q0, q1, but2col, 4|8|16|128|256);
+	if(buts & (4|8|16|128|256))
 		return 0;
 	if(buts & 1){	/* pick up argument */
 		*tp = argtext;
@@ -1344,7 +1344,7 @@ textselect3(Text *t, uint *q0, uint *q1)
 {
 	int h;
 
-	h = (textselect23(t, q0, q1, but3col, 1|2) == 0);
+	h = (textselect23(t, q0, q1, but3col, 1|2|8|16|128|256) == 0);
 	return h;
 }
 
