@@ -41,7 +41,6 @@ void	fontx(Text*, Text*, Text*, int, int, Rune*, int);
 void	get(Text*, Text*, Text*, int, int, Rune*, int);
 void	indent(Text*, Text*, Text*, int, int, Rune*, int);
 void	xkill(Text*, Text*, Text*, int, int, Rune*, int);
-void	local(Text*, Text*, Text*, int, int, Rune*, int);
 void	look(Text*, Text*, Text*, int, int, Rune*, int);
 void	newcol(Text*, Text*, Text*, int, int, Rune*, int);
 void	paste(Text*, Text*, Text*, int, int, Rune*, int);
@@ -74,7 +73,6 @@ static Rune LGet[] = { 'G', 'e', 't', 0 };
 static Rune LIndent[] = { 'I', 'n', 'd', 'e', 'n', 't', 0 };
 static Rune LKill[] = { 'K', 'i', 'l', 'l', 0 };
 static Rune LLoad[] = { 'L', 'o', 'a', 'd', 0 };
-static Rune LLocal[] = { 'L', 'o', 'c', 'a', 'l', 0 };
 static Rune LLook[] = { 'L', 'o', 'o', 'k', 0 };
 static Rune LNew[] = { 'N', 'e', 'w', 0 };
 static Rune LNewcol[] = { 'N', 'e', 'w', 'c', 'o', 'l', 0 };
@@ -102,7 +100,6 @@ Exectab exectab[] = {
 	{ LIndent,		indent,	FALSE,	XXX,		XXX		},
 	{ LKill,		xkill,		FALSE,	XXX,		XXX		},
 	{ LLoad,		dump,	FALSE,	FALSE,	XXX		},
-	{ LLocal,		local,	FALSE,	XXX,		XXX		},
 	{ LLook,		look,		FALSE,	XXX,		XXX		},
 	{ LNew,		new,		FALSE,	XXX,		XXX		},
 	{ LNewcol,	newcol,	FALSE,	XXX,		XXX		},
@@ -1173,27 +1170,6 @@ putall(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 			free(a);
 		}
 	}
-}
-
-void
-local(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
-{
-	char *a, *aa;
-	Runestr dir;
-
-	USED(_0);
-	USED(_1);
-	USED(_2);
-
-	aa = getbytearg(argt, TRUE, TRUE, &a);
-
-	dir = dirname(et, nil, 0);
-	if(dir.nr==1 && dir.r[0]=='.'){	/* sigh */
-		free(dir.r);
-		dir.r = nil;
-		dir.nr = 0;
-	}
-	run(nil, runetobyte(arg, narg), dir.r, dir.nr, FALSE, aa, a, FALSE);
 }
 
 void
