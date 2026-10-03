@@ -717,14 +717,6 @@ texttype(Text *t, Rune r)
 		typecommit(t);
 		cut(t, t, nil, TRUE, FALSE, nil, 0);
 		return;
-	case Kcmd+'z':	/* %Z: undo */
-	 	typecommit(t);
-		undo(t, nil, nil, TRUE, 0, nil, 0);
-		return;
-	case Kcmd+'Z':	/* %-shift-Z: redo */
-	 	typecommit(t);
-		undo(t, nil, nil, FALSE, 0, nil, 0);
-		return;
 	}
 	if(r >= KF)
 		return;
@@ -854,11 +846,8 @@ texttype(Text *t, Rune r)
 		 * so that if the window body is resized the
 		 * commit will not find anything in ncache.
 		 */
-		if(u->what==Body && u->ncache == 0){
-			u->needundo = TRUE;
+		if(u->what==Body && u->ncache == 0)
 			winsettag(t->w);
-			u->needundo = FALSE;
-		}
 		textinsert(u, t->q0, rp, nr, FALSE);
 		if(u != t)
 			textsetselect(u, u->q0, u->q1);
