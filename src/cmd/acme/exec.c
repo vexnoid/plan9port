@@ -635,8 +635,10 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		t->file->mod = TRUE;
 		dirty = TRUE;
 	}
-	for(i=0; i<t->file->ntext; i++)
+	for(i=0; i<t->file->ntext; i++){
 		t->file->text[i]->w->dirty = dirty;
+		t->file->text[i]->w->isscratch = FALSE;
+	}
 	free(name);
 	free(r);
 	winsettag(w);
@@ -800,6 +802,8 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 		for(i=0; i<f->ntext; i++){
 			f->text[i]->w->putseq = f->seq;
 			f->text[i]->w->dirty = w->dirty;
+			if(q0==0 && q1==f->b.nc)
+				f->text[i]->w->isscratch = FALSE;
 		}
 	}
 	fbuffree(s);
