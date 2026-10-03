@@ -362,6 +362,7 @@ rowdump1(Row *row, Biobuf *b)
 		for(j=0; j<c->nw; j++){
 			w = c->w[j];
 			wincommit(w, &w->tag);
+			wincommit(w, &w->body);
 			t = &w->body;
 			/* windows owned by others get special treatment */
 			if(w->nopen[QWevent] > 0)
