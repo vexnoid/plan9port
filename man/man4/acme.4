@@ -421,6 +421,13 @@ will cause the action to be applied to the file exactly as it would
 have been if the
 .B event
 file had not been open.
+For a command with a chorded argument, a client may give the flag 8
+(count and text still omitted) and follow it with the two messages
+that reported the argument and its origin; the command then runs with
+that argument and, in
+.BR $acmeaddr ,
+that origin.
+A message cut off at the end of a write is held until the next write completes it.
 .TP
 .B tag
 holds contents of the window tag.  It may be read at any byte offset.

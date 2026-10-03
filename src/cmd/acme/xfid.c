@@ -228,6 +228,11 @@ xfidclose(Xfid *x)
 
 	q = FILE(x->f->qid);
 	x->f->open = FALSE;
+	free(x->f->evpart);
+	x->f->evpart = nil;
+	x->f->nevpart = 0;
+	x->f->evcap = 0;
+	x->f->evneed = 0;
 	if(w){
 		winlock(w, 'E');
 		switch(q){
@@ -844,28 +849,137 @@ out:
 		textscrdraw(&w->body);
 }
 
+static int
+evtext(char *p, char *ep, int c, char **sp, int *need)
+{
+	char *s;
+	int i, n, nb;
+	Rune r;
+
+	/* -2 below means incomplete (*need: least bytes), -1 malformed */
+	if(ep-p < 8){
+		*need = 11;	/* the shortest message */
+		return -2;
+	}
+	if(p[1] != c || strncmp(p+2, "0 0 0 ", 6) != 0)
+		return -1;
+	n = 0;
+	for(s=p+8; s<ep && '0'<=*s && *s<='9'; s++){
+		if(n > 100000000)
+			return -1;
+		n = n*10 + *s-'0';
+	}
+	if(s == ep){
+		*need = ep-p+1;
+		return -2;
+	}
+	if(s==p+8 || *s!=' ')
+		return -1;
+	s++;
+	if(ep-s < n+1){
+		*need = s-p+n+1;	/* a byte per rune, and the newline */
+		return -2;
+	}
+	nb = 0;
+	for(i=0; i<n; i++){
+		if(!fullrune(s+nb, ep-(s+nb))){
+			/* this rune needs another byte, the rest one each */
+			*need = ep-p+1 + n-i;
+			return -2;
+		}
+		nb += chartorune(&r, s+nb);
+	}
+	if(s+nb >= ep){
+		*need = s+nb+1-p;
+		return -2;
+	}
+	if(s[nb] != '\n')
+		return -1;
+	*sp = emalloc(nb+1);
+	memmove(*sp, s, nb);
+	return s+nb+1-p;
+}
+
+static int
+evargs(char *p, char *ep, int c, char **as, char **aa, int *need)
+{
+	int k, k2;
+
+	k = evtext(p, ep, c, as, need);
+	if(k < 0)
+		return k;
+	k2 = evtext(p+k, ep, c, aa, need);
+	if(k2 < 0){
+		free(*as);
+		*as = nil;
+		if(k2 == -2)
+			*need += k;
+		return k2;
+	}
+	return k+k2;
+}
+
+static Text*
+argtextinit(Text *st, File *sf, char *s)
+{
+	Rune *r;
+	int nr;
+
+	memset(st, 0, sizeof *st);
+	memset(sf, 0, sizeof *sf);
+	if(s == nil)
+		return nil;
+	st->file = sf;
+	st->what = Body;
+	r = bytetorune(s, &nr);
+	if(nr > 0)
+		bufinsert(&sf->b, 0, r, nr);
+	free(r);
+	st->q1 = nr;
+	return st;
+}
+
 void
 xfideventwrite(Xfid *x, Window *w)
 {
 	Fcall fc;
-	int m, n;
-	Rune *r;
-	char *err, *p, *q;
-	int isfbuf;
-	Text *t;
+	int m, n, k, count, cap, need;
+	char *err, *p, *q, *ep, *as, *aa, *data;
+	Fid *f;
+	Text *t, *argt;
+	Text st;
+	File sf;
 	int c;
-	uint q0, q1;
+	uint q0, q1, flag;
 
 	err = nil;
-	isfbuf = TRUE;
-	if(x->fcall.count < RBUFSIZE)
-		r = fbufalloc();
-	else{
-		isfbuf = FALSE;
-		r = emalloc(x->fcall.count*UTFmax+1);
+	need = 0;
+
+	/* a message may span writes: append to what the last one left */
+	f = x->f;
+	cap = f->nevpart+x->fcall.count+1;	/* +1 for the NUL below */
+	if(cap > f->evcap){
+		/* grow geometrically, so a large message costs linear time */
+		if(cap < f->evcap + f->evcap/2)
+			cap = f->evcap + f->evcap/2;
+		f->evpart = erealloc(f->evpart, cap);
+		f->evcap = cap;
 	}
-	for(n=0; n<x->fcall.count; n+=m){
-		p = x->fcall.data+n;
+	memmove(f->evpart+f->nevpart, x->fcall.data, x->fcall.count);
+	f->nevpart += x->fcall.count;
+	if(f->nevpart < f->evneed)	/* cannot be complete yet */
+		goto Reply;
+	data = f->evpart;
+	count = f->nevpart;
+	data[count] = 0;	/* the NUL stops the scans below */
+	ep = data+count;
+	for(n=0; n<count; n+=m){
+		p = data+n;
+		if(ep-p < 2 || memchr(p, '\n', ep-p) == nil){
+			if(ep-p > 64)	/* no header is this long */
+				goto Rescue;
+			goto Partial;
+		}
 		w->owner = *p++;	/* disgusting */
 		c = *p++;
 		while(*p == ' ')
@@ -882,9 +996,16 @@ xfideventwrite(Xfid *x, Window *w)
 		p = q;
 		while(*p == ' ')
 			p++;
+		flag = 0;
+		if('0'<=*p && *p<='9'){
+			flag = strtoul(p, &q, 10);
+			p = q;
+			while(*p == ' ')
+				p++;
+		}
 		if(*p++ != '\n')
 			goto Rescue;
-		m = p-(x->fcall.data+n);
+		m = p-(data+n);
 		if('a'<=c && c<='z')
 			t = &w->tag;
 		else if('A'<=c && c<='Z')
@@ -894,11 +1015,29 @@ xfideventwrite(Xfid *x, Window *w)
 		if(q0>t->file->b.nc || q1>t->file->b.nc || q0>q1)
 			goto Rescue;
 
+		as = nil;
+		aa = nil;
+		if((c=='x' || c=='X') && (flag&8)){
+			k = evargs(p, ep, c, &as, &aa, &need);
+			if(k < 0){
+				if(k == -2){	/* incomplete; wait for the rest */
+					need += m;
+					goto Partial;
+				}
+				goto Rescue;
+			}
+			m += k;
+		}
+
 		qlock(&row.lk);	/* just like mousethread */
 		switch(c){
 		case 'x':
 		case 'X':
-			execute(t, q0, q1, TRUE, nil);
+			argt = argtextinit(&st, &sf, as);
+			execute(t, q0, q1, TRUE, argt, aa);
+			bufclose(&sf.b);	/* frees the text argtextinit made */
+			free(as);
+			free(aa);
 			break;
 		case 'l':
 		case 'L':
@@ -913,15 +1052,23 @@ xfideventwrite(Xfid *x, Window *w)
 	}
 
     Out:
-	if(isfbuf)
-		fbuffree(r);
-	else
-		free(r);
+	free(f->evpart);
+	f->evpart = nil;
+	f->nevpart = 0;
+	f->evcap = 0;
+	f->evneed = 0;
+    Reply:
+	fc.count = x->fcall.count;
 	if(err)
-		n = 0;
-	fc.count = n;
+		fc.count = 0;
 	respond(x, &fc, err);
 	return;
+
+    Partial:
+	f->nevpart = count-n;
+	memmove(data, data+n, f->nevpart);
+	f->evneed = need;	/* from the start of the message kept */
+	goto Reply;
 
     Rescue:
 	err = Ebadevent;

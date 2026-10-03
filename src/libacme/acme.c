@@ -315,10 +315,21 @@ winseek(Win *w, char *file, int n, int off)
 int
 winwriteevent(Win *w, Event *e)
 {
-	char buf[100];
+	char *s;
+	int n;
 
-	snprint(buf, sizeof buf, "%c%c%d %d \n", e->c1, e->c2, e->q0, e->q1);
-	return fswrite(wfid(w, "event"), buf, strlen(buf));
+	if((e->flag&8) && e->arg != nil && e->loc != nil)
+		s = smprint("%c%c%d %d 8 \n%c%c0 0 0 %d %s\n%c%c0 0 0 %d %s\n",
+			e->c1, e->c2, e->q0, e->q1,
+			e->c1, e->c2, utflen(e->arg), e->arg,
+			e->c1, e->c2, utflen(e->loc), e->loc);
+	else
+		s = smprint("%c%c%d %d \n", e->c1, e->c2, e->q0, e->q1);
+	if(s == nil)
+		sysfatal("out of memory");
+	n = fswrite(wfid(w, "event"), s, strlen(s));
+	free(s);
+	return n;
 }
 
 int

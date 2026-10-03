@@ -145,7 +145,7 @@ isexecc(int c)
 }
 
 void
-execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
+execute(Text *t, uint aq0, uint aq1, int external, Text *argt, char *argaddr)
 {
 	uint q0, q1;
 	Rune *r, *s;
@@ -224,6 +224,10 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 		dir.nr = 0;
 	}
 	aa = getbytearg(argt, TRUE, TRUE, &a);
+	if(argaddr!=nil && argaddr[0]!=0){
+		free(aa);
+		aa = estrdup(argaddr);
+	}
 	if(t->w)
 		incref(&t->w->ref);
 	run(t->w, b, dir.r, dir.nr, TRUE, aa, a, FALSE);

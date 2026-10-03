@@ -399,6 +399,10 @@ struct Fid
 	Mntdir	*mntdir;
 	int		nrpart;
 	uchar	rpart[UTFmax];
+	char		*evpart;	/* incomplete event write */
+	int		nevpart;
+	int		evcap;	/* allocated size of evpart */
+	int		evneed;	/* bytes needed before evpart can be parsed */
 	vlong	logoff;	/* for putlog */
 };
 
