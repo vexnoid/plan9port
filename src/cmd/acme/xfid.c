@@ -404,6 +404,40 @@ xfidread(Xfid *x)
 	winunlock(w);
 }
 
+static
+Text*
+resolveevarg(Window *w, Text *st, File *sf)
+{
+	Text *argt;
+	Range r;
+
+	argt = w->evargt;
+	if(argt == nil)
+		return nil;
+	if(argt == &snarftext){
+		/* snarf may have changed; use the copy */
+		if(w->evsnarf.r == nil)
+			return nil;
+		st->file = sf;
+		st->what = Body;
+		bufinsert(&sf->b, 0, w->evsnarf.r, w->evsnarf.nr);
+		st->q0 = 0;
+		st->q1 = w->evsnarf.nr;
+		return st;
+	}
+	/* copy, so the user's selection is left alone */
+	textcommit(argt, TRUE);
+	*st = *argt;
+	r = w->evargr;
+	if(r.q1 > st->file->b.nc)
+		r.q1 = st->file->b.nc;
+	if(r.q0 > r.q1)
+		r.q0 = r.q1;
+	st->q0 = r.q0;
+	st->q1 = r.q1;
+	return st;
+}
+
 static int
 shouldscroll(Text *t, uint q0, int qid)
 {
@@ -850,8 +884,10 @@ xfideventwrite(Xfid *x, Window *w)
 	Rune *r;
 	char *err, *p, *q;
 	int isfbuf;
-	Text *t;
-	int c;
+	Text *t, *argt;
+	Text st;
+	File sf;
+	int c, matched;
 	uint q0, q1;
 
 	err = nil;
@@ -896,7 +932,20 @@ xfideventwrite(Xfid *x, Window *w)
 		switch(c){
 		case 'x':
 		case 'X':
-			execute(t, q0, q1, TRUE, nil);
+			memset(&st, 0, sizeof st);
+			memset(&sf, 0, sizeof sf);
+			/* argument is for one event only */
+			matched = w->evargt!=nil && c==w->evkc
+				&& ((q0==w->evk0.q0 && q1==w->evk0.q1)
+				 || (q0==w->evk1.q0 && q1==w->evk1.q1));
+			argt = nil;
+			if(matched)
+				argt = resolveevarg(w, &st, &sf);
+			execute(t, q0, q1, TRUE, argt);
+			if(st.file == &sf)
+				bufclose(&sf.b);
+			if(matched)
+				evargclear(w);
 			break;
 		case 'l':
 		case 'L':

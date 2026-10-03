@@ -333,6 +333,7 @@ winclose(Window *w)
 			free(w->incl[i]);
 		free(w->incl);
 		free(w->events);
+		free(w->evsnarf.r);
 		free(w);
 	}
 }

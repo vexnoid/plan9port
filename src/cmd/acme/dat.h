@@ -253,6 +253,12 @@ struct Window
 	char		*events;
 	int		nevents;	/* bytes in events */
 	int		evstart;	/* bytes of events already read */
+	Text		*evargt;	/* pending chord */
+	Range	evargr;
+	Runestr	evsnarf;	/* snarf copy */
+	int		evkc;	/* its event */
+	Range	evk0;
+	Range	evk1;	/* expanded range */
 	int		owner;
 	int		maxlines;
 	Dirlist	**dlp;
@@ -292,6 +298,7 @@ void	windelete(Window*);
 int	winclean(Window*, int);
 void	windirfree(Window*);
 void	winevent(Window*, char*, ...);
+void	evargclear(Window*);
 void	winmousebut(Window*);
 void	winaddincl(Window*, Rune*, int);
 void	wincleartag(Window*);

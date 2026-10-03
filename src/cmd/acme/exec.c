@@ -149,6 +149,27 @@ isexecc(int c)
 	return c=='<' || c=='|' || c=='>';
 }
 
+/* snarf changes; copy it */
+static Runestr
+snarfsnap(void)
+{
+	Runestr s;
+
+	s.nr = snarffile.b.nc;
+	s.r = runemalloc(s.nr+1);
+	bufread(&snarffile.b, 0, s.r, s.nr);
+	return s;
+}
+
+void
+evargclear(Window *w)
+{
+	w->evargt = nil;
+	free(w->evsnarf.r);
+	w->evsnarf.r = nil;
+	w->evsnarf.nr = 0;
+}
+
 void
 execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 {
@@ -212,6 +233,19 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 			else
 				winevent(t->w, "%c0 0 0 0 \n", c);
 		}
+		/* remember chord for the write-back of this event */
+		if(argt != nil){
+			evargclear(t->w);
+			t->w->evargt = argt;
+			t->w->evargr = range(argt->q0, argt->q1);
+			if(argt == &snarftext)
+				t->w->evsnarf = snarfsnap();
+			t->w->evkc = c;
+			t->w->evk0 = range(aq0, aq1);
+			t->w->evk1 = range(q0, q1);
+		}else if(t->w->evargt != nil && t->w->evkc == c
+		&& t->w->evk0.q0 == (int)aq0 && t->w->evk0.q1 == (int)aq1)
+			evargclear(t->w);
 		free(r);
 		free(aa);
 		free(a);
