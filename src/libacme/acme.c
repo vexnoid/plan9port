@@ -18,6 +18,13 @@ mountacme(void)
 	}
 }
 
+CFsys*
+acmefsys(void)
+{
+	mountacme();
+	return acmefs;
+}
+
 Win*
 newwin(void)
 {
