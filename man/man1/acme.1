@@ -356,31 +356,6 @@ Given an argument, use that file but do not change the window's file name.
 Print window ID number
 .RI ( q.v. ).
 .TP
-.B Incl
-When opening `include' files
-(those enclosed in
-.BR <> )
-with button 3,
-.I acme
-searches in directories
-.B /$objtype/include
-and
-.BR /sys/include .
-.B Incl
-adds its arguments to a supplementary list of include directories, analogous to
-the
-.B -I
-option to the compilers.
-This list is per-window and is inherited when windows are created by actions in that window, so
-.I Incl
-is most usefully applied to a directory containing relevant source.
-With no arguments,
-.I Incl
-prints the supplementary list.
-This command is largely superseded by plumbing
-(see
-.MR plumb 7 ).
-.TP
 .B Indent
 Set the autoindent mode according to the argument:
 .B on
@@ -564,13 +539,6 @@ moves the mouse cursor to the selected text in the body of that window.
 If the text names an existing file with no associated window,
 .I acme
 loads the file into a new window and moves the mouse there.
-If the text is a file name contained in angle brackets,
-.I acme
-loads the indicated include file from the directory appropriate to the
-suffix of the file name of the window holding the text.
-(The
-.B Incl
-command adds directories to the standard list.)
 .PP
 If the text begins with a colon, it is taken to be an address, in
 the style of

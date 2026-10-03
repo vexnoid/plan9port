@@ -41,7 +41,6 @@ void	xexit(Text*, Text*, Text*, int, int, Rune*, int);
 void	fontx(Text*, Text*, Text*, int, int, Rune*, int);
 void	get(Text*, Text*, Text*, int, int, Rune*, int);
 void	id(Text*, Text*, Text*, int, int, Rune*, int);
-void	incl(Text*, Text*, Text*, int, int, Rune*, int);
 void	indent(Text*, Text*, Text*, int, int, Rune*, int);
 void	xkill(Text*, Text*, Text*, int, int, Rune*, int);
 void	local(Text*, Text*, Text*, int, int, Rune*, int);
@@ -76,7 +75,6 @@ static Rune LExit[] = { 'E', 'x', 'i', 't', 0 };
 static Rune LFont[] = { 'F', 'o', 'n', 't', 0 };
 static Rune LGet[] = { 'G', 'e', 't', 0 };
 static Rune LID[] = { 'I', 'D', 0 };
-static Rune LIncl[] = { 'I', 'n', 'c', 'l', 0 };
 static Rune LIndent[] = { 'I', 'n', 'd', 'e', 'n', 't', 0 };
 static Rune LKill[] = { 'K', 'i', 'l', 'l', 0 };
 static Rune LLoad[] = { 'L', 'o', 'a', 'd', 0 };
@@ -107,7 +105,6 @@ Exectab exectab[] = {
 	{ LFont,		fontx,	FALSE,	XXX,		XXX		},
 	{ LGet,		get,		FALSE,	TRUE,	XXX		},
 	{ LID,		id,		FALSE,	XXX,		XXX		},
-	{ LIncl,		incl,		FALSE,	XXX,		XXX		},
 	{ LIndent,		indent,	FALSE,	XXX,		XXX		},
 	{ LKill,		xkill,		FALSE,	XXX,		XXX		},
 	{ LLoad,		dump,	FALSE,	FALSE,	XXX		},
@@ -1350,44 +1347,6 @@ fontx(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
 	}
 	free(file);
 	free(flag);
-}
-
-void
-incl(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
-{
-	Rune *a, *r;
-	Window *w;
-	int na, n, len;
-
-	USED(_0);
-	USED(_1);
-	USED(_2);
-
-	if(et==nil || et->w==nil)
-		return;
-	w = et->w;
-	n = 0;
-	getarg(argt, FALSE, TRUE, &r, &len);
-	if(r){
-		n++;
-		winaddincl(w, r, len);
-	}
-	/* loop condition: *arg is not a blank */
-	for(;;){
-		a = findbl(arg, narg, &na);
-		if(a == arg)
-			break;
-		r = runemalloc(narg-na+1);
-		runemove(r, arg, narg-na);
-		n++;
-		winaddincl(w, r, narg-na);
-		arg = skipbl(a, na, &narg);
-	}
-	if(n==0 && w->nincl){
-		for(n=w->nincl; --n>=0; )
-			warning(nil, "%S ", w->incl[n]);
-		warning(nil, "\n");
-	}
 }
 
 static Rune LON[] = { 'O', 'N', 0 };

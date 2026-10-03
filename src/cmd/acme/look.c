@@ -472,80 +472,6 @@ cleanrname(Runestr rs)
 }
 
 Runestr
-includefile(Rune *dir, Rune *file, int nfile)
-{
-	int m, n;
-	char *a;
-	Rune *r;
-	static Rune Lslash[] = { '/', 0 };
-
-	m = runestrlen(dir);
-	a = emalloc((m+1+nfile)*UTFmax+1);
-	sprint(a, "%S/%.*S", dir, nfile, file);
-	n = access(a, 0);
-	free(a);
-	if(n < 0)
-		return runestr(nil, 0);
-	r = runemalloc(m+1+nfile);
-	runemove(r, dir, m);
-	runemove(r+m, Lslash, 1);
-	runemove(r+m+1, file, nfile);
-	free(file);
-	return cleanrname(runestr(r, m+1+nfile));
-}
-
-static	Rune	*objdir;
-
-Runestr
-includename(Text *t, Rune *r, int n)
-{
-	Window *w;
-	char buf[128];
-	Rune Lsysinclude[] = { '/', 's', 'y', 's', '/', 'i', 'n', 'c', 'l', 'u', 'd', 'e', 0 };
-	Rune Lusrinclude[] = { '/', 'u', 's', 'r', '/', 'i', 'n', 'c', 'l', 'u', 'd', 'e', 0 };
-	Rune Lusrlocalinclude[] = { '/', 'u', 's', 'r', '/', 'l', 'o', 'c', 'a', 'l',
-			'/', 'i', 'n', 'c', 'l', 'u', 'd', 'e', 0 };
-	Rune Lusrlocalplan9include[] = { '/', 'u', 's', 'r', '/', 'l', 'o', 'c', 'a', 'l',
-			'/', 'p', 'l', 'a', 'n', '9', '/', 'i', 'n', 'c', 'l', 'u', 'd', 'e', 0 };
-	Runestr file;
-	int i;
-
-	if(objdir==nil && objtype!=nil){
-		sprint(buf, "/%s/include", objtype);
-		objdir = bytetorune(buf, &i);
-		objdir = runerealloc(objdir, i+1);
-		objdir[i] = '\0';
-	}
-
-	w = t->w;
-	if(n==0 || r[0]=='/' || w==nil)
-		goto Rescue;
-	if(n>2 && r[0]=='.' && r[1]=='/')
-		goto Rescue;
-	file.r = nil;
-	file.nr = 0;
-	for(i=0; i<w->nincl && file.r==nil; i++)
-		file = includefile(w->incl[i], r, n);
-
-	if(file.r == nil)
-		file = includefile(Lsysinclude, r, n);
-	if(file.r == nil)
-		file = includefile(Lusrlocalplan9include, r, n);
-	if(file.r == nil)
-		file = includefile(Lusrlocalinclude, r, n);
-	if(file.r == nil)
-		file = includefile(Lusrinclude, r, n);
-	if(file.r==nil && objdir!=nil)
-		file = includefile(objdir, r, n);
-	if(file.r == nil)
-		goto Rescue;
-	return file;
-
-    Rescue:
-	return runestr(r, n);
-}
-
-Runestr
 dirname(Text *t, Rune *r, int n)
 {
 	Rune *b;
@@ -583,65 +509,25 @@ dirname(Text *t, Rune *r, int n)
 	return tmp;
 }
 
-static int
-texthas(Text *t, uint q0, Rune *r)
-{
-	int i;
-
-	if((int)q0 < 0)
-		return FALSE;
-	for(i=0; r[i]; i++)
-		if(q0+i >= t->file->b.nc || textreadc(t, q0+i) != r[i])
-			return FALSE;
-	return TRUE;
-}
-
 int
 expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 {
-	int i, n, nname, colon, eval;
+	int i, n, nname, eval;
 	uint amin, amax;
 	Rune *r, c;
 	Window *w;
 	Runestr rs;
-	Rune Lhttpcss[] = {'h', 't', 't', 'p', ':', '/', '/', 0};
-	Rune Lhttpscss[] = {'h', 't', 't', 'p', 's', ':', '/', '/', 0};
 
 	amax = q1;
 	if(q1 == q0){
-		colon = -1;
-		while(q1<t->file->b.nc && isfilec(c=textreadc(t, q1))){
-			if(c == ':' && !texthas(t, q1-4, Lhttpcss) && !texthas(t, q1-5, Lhttpscss)){
-				colon = q1;
-				break;
-			}
+		while(q1<t->file->b.nc && isfilec(textreadc(t, q1)))
 			q1++;
-		}
-		while(q0>0 && (isfilec(c=textreadc(t, q0-1)) || isaddrc(c) || isregexc(c))){
+		while(q0>0 && (isfilec(c=textreadc(t, q0-1)) || isaddrc(c) || isregexc(c)))
 			q0--;
-			if(colon<0 && c==':' && !texthas(t, q0-4, Lhttpcss) && !texthas(t, q0-5, Lhttpscss))
-				colon = q0;
-		}
-		/*
-		 * if it looks like it might begin file: , consume address chars after :
-		 * otherwise terminate expansion at :
-		 */
-		if(colon >= 0){
-			q1 = colon;
-			if(colon<t->file->b.nc-1 && isaddrc(textreadc(t, colon+1))){
-				q1 = colon+1;
-				while(q1<t->file->b.nc && isaddrc(textreadc(t, q1)))
-					q1++;
-			}
-		}
 		if(q1 > q0)
-			if(colon >= 0){	/* stop at white space */
-				for(amax=colon+1; amax<t->file->b.nc; amax++)
-					if((c=textreadc(t, amax))==' ' || c=='\t' || c=='\n')
-						break;
-			}else
-				amax = t->file->b.nc;
-		if(colon != q0)
+			amax = t->file->b.nc;
+		/* reverse only applies when the expansion starts at an explicit ':' address */
+		if(reverse && (q0>=t->file->b.nc || textreadc(t, q0)!=':'))
 			reverse = FALSE;
 	}else if(reverse){
 		if(textreadc(t, q0) != ':')
@@ -653,25 +539,21 @@ expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 	n = q1-q0;
 	if(n == 0)
 		return FALSE;
-	/* see if it's a file name */
 	r = runemalloc(n+1);
 	bufread(&t->file->b, q0, r, n);
 	r[n] = 0;
-	/* is it a URL? look for http:// and https:// prefix */
-	if(runestrncmp(r, Lhttpcss, 7) == 0 || runestrncmp(r, Lhttpscss, 8) == 0){
-		// Avoid capturing end-of-sentence punctuation.
-		if(r[n-1] == '.') {
-			e->q1--;
-			n--;
-		}
-		e->name = r;
-		e->nname = n;
+	if(r[0] == ':' && t->w != nil){
+		e->name = nil;
+		e->nname = 0;
+		e->bname = nil;
 		e->u.at = t;
-		e->a0 = e->q1;
-		e->a1 = e->q1;
+		e->a0 = q0+1;
+		e->a1 = q1;
+		e->reverse = reverse;
+		free(r);
 		return TRUE;
 	}
-	/* first, does it have bad chars? */
+	/* does it have a trailing :address ? */
 	nname = -1;
 	for(i=0; i<n; i++){
 		c = r[i];
@@ -688,20 +570,7 @@ expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 	for(i=0; i<nname; i++)
 		if(!isfilec(r[i]) && r[i] != ' ')
 			goto Isntfile;
-	/*
-	 * See if it's a file name in <>, and turn that into an include
-	 * file name if so.  Should probably do it for "" too, but that's not
-	 * restrictive enough syntax and checking for a #include earlier on the
-	 * line would be silly.
-	 */
-	if(q0>0 && textreadc(t, q0-1)=='<' && q1<t->file->b.nc && textreadc(t, q1)=='>'){
-		rs = includename(t, r, nname);
-		r = rs.r;
-		nname = rs.nr;
-	}
-	else if(amin == q0)
-		goto Isfile;
-	else{
+	if(amin != q0){
 		rs = dirname(t, r, nname);
 		r = rs.r;
 		nname = rs.nr;
