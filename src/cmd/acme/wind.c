@@ -382,16 +382,13 @@ winsetname(Window *w, Rune *name, int n)
 	Text *t;
 	Window *v;
 	int i;
-	static Rune Lslashguide[] = { '/', 'g', 'u', 'i', 'd', 'e', 0 };
 	static Rune Lpluserrors[] = { '+', 'E', 'r', 'r', 'o', 'r', 's', 0 };
 
 	t = &w->body;
 	if(runeeq(t->file->name, t->file->nname, name, n) == TRUE)
 		return;
 	w->isscratch = FALSE;
-	if(n>=6 && runeeq(Lslashguide, 6, name+(n-6), 6))
-		w->isscratch = TRUE;
-	else if(n>=7 && runeeq(Lpluserrors, 7, name+(n-7), 7))
+	if(n>=7 && runeeq(Lpluserrors, 7, name+(n-7), 7))
 		w->isscratch = TRUE;
 	filesetname(t->file, name, n);
 	for(i=0; i<t->file->ntext; i++){

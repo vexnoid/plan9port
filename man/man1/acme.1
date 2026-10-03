@@ -650,47 +650,6 @@ windows.  An example definition is
 .EX
 	fn cd { builtin cd $1 && awd $sysname }
 .EE
-.SS "Applications and guide files
-In the directory
-.B /acme
-live several subdirectories, each corresponding to a program or
-set of related programs that employ
-.I acme's
-user interface.
-Each subdirectory includes source, binaries, and a
-.B readme
-file for further information.
-It also includes a
-.BR guide ,
-a text file holding sample commands to invoke the programs.
-The idea is to find an example in the guide that best matches
-the job at hand, edit it to suit, and execute it.
-.PP
-Whenever a command is executed by
-.IR acme ,
-the default search path includes the directory of the window containing
-the command and its subdirectory
-.BR $cputype .
-The program directories in
-.B /acme
-contain appropriately labeled subdirectories of binaries,
-so commands named
-in the guide files will be found automatically when run.
-Also,
-.I acme
-binds the directories
-.B /acme/bin
-and
-.B /acme/bin/$cputype
-to the end of
-.B /bin
-when it starts; this is where
-.IR acme -specific
-programs such as
-.I win
-and
-.I awd
-reside.
 .SH FILES
 .TF $HOME/acme.dump
 .TP
@@ -702,18 +661,6 @@ and
 also where state is written if
 .I acme
 dies or is killed unexpectedly, e.g. by deleting its window.
-.TP
-.B /acme/*/guide
-template files for applications
-.TP
-.B /acme/*/readme
-informal documentation for applications
-.TP
-.B /acme/*/src
-source for applications
-.TP
-.B /acme/*/mips
-MIPS-specific binaries for applications
 .SH SOURCE
 .B \*9/src/cmd/acme
 .br
