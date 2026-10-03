@@ -665,11 +665,8 @@ winclean(Window *w)
 	if(w->dirty){
 		if(w->body.file->nname)
 			warning(nil, "%.*S modified\n", w->body.file->nname, w->body.file->name);
-		else{
-			if(w->body.file->b.nc < 100)	/* don't whine if it's too small */
-				return TRUE;
+		else
 			warning(nil, "unnamed file modified\n");
-		}
 		w->dirty = FALSE;
 		return FALSE;
 	}
