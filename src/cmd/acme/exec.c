@@ -79,12 +79,10 @@ static Rune LNewcol[] = { 'N', 'e', 'w', 'c', 'o', 'l', 0 };
 static Rune LPaste[] = { 'P', 'a', 's', 't', 'e', 0 };
 static Rune LPut[] = { 'P', 'u', 't', 0 };
 static Rune LPutall[] = { 'P', 'u', 't', 'a', 'l', 'l', 0 };
-static Rune LRedo[] = { 'R', 'e', 'd', 'o', 0 };
 static Rune LSend[] = { 'S', 'e', 'n', 'd', 0 };
 static Rune LSnarf[] = { 'S', 'n', 'a', 'r', 'f', 0 };
 static Rune LSort[] = { 'S', 'o', 'r', 't', 0 };
 static Rune LTab[] = { 'T', 'a', 'b', 0 };
-static Rune LUndo[] = { 'U', 'n', 'd', 'o', 0 };
 static Rune LZerox[] = { 'Z', 'e', 'r', 'o', 'x', 0 };
 
 Exectab exectab[] = {
@@ -106,12 +104,10 @@ Exectab exectab[] = {
 	{ LPaste,		paste,	TRUE,	TRUE,	XXX		},
 	{ LPut,		put,		FALSE,	XXX,		XXX		},
 	{ LPutall,		putall,	FALSE,	XXX,		XXX		},
-	{ LRedo,		undo,	FALSE,	FALSE,	XXX		},
 	{ LSend,		sendx,	TRUE,	XXX,		XXX		},
 	{ LSnarf,		cut,		FALSE,	TRUE,	FALSE	},
 	{ LSort,		sort,		FALSE,	XXX,		XXX		},
 	{ LTab,		tab,		FALSE,	XXX,		XXX		},
-	{ LUndo,		undo,	FALSE,	TRUE,	XXX		},
 	{ LZerox,		zeroxx,	FALSE,	XXX,		XXX		},
 	{ nil,			0,		0,		0,		0		}
 };
@@ -402,22 +398,16 @@ seqof(Window *w, int isundo)
 }
 
 void
-undo(Text *et, Text *_0, Text *_1, int flag1, int _2, Rune *_3, int _4)
+undo(Window *w, int isundo)
 {
 	int i, j;
 	Column *c;
-	Window *w;
+	Window *v;
 	uint seq;
 
-	USED(_0);
-	USED(_1);
-	USED(_2);
-	USED(_3);
-	USED(_4);
-
-	if(et==nil || et->w== nil)
+	if(w == nil)
 		return;
-	seq = seqof(et->w, flag1);
+	seq = seqof(w, isundo);
 	if(seq == 0){
 		/* nothing to undo */
 		return;
@@ -427,15 +417,15 @@ undo(Text *et, Text *_0, Text *_1, int flag1, int _2, Rune *_3, int _4)
 	 * in the same file will not call show() and jump to a different location in the file.
 	 * Simultaneous changes to other files will be chaotic, however.
 	 */
-	winundo(et->w, flag1);
+	winundo(w, isundo);
 	for(i=0; i<row.ncol; i++){
 		c = row.col[i];
 		for(j=0; j<c->nw; j++){
-			w = c->w[j];
-			if(w == et->w)
+			v = c->w[j];
+			if(v == w)
 				continue;
-			if(seqof(w, flag1) == seq)
-				winundo(w, flag1);
+			if(seqof(v, isundo) == seq)
+				winundo(v, isundo);
 		}
 	}
 }
