@@ -781,13 +781,11 @@ rowload(Row *row, char *file, int initing)
 			textload(&w->body, 0, buf, 1);
 			remove(buf);
 			close(fd);
-			w->body.file->mod = TRUE;
-			if(w->isscratch){
-				w->dirty = dirty;
-				w->body.file->mod = w->dirty;
-			}else{
+			w->dirty = dirty;
+			w->body.file->mod = w->dirty;
+			if(!w->isscratch){
 				for(n=0; n<w->body.file->ntext; n++)
-					w->body.file->text[n]->w->dirty = TRUE;
+					w->body.file->text[n]->w->dirty = w->dirty;
 			}
 			winsettag(w);
 		}else if(dumpid==0)
