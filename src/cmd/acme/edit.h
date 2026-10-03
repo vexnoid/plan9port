@@ -71,7 +71,8 @@ struct List	/* code depends on a long being able to hold a pointer */
 	} u;
 };
 
-enum Defaddr{	/* default addresses */
+enum Defaddr
+{	/* default addresses */
 	aNo,
 	aDot,
 	aAll
