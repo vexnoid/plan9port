@@ -774,7 +774,8 @@ rowload(Row *row, char *file, int initing)
 			winsetname(w, r, n);
 		textdelete(&w->tag, 0, w->tag.file->b.nc, TRUE);
 		textinsert(&w->tag, 0, r, nr, TRUE);
-		textsetselect(&w->tag, w->tag.file->b.nc, w->tag.file->b.nc);
+		for(n=0; n<w->tag.file->ntext; n++)
+			textsetselect(w->tag.file->text[n], w->tag.file->b.nc, w->tag.file->b.nc);
 		if(ndumped >= 0){
 			/* simplest thing is to put it in a file and load that */
 			sprint(buf, "/tmp/d%d.%.4sacme", getpid(), getuser());
