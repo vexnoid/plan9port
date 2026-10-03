@@ -487,7 +487,7 @@ s_cmd(Text *t, Cmd *cp)
 		for(i = 0; i<cp->u.text->n; i++)
 			if((c = cp->u.text->r[i])=='\\' && i<cp->u.text->n-1){
 				c = cp->u.text->r[++i];
-				if('1'<=c && c<='9') {
+				if('1'<=c && c<='9'){
 					j = c-'0';
 					if(sel.r[j].q1-sel.r[j].q0>RBUFSIZE){
 						err = "replacement string too long";
@@ -679,7 +679,7 @@ nlcount(Text *t, long q0, long q1, long *pnr)
 			bufread(&t->file->b, q0, buf, nbuf);
 			i = 0;
 		}
-		if(buf[i++] == '\n') {
+		if(buf[i++] == '\n'){
 			start = q0+1;
 			nl++;
 		}
@@ -691,7 +691,8 @@ nlcount(Text *t, long q0, long q1, long *pnr)
 	return nl;
 }
 
-enum {
+enum
+{
 	PosnLine = 0,
 	PosnChars = 1,
 	PosnLineChars = 2,
@@ -705,7 +706,7 @@ printposn(Text *t, int mode)
 	if (t != nil && t->file != nil && t->file->name != nil)
 		warning(nil, "%.*S:", t->file->nname, t->file->name);
 
-	switch(mode) {
+	switch(mode){
 	case PosnChars:
 		warning(nil, "#%d", addr.r.q0);
 		if(addr.r.q1 != addr.r.q0)
@@ -1002,15 +1003,15 @@ filelooper(Text *t, Cmd *cp, int XY)
 	 */
 	allwindows(alllocker, (void*)1);
 	globalincref = 1;
-	
+
 	/*
 	 * Unlock the window running the X command.
 	 * We'll need to lock and unlock each target window in turn.
 	 */
 	if(t && t->w)
 		winunlock(t->w);
-	
-	for(i=0; i<loopstruct.nw; i++) {
+
+	for(i=0; i<loopstruct.nw; i++){
 		targ = &loopstruct.w[i]->body;
 		if(targ && targ->w)
 			winlock(targ->w, cp->cmdc);

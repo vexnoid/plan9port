@@ -216,7 +216,7 @@ flushwarnings(void)
 	int owner, nr, q0, n;
 	Rune *r;
 
-	for(warn=warnings; warn; warn=next) {
+	for(warn=warnings; warn; warn=next){
 		w = errorwin(warn->md, 'E');
 		t = &w->body;
 		owner = w->owner;
@@ -393,7 +393,7 @@ restoremouse(Window *w)
 	int did;
 
 	did = 0;
-	if(mousew!=nil && mousew==w) {
+	if(mousew!=nil && mousew==w){
 		moveto(mousectl, prevmouse);
 		did = 1;
 	}

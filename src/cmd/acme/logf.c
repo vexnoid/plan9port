@@ -12,26 +12,26 @@
 #include "dat.h"
 #include "fns.h"
 
-// State for global log file.
+/* State for global log file. */
 typedef struct Log Log;
 struct Log
 {
 	QLock lk;
 	Rendez r;
 
-	vlong start; // msg[0] corresponds to 'start' in the global sequence of events
+	vlong start; /* msg[0] corresponds to 'start' in the global sequence of events */
 
-	// queued events (nev=entries in ev, mev=capacity of p)
+	/* queued events (nev=entries in ev, mev=capacity of p) */
 	char **ev;
 	int nev;
 	int mev;
 
-	// open acme/put files that need to read events
+	/* open acme/put files that need to read events */
 	Fid **f;
 	int nf;
 	int mf;
 
-	// active (blocked) reads waiting for events
+	/* active (blocked) reads waiting for events */
 	Xfid **read;
 	int nread;
 	int mread;
@@ -43,7 +43,7 @@ void
 xfidlogopen(Xfid *x)
 {
 	qlock(&eventlog.lk);
-	if(eventlog.nf >= eventlog.mf) {
+	if(eventlog.nf >= eventlog.mf){
 		eventlog.mf = eventlog.mf*2;
 		if(eventlog.mf == 0)
 			eventlog.mf = 8;
@@ -61,8 +61,8 @@ xfidlogclose(Xfid *x)
 	int i;
 
 	qlock(&eventlog.lk);
-	for(i=0; i<eventlog.nf; i++) {
-		if(eventlog.f[i] == x->f) {
+	for(i=0; i<eventlog.nf; i++){
+		if(eventlog.f[i] == x->f){
 			eventlog.f[i] = eventlog.f[--eventlog.nf];
 			break;
 		}
@@ -78,7 +78,7 @@ xfidlogread(Xfid *x)
 	Fcall fc;
 
 	qlock(&eventlog.lk);
-	if(eventlog.nread >= eventlog.mread) {
+	if(eventlog.nread >= eventlog.mread){
 		eventlog.mread = eventlog.mread*2;
 		if(eventlog.mread == 0)
 			eventlog.mread = 8;
@@ -92,14 +92,14 @@ xfidlogread(Xfid *x)
 	while(x->f->logoff >= eventlog.start+eventlog.nev && !x->flushed)
 		rsleep(&eventlog.r);
 
-	for(i=0; i<eventlog.nread; i++) {
-		if(eventlog.read[i] == x) {
+	for(i=0; i<eventlog.nread; i++){
+		if(eventlog.read[i] == x){
 			eventlog.read[i] = eventlog.read[--eventlog.nread];
 			break;
 		}
 	}
 
-	if(x->flushed) {
+	if(x->flushed){
 		qunlock(&eventlog.lk);
 		return;
 	}
@@ -122,9 +122,9 @@ xfidlogflush(Xfid *x)
 	Xfid *rx;
 
 	qlock(&eventlog.lk);
-	for(i=0; i<eventlog.nread; i++) {
+	for(i=0; i<eventlog.nread; i++){
 		rx = eventlog.read[i];
-		if(rx->fcall.tag == x->fcall.oldtag) {
+		if(rx->fcall.tag == x->fcall.oldtag){
 			rx->flushed = TRUE;
 			rwakeupall(&eventlog.r);
 		}
@@ -162,14 +162,14 @@ xfidlog(Window *w, char *op)
 	char *name;
 
 	qlock(&eventlog.lk);
-	if(eventlog.nev >= eventlog.mev) {
-		// Remove and free any entries that all readers have read.
+	if(eventlog.nev >= eventlog.mev){
+		/* Remove and free any entries that all readers have read. */
 		min = eventlog.start + eventlog.nev;
-		for(i=0; i<eventlog.nf; i++) {
+		for(i=0; i<eventlog.nf; i++){
 			if(min > eventlog.f[i]->logoff)
 				min = eventlog.f[i]->logoff;
 		}
-		if(min > eventlog.start) {
+		if(min > eventlog.start){
 			n = min - eventlog.start;
 			for(i=0; i<n; i++)
 				free(eventlog.ev[i]);
@@ -178,8 +178,8 @@ xfidlog(Window *w, char *op)
 			memmove(eventlog.ev, eventlog.ev+n, eventlog.nev*sizeof eventlog.ev[0]);
 		}
 
-		// Otherwise grow.
-		if(eventlog.nev >= eventlog.mev) {
+		/* Otherwise grow. */
+		if(eventlog.nev >= eventlog.mev){
 			eventlog.mev = eventlog.mev*2;
 			if(eventlog.mev == 0)
 				eventlog.mev = 8;
