@@ -33,7 +33,7 @@ struct Win
 	Channel *c;	/* chan(Event) */
 	Win *next;
 	Win *prev;
-	
+
 	/* events */
 	int nbuf;
 	char buf[1024];
@@ -46,6 +46,7 @@ struct Win
 
 Win *newwin(void);
 Win *openwin(int, CFid*);
+CFsys *acmefsys(void);
 
 int eventfmt(Fmt*);
 int pipewinto(Win *w, char *name, int, char *fmt, ...);
