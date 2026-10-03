@@ -631,8 +631,10 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		t->file->mod = TRUE;
 		dirty = TRUE;
 	}
-	for(i=0; i<t->file->ntext; i++)
+	for(i=0; i<t->file->ntext; i++){
 		t->file->text[i]->w->dirty = dirty;
+		t->file->text[i]->w->isscratch = FALSE;
+	}
 	free(name);
 	free(r);
 	winsettag(w);
