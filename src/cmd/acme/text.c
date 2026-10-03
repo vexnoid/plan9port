@@ -689,11 +689,6 @@ texttype(Text *t, Rune r)
 		if(t->q1 < t->file->b.nc)
 			textshow(t, t->q1+1, t->q1+1, TRUE);
 		return;
-	case Kdown:
-		if(t->what == Tag)
-			goto Tagdown;
-		n = t->fr.maxlines/3;
-		goto case_Down;
 	case Kscrollonedown:
 		if(t->what == Tag)
 			goto Tagdown;
@@ -701,47 +696,18 @@ texttype(Text *t, Rune r)
 		if(n <= 0)
 			n = 1;
 		goto case_Down;
-	case Kpgdown:
-		n = 2*t->fr.maxlines/3;
 	case_Down:
 		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+n*t->fr.font->height));
 		textsetorigin(t, q0, TRUE);
 		return;
-	case Kup:
-		if(t->what == Tag)
-			goto Tagup;
-		n = t->fr.maxlines/3;
-		goto case_Up;
 	case Kscrolloneup:
 		if(t->what == Tag)
 			goto Tagup;
 		n = mousescrollsize(t->fr.maxlines);
 		goto case_Up;
-	case Kpgup:
-		n = 2*t->fr.maxlines/3;
 	case_Up:
 		q0 = textbacknl(t, t->org, n);
 		textsetorigin(t, q0, TRUE);
-		return;
-	case Khome:
-		typecommit(t);
-		if(t->org > t->iq1) {
-			q0 = textbacknl(t, t->iq1, 1);
-			textsetorigin(t, q0, TRUE);
-		} else
-			textshow(t, 0, 0, FALSE);
-		return;
-	case Kend:
-		typecommit(t);
-		if(t->iq1 > t->org+t->fr.nchars) {
-			if(t->iq1 > t->file->b.nc) {
-				// should not happen, but does. and it will crash textbacknl.
-				t->iq1 = t->file->b.nc;
-			}
-			q0 = textbacknl(t, t->iq1, 1);
-			textsetorigin(t, q0, TRUE);
-		} else
-			textshow(t, t->file->b.nc, t->file->b.nc, FALSE);
 		return;
 	case 0x01:	/* ^A: beginning of line */
 		typecommit(t);
@@ -788,6 +754,8 @@ texttype(Text *t, Rune r)
 		}
 		return;
 	}
+	if(r >= KF)
+		return;
 	if(t->what == Body){
 		seq++;
 		filemark(t->file);
@@ -824,7 +792,6 @@ texttype(Text *t, Rune r)
 	textshow(t, t->q0, t->q0, 1);
 	switch(r){
 	case 0x06:	/* ^F: complete */
-	case Kins:
 		typecommit(t);
 		rp = textcomplete(t);
 		if(rp == nil)
