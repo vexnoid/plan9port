@@ -258,6 +258,7 @@ readfile(Column *c, char *s)
 	textload(&w->body, 0, s, 1);
 	w->body.file->mod = FALSE;
 	w->dirty = FALSE;
+	wininittag(w);
 	winsettag(w);
 	winresize(w, w->r, FALSE, TRUE);
 	textscrdraw(&w->body);
@@ -809,6 +810,7 @@ newwindowthread(void *v)
 		/* only fsysproc is talking to us, so synchronization is trivial */
 		recvp(cnewwindow);
 		w = makenewwindow(nil);
+		wininittag(w);
 		winsettag(w);
 		xfidlog(w, "new");
 		sendp(cnewwindow, w);

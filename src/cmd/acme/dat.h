@@ -242,7 +242,7 @@ struct Window
 	Rectangle	r;
 	uchar	isdir;
 	uchar	isscratch;
-	uchar	filemenu;
+	uchar	filecmds;
 	uchar	dirty;
 	uchar	autoindent;
 	uchar	showdel;
@@ -299,6 +299,7 @@ void	winundo(Window*, int);
 void	winsetname(Window*, Rune*, int);
 void	winsettag(Window*);
 void	winsettag1(Window*);
+void	wininittag(Window*);
 void	wincommit(Window*, Text*);
 int	winresize(Window*, Rectangle, int, int);
 void	winclose(Window*);

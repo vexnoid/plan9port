@@ -1,6 +1,6 @@
 .TH ACME 3
 .SH NAME
-Event, Win,
+Event, Win, Winstat,
 acmefsys,
 eventfmt,
 newwin,
@@ -9,6 +9,7 @@ pipewinto,
 sysrun,
 winaddr,
 winclosefiles,
+wincmds,
 winctl,
 windel,
 windeleteall,
@@ -24,6 +25,7 @@ winread,
 winreadaddr,
 winreadevent,
 winseek,
+winstat,
 winwrite,
 winwriteevent \- acme client library
 .SH SYNOPSIS
@@ -55,6 +57,18 @@ struct Event
 	char	*loc;
 };
 .PP
+.ta +\w'\fLxxxx'u +\w'\fLxxxxx'u
+.nf
+struct Winstat
+{
+	int	id;
+	int	tagnc;
+	int	bodync;
+	int	isdir;
+	int	dirty;
+	int	isscratch;
+};
+.PP
 .ta +\w'\fLxxxxxxxxxx'u
 .B
 CFsys*	acmefsys(void)
@@ -82,6 +96,9 @@ int	winaddr(Win *w, char *fmt, ...)
 .PP
 .B
 void	winclosefiles(Win *w)
+.PP
+.B
+int	wincmds(Win *w, char *fmt, ...)
 .PP
 .B
 int	winctl(Win *w, char *fmt, ...)
@@ -124,6 +141,9 @@ int	winreadevent(Win *w, Event *e)
 .PP
 .B
 int	winseek(Win *w, char *file, int off, int type)
+.PP
+.B
+void	winstat(char *buf, Winstat *st)
 .PP
 .B
 int	winwrite(Win *w, char *file, void *a, int n)
@@ -260,6 +280,30 @@ cached across calls to
 .IR winctl ,
 .IR etc .)
 .PP
+.I Wincmds
+replaces the text of the window's tag to the right of the bar
+with
+.I fmt\fR, \fP...\|.
+It first writes
+.B cleartag
+to the window's
+.B ctl
+file and then writes the formatted text to the
+.B tag
+file.
+The commands in a window's tag are ordinary text;
+a program that wants particular commands there
+(or wants to omit a default one, such as
+.BR Put )
+sets them with
+.IR wincmds .
+Since
+.I wincmds
+discards whatever was to the right of the bar,
+including text the program wrote earlier,
+it should be called once to set the tag, not to append to it.
+The window name to the left of the bar is unchanged.
+.PP
 .I Winctl
 writes
 .I fmt\fR, \fP...
@@ -330,6 +374,43 @@ relative to
 .I type
 (see
 .MR seek 3 ).
+.PP
+.I Winstat
+parses
+.IR buf ,
+which must hold the contents read from a window's
+.B ctl
+file,
+into the
+.B Winstat
+that
+.I st
+points to.
+The fields are the window's
+.BR id ;
+the number of characters in its tag
+.RB ( tagnc )
+and body
+.RB ( bodync );
+and whether it holds a directory
+.RB ( isdir ),
+has been modified
+.RB ( dirty ),
+or has been marked scratch
+.RB ( isscratch ).
+The last three are 0 or 1.
+A program can use these to decide what to put in the tag with
+.IR wincmds .
+Any program may read the
+.B ctl
+file of any window, not only those it created,
+so the buffer may come from another window's
+.B ctl
+file.
+.I Winstat
+does no I/O and cannot fail;
+.I buf
+must hold all the fields.
 .PP
 .I Winwrite
 writes the

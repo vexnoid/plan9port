@@ -638,7 +638,6 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 	t->file->unread = FALSE;
 	for(i=0; i<t->file->ntext; i++){
 		u = t->file->text[i];
-		textsetselect(&u->w->tag, u->w->tag.file->b.nc, u->w->tag.file->b.nc);
 		if(samename){
 			a = &addr[i];
 			q0 = nlcounttopos(u, 0, a->lq0, a->rq0);
