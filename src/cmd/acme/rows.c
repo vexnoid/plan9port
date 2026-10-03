@@ -783,9 +783,15 @@ rowload(Row *row, char *file, int initing)
 			close(fd);
 			w->dirty = dirty;
 			w->body.file->mod = w->dirty;
+			if(w->dirty)
+				w->putseq = ~0;
+			else
+				w->putseq = w->body.file->seq;
 			if(!w->isscratch){
-				for(n=0; n<w->body.file->ntext; n++)
+				for(n=0; n<w->body.file->ntext; n++){
 					w->body.file->text[n]->w->dirty = w->dirty;
+					w->body.file->text[n]->w->putseq = w->putseq;
+				}
 			}
 			winsettag(w);
 		}else if(dumpid==0)
