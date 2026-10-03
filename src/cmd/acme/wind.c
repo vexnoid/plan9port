@@ -509,6 +509,8 @@ wininittag(Window *w)
 	new[i] = 0;
 	textdelete(&w->tag, 0, w->tag.file->b.nc, TRUE);
 	textinsert(&w->tag, 0, new, i, TRUE);
+	if(w->body.file->nname > 0)
+		textsetselect(&w->tag, w->tag.file->b.nc, w->tag.file->b.nc);
 	free(new);
 }
 

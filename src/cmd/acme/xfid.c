@@ -614,9 +614,10 @@ xfidwrite(Xfid *x)
 					q0 = t->file->b.nc;
 			}else
 				q0 = t->file->b.nc;
-			if(qid == QWtag)
+			if(qid == QWtag){
 				textinsert(t, q0, r, nr, TRUE);
-			else{
+				textsetselect(t, q0+nr, q0+nr);
+			}else{
 				if(w->nomark == FALSE){
 					seq++;
 					filemark(t->file);
