@@ -531,6 +531,7 @@ xfidwrite(Xfid *x)
 	case Qeditout:
 	case QWeditout:
 		r = fullrunewrite(x, &nr);
+		seq++;
 		if(w)
 			err = edittext(w, w->wrselrange.q1, r, nr);
 		else
@@ -568,10 +569,9 @@ xfidwrite(Xfid *x)
 		}
 		r = runemalloc(x->fcall.count);
 		cvttorunes(x->fcall.data, x->fcall.count, r, &nb, &nr, nil);
-		if(w->nomark == FALSE){
-			seq++;
+		seq++;
+		if(w->nomark == FALSE)
 			filemark(t->file);
-		}
 		q0 = a.q0;
 		if(a.q1 > q0){
 			textdelete(t, q0, a.q1, TRUE);
@@ -617,10 +617,9 @@ xfidwrite(Xfid *x)
 			if(qid == QWtag)
 				textinsert(t, q0, r, nr, TRUE);
 			else{
-				if(w->nomark == FALSE){
-					seq++;
+				seq++;
+				if(w->nomark == FALSE)
 					filemark(t->file);
-				}
 				q0 = textbsinsert(t, q0, r, nr, TRUE, &nr);
 				textsetselect(t, t->q0, t->q1);	/* insert could leave it somewhere else */
 				if(qid!=QWwrsel && shouldscroll(t, q0, qid))

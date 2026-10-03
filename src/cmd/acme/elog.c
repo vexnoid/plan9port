@@ -317,21 +317,6 @@ elogapply(File *f)
 			if(t->q0 == b.q0 && t->q1 == b.q0)
 				t->q1 += b.nr;
 			break;
-
-/*		case Filename:
-			f->seq = u.seq;
-			fileunsetname(f, epsilon);
-			f->mod = u.mod;
-			up -= u.n;
-			free(f->name);
-			if(u.n == 0)
-				f->name = nil;
-			else
-				f->name = runemalloc(u.n);
-			bufread(delta, up, f->name, u.n);
-			f->nname = u.n;
-			break;
-*/
 		}
 		bufdelete(log, up, log->nc);
 	}
