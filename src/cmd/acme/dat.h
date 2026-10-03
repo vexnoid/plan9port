@@ -332,6 +332,7 @@ void		coldragwin(Column*, Window*, int);
 void		colgrow(Column*, Window*, int);
 int		colclean(Column*);
 void		colsort(Column*);
+void		colpack(Column*);
 void		colmousebut(Column*);
 
 struct Row
