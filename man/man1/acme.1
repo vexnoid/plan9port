@@ -393,10 +393,6 @@ With no argument, write to the file named in the tag of the window.
 .B Putall
 Write all dirty windows whose names indicate existing regular files.
 .TP
-.B Send
-Append selected text or snarf buffer to end of body; used mainly with
-.IR win .
-.TP
 .B Snarf
 Place selected text in snarf buffer.
 .TP
@@ -613,6 +609,21 @@ window and runs a
 in it, turning the window into something analogous to an
 .MR 9term 1
 window.
+.I Win
+itself implements the command
+.BR Send ,
+which is available only in
+.I win
+windows.
+It appends its argument to the end of the body and sends it to the command,
+adding a newline if there is none.
+The argument is the chorded argument, if any
+(buttons 2 and 1 give the selected text, buttons 2 and 3 give the snarf buffer);
+otherwise the text typed after
+.BR Send ;
+otherwise the text selected in the body.
+.B Send
+does not change the snarf buffer.
 Executing text in a
 .I win
 window with button

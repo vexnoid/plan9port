@@ -54,7 +54,6 @@ void	newcol(Text*, Text*, Text*, int, int, Rune*, int);
 void	paste(Text*, Text*, Text*, int, int, Rune*, int);
 void	put(Text*, Text*, Text*, int, int, Rune*, int);
 void	putall(Text*, Text*, Text*, int, int, Rune*, int);
-void	sendx(Text*, Text*, Text*, int, int, Rune*, int);
 void	sort(Text*, Text*, Text*, int, int, Rune*, int);
 void	tab(Text*, Text*, Text*, int, int, Rune*, int);
 void	zeroxx(Text*, Text*, Text*, int, int, Rune*, int);
@@ -86,7 +85,6 @@ static Rune LNewcol[] = { 'N', 'e', 'w', 'c', 'o', 'l', 0 };
 static Rune LPaste[] = { 'P', 'a', 's', 't', 'e', 0 };
 static Rune LPut[] = { 'P', 'u', 't', 0 };
 static Rune LPutall[] = { 'P', 'u', 't', 'a', 'l', 'l', 0 };
-static Rune LSend[] = { 'S', 'e', 'n', 'd', 0 };
 static Rune LSnarf[] = { 'S', 'n', 'a', 'r', 'f', 0 };
 static Rune LSort[] = { 'S', 'o', 'r', 't', 0 };
 static Rune LTab[] = { 'T', 'a', 'b', 0 };
@@ -111,7 +109,6 @@ Exectab exectab[] = {
 	{ LPaste,		paste,	TRUE,	XXX		},
 	{ LPut,		put,		XXX,		XXX		},
 	{ LPutall,		putall,	XXX,		XXX		},
-	{ LSend,		sendx,	XXX,		XXX		},
 	{ LSnarf,		cut,		TRUE,	FALSE	},
 	{ LSort,		sort,		XXX,		XXX		},
 	{ LTab,		tab,		XXX,		XXX		},
@@ -1056,32 +1053,6 @@ look(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
 		search(t, r, n);
 		free(r);
 	}
-}
-
-static Rune Lnl[] = { '\n', 0 };
-
-void
-sendx(Text *et, Text *t, Text *_0, int _1, int _2, Rune *_3, int _4)
-{
-	USED(_0);
-	USED(_1);
-	USED(_2);
-	USED(_3);
-	USED(_4);
-
-	if(et->w==nil)
-		return;
-	t = &et->w->body;
-	if(t->q0 != t->q1)
-		cut(t, t, nil, TRUE, FALSE, nil, 0);
-	textsetselect(t, t->file->b.nc, t->file->b.nc);
-	paste(t, t, nil, TRUE, TRUE, nil, 0);
-	if(textreadc(t, t->file->b.nc-1) != '\n'){
-		textinsert(t, t->file->b.nc, Lnl, 1, TRUE);
-		textsetselect(t, t->file->b.nc, t->file->b.nc);
-	}
-	t->iq1 = t->q1;
-	textshow(t, t->q1, t->q1, 1);
 }
 
 void
