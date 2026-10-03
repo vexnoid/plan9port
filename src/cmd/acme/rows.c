@@ -323,7 +323,7 @@ rowdump1(Row *row, Biobuf *b)
 	char *buf, *a, *fontname, *fontfmt, *fontnamelo, *fontnamehi;
 	Rune *r;
 	Column *c;
-	Window *w, *w1;
+	Window *w;
 	Text *t;
 
 	buf = fbufalloc();
@@ -366,15 +366,6 @@ rowdump1(Row *row, Biobuf *b)
 			wincommit(w, &w->tag);
 			wincommit(w, &w->body);
 			t = &w->body;
-			/* zeroxes of external windows are tossed */
-			if(t->file->ntext > 1)
-				for(n=0; n<t->file->ntext; n++){
-					w1 = t->file->text[n]->w;
-					if(w == w1)
-						continue;
-					if(w1->nopen[QWevent])
-						goto Continue2;
-				}
 			fontfmt = "%s";
 			fontnamelo = "";
 			fontnamehi = nil;
@@ -457,7 +448,6 @@ rowdump1(Row *row, Biobuf *b)
 				else
 					Bprint(b, "\n%s\n", w->dumpstr);
 			}
-    Continue2:;
 		}
 	}
 	fbuffree(r);

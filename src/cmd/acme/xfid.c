@@ -116,6 +116,11 @@ xfidopen(Xfid *x)
 			w->nopen[q]++;
 			break;
 		case QWevent:
+			if(t->file->ntext > 1){
+				winunlock(w);
+				respond(x, &fc, "zeroxed window; event illegal");
+				return;
+			}
 			w->nopen[q]++;
 			break;
 		case QWrdsel:

@@ -581,6 +581,8 @@ zeroxx(Text *et, Text *t, Text *_1, int _2, int _3, Rune *_4, int _5)
 	t = &t->w->body;
 	if(t->w->isdir)
 		warning(nil, "%.*S is a directory; Zerox illegal\n", t->file->nname, t->file->name);
+	else if(t->w->nopen[QWevent] > 0)
+		warning(nil, "%.*S is an event window; Zerox illegal\n", t->file->nname, t->file->name);
 	else{
 		nw = coladd(t->w->col, nil, t->w, -1);
 		/* ugly: fix locks so w->unlock works */
