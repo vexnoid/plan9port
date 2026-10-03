@@ -938,6 +938,8 @@ dump(Text *_0, Text *_1, Text *argt, int isdump, int _2, Rune *arg, int narg)
 	USED(_1);
 	USED(_2);
 
+	while(narg>0 && (arg[narg-1]==' ' || arg[narg-1]=='\t'))
+		narg--;
 	if(narg)
 		name = runetobyte(arg, narg);
 	else
