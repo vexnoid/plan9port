@@ -1,6 +1,7 @@
 .TH ACME 3
 .SH NAME
 Event, Win,
+acmefsys,
 eventfmt,
 newwin,
 pipetowin,
@@ -55,6 +56,9 @@ struct Event
 };
 .PP
 .ta +\w'\fLxxxxxxxxxx'u
+.B
+CFsys*	acmefsys(void)
+.PP
 .B
 int	eventfmt(Fmt *fmt)
 .PP
@@ -180,6 +184,31 @@ using
 .I smprint
 (see
 .MR print 3 ).
+.PP
+.I Acmefsys
+returns the
+.B CFsys
+(see
+.MR 9pclient 3 )
+of the
+.I acme
+file system that the library uses to reach windows,
+mounting it first if that has not yet been done.
+If the mount fails,
+.I acmefsys
+calls
+.MR sysfatal 3 .
+It lets a program open the files in the
+.I acme
+directory itself, such as
+.BR index ,
+.BR log ,
+and
+.BR new ,
+which no
+.B Win
+represents.
+The structure is shared with the library, so the program should not unmount it.
 .PP
 .I Pipetowin
 runs the
