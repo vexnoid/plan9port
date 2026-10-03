@@ -71,11 +71,13 @@ wininit(Window *w, Window *clone, Rectangle r)
 	w->filecmds = TRUE;
 	w->maxlines = w->body.fr.maxlines;
 	w->autoindent = globalautoindent;
+	w->delseq = ~0;
 	if(!clone)
 		wininittag(w);
 	if(clone){
 		w->dirty = clone->dirty;
 		w->putseq = clone->putseq;
+		w->delseq = clone->delseq;
 		w->autoindent = clone->autoindent;
 		textsetselect(&w->tag, clone->tag.q0, clone->tag.q1);
 		textsetselect(&w->body, clone->body.q0, clone->body.q1);
@@ -663,15 +665,16 @@ winclean(Window *w)
 {
 	if(w->isscratch || w->isdir)	/* don't whine if it's a guide file, error window, etc. */
 		return TRUE;
-	if(w->dirty){
-		if(w->body.file->nname)
-			warning(nil, "%.*S modified\n", w->body.file->nname, w->body.file->name);
-		else
-			warning(nil, "unnamed file modified\n");
-		w->dirty = FALSE;
-		return FALSE;
-	}
-	return TRUE;
+	if(!w->dirty)
+		return TRUE;
+	if(w->delseq == w->body.file->seq)
+		return TRUE;
+	if(w->body.file->nname)
+		warning(nil, "%.*S modified\n", w->body.file->nname, w->body.file->name);
+	else
+		warning(nil, "unnamed file modified\n");
+	w->delseq = w->body.file->seq;
+	return FALSE;
 }
 
 char*
