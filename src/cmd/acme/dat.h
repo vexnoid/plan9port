@@ -547,7 +547,8 @@ extern Text			*mousetext;	/* global because Text.close needs to clear it */
 extern Text			*typetext;		/* global because Text.close needs to clear it */
 extern Window		*activewin;
 extern Column		*activecol;
-extern Buffer		snarfbuf;
+extern File		snarffile;
+extern Text		snarftext;
 extern Rectangle		nullrect;
 extern int			fsyspid;
 extern char			*cputype;
