@@ -376,7 +376,7 @@ g_cmd(Text *t, Cmd *cp)
 	}
 	if(rxcompile(cp->re->r) == FALSE)
 		editerror("bad regexp in g command");
-	if(rxexecute(t, nil, addr.r.q0, addr.r.q1, &sel) ^ cp->cmdc=='v'){
+	if(rxexecute(t, nil, addr.r.q0, addr.r.q0, addr.r.q1, &sel) ^ cp->cmdc=='v'){
 		t->q0 = addr.r.q0;
 		t->q1 = addr.r.q1;
 		return cmdexec(t, cp->u.cmd);
@@ -462,7 +462,7 @@ s_cmd(Text *t, Cmd *cp)
 	rp = nil;
 	delta = 0;
 	didsub = FALSE;
-	for(p1 = addr.r.q0; p1<=addr.r.q1 && rxexecute(t, nil, p1, addr.r.q1, &sel); ){
+	for(p1 = addr.r.q0; p1<=addr.r.q1 && rxexecute(t, nil, addr.r.q0, p1, addr.r.q1, &sel); ){
 		if(sel.r[0].q0 == sel.r[0].q1){	/* empty match? */
 			if(sel.r[0].q0 == op){
 				p1++;
@@ -839,13 +839,14 @@ pfilename(File *f)
 }
 
 void
-loopcmd(File *f, Cmd *cp, Range *rp, long nrp)
+loopcmd(File *f, Cmd *cp, Rangeloop *rp, long nrp)
 {
 	long i;
 
 	for(i=0; i<nrp; i++){
-		f->curtext->q0 = rp[i].q0;
-		f->curtext->q1 = rp[i].q1;
+		f->curtext->q0 = rp[i].r.q0;
+		f->curtext->q1 = rp[i].r.q1;
+		sel = rp[i].sel;
 		cmdexec(f->curtext, cp);
 	}
 }
@@ -856,7 +857,7 @@ looper(File *f, Cmd *cp, int xy)
 	int j;
 	long p, op, nrp;
 	Range r, tr;
-	Range *rp;
+	Rangeloop *rp;
 	Rangeset emptysel;
 
 	for(j=0; j<NRange; j++)
@@ -869,7 +870,7 @@ looper(File *f, Cmd *cp, int xy)
 	nrp = 0;
 	rp = nil;
 	for(p = r.q0; p<=r.q1; ){
-		if(!rxexecute(f->curtext, nil, p, r.q1, &sel)){ /* no match, but y should still run */
+		if(!rxexecute(f->curtext, nil, r.q0, p, r.q1, &sel)){ /* no match, but y should still run */
 			if(xy || op>r.q1)
 				break;
 			sel = emptysel;
@@ -891,8 +892,9 @@ looper(File *f, Cmd *cp, int xy)
 		}
 		op = sel.r[0].q1;
 		nrp++;
-		rp = erealloc(rp, nrp*sizeof(Range));
-		rp[nrp-1] = tr;
+		rp = erealloc(rp, nrp*sizeof(Rangeloop));
+		rp[nrp-1].r = tr;
+		rp[nrp-1].sel = sel;
 	}
 	loopcmd(f, cp->u.cmd, rp, nrp);
 	free(rp);
@@ -902,11 +904,15 @@ looper(File *f, Cmd *cp, int xy)
 void
 linelooper(File *f, Cmd *cp)
 {
+	int j;
 	long nrp, p;
 	Range r, linesel;
+	Rangeloop *rp;
+	Rangeset emptysel;
 	Address a, a3;
-	Range *rp;
 
+	for(j=0; j<NRange; j++)
+		emptysel.r[j].q0 = emptysel.r[j].q1 = -1;
 	nest++;
 	nrp = 0;
 	rp = nil;
@@ -929,8 +935,9 @@ linelooper(File *f, Cmd *cp)
 			if(linesel.q0>=a3.r.q1 && linesel.q1>a3.r.q1){
 				a3.r = linesel;
 				nrp++;
-				rp = erealloc(rp, nrp*sizeof(Range));
-				rp[nrp-1] = linesel;
+				rp = erealloc(rp, nrp*sizeof(Rangeloop));
+				rp[nrp-1].r = linesel;
+				rp[nrp-1].sel = emptysel;
 				continue;
 			}
 		break;
@@ -1075,12 +1082,12 @@ nextmatch(File *f, String *r, long p, int sign)
 	if(rxcompile(r->r) == FALSE)
 		editerror("bad regexp in command address");
 	if(sign >= 0){
-		if(!rxexecute(f->curtext, nil, p, 0x7FFFFFFFL, &sel))
+		if(!rxexecute(f->curtext, nil, 0, p, 0x7FFFFFFFL, &sel))
 			editerror("no match for regexp");
 		if(sel.r[0].q0==sel.r[0].q1 && sel.r[0].q0==p){
 			if(++p>f->b.nc)
 				p = 0;
-			if(!rxexecute(f->curtext, nil, p, 0x7FFFFFFFL, &sel))
+			if(!rxexecute(f->curtext, nil, 0, p, 0x7FFFFFFFL, &sel))
 				editerror("address");
 		}
 	}else{
@@ -1280,7 +1287,7 @@ filematch(File *f, String *r)
 		'+', " ."[curtext!=nil && curtext->file==f], f->nname, f->name);
 	rbuf = bytetorune(buf, &i);
 	fbuffree(buf);
-	match = rxexecute(nil, rbuf, 0, i, &s);
+	match = rxexecute(nil, rbuf, 0, 0, i, &s);
 	free(rbuf);
 	return match;
 }
