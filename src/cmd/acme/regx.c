@@ -556,8 +556,9 @@ rxnull(void)
 }
 
 /* either t!=nil or r!=nil, and we match the string in the appropriate place */
+/* ^ and $ match at bof and eof as well as at newlines */
 int
-rxexecute(Text *t, Rune *r, uint startp, uint eof, Rangeset *rp)
+rxexecute(Text *t, Rune *r, uint bof, uint startp, uint eof, Rangeset *rp)
 {
 	int flag;
 	Inst *inst;
@@ -653,14 +654,14 @@ rxexecute(Text *t, Rune *r, uint startp, uint eof, Rangeset *rp)
 					goto Addinst;
 				break;
 			case BOL:
-				if(p==0 || (t!=nil && textreadc(t, p-1)=='\n') || (r!=nil && r[p-1]=='\n')){
+				if(p==bof || (t!=nil && textreadc(t, p-1)=='\n') || (r!=nil && r[p-1]=='\n')){
 	Step:
 					inst = inst->u1.next;
 					goto Switchstmt;
 				}
 				break;
 			case EOL:
-				if(c=='\n' || (c==0 && p>=nc && p>0 && (t!=nil? textreadc(t, p-1) : r[p-1])!='\n'))
+				if(c=='\n' || (c==0 && (p>=eof || p>=nc) && (p==bof || (t!=nil? textreadc(t, p-1) : r[p-1])!='\n')))
 					goto Step;
 				break;
 			case CCLASS:
