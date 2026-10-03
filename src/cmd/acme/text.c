@@ -820,7 +820,7 @@ texttype(Text *t, Rune r)
 	if(t->q1 > t->q0){
 		if(t->ncache != 0)
 			error("text.type");
-		cut(t, t, nil, TRUE, TRUE, nil, 0);
+		cut(t, t, nil, r==0x1B, TRUE, nil, 0);
 		t->eq0 = ~0;
 	}
 	textshow(t, t->q0, t->q0, 1);
