@@ -728,7 +728,7 @@ texttype(Text *t, Rune r)
 	}
 	if(r >= KF)
 		return;
-	if(t->what == Body){
+	if(t->what == Body && t->q1 == t->q0){
 		seq++;
 		filemark(t->file);
 	}
@@ -997,16 +997,10 @@ textselect(Text *t)
 		if((b&1) && (b&(2|8|16))){
 			if(b & 2)
 				cut(t, t, nil, TRUE, FALSE, nil, 0);
-			else{
-				if(t->what==Body){
-					seq++;
-					filemark(t->w->body.file);
-				}
-				if(b & 8)
-					cut(t, t, nil, TRUE, TRUE, nil, 0);
-				else
-					paste(t, t, nil, TRUE, FALSE, nil, 0);
-			}
+			else if(b & 8)
+				cut(t, t, nil, TRUE, TRUE, nil, 0);
+			else
+				paste(t, t, nil, TRUE, FALSE, nil, 0);
 			textscrdraw(t);
 			clearmouse();
 			flushimage(display, 1);

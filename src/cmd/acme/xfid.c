@@ -165,8 +165,10 @@ xfidopen(Xfid *x)
 			break;
 		case QWwrsel:
 			w->nopen[q]++;
-			seq++;
-			filemark(t->file);
+			if(t->q0 == t->q1){
+				seq++;
+				filemark(t->file);
+			}
 			cut(t, t, nil, FALSE, TRUE, nil, 0);
 			w->wrselrange = range(t->q1, t->q1);
 			w->nomark = TRUE;
