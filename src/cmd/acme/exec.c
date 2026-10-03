@@ -52,6 +52,7 @@ void	indent(Text*, Text*, Text*, int, int, Rune*, int);
 void	xkill(Text*, Text*, Text*, int, int, Rune*, int);
 void	look(Text*, Text*, Text*, int, int, Rune*, int);
 void	newcol(Text*, Text*, Text*, int, int, Rune*, int);
+void	pack(Text*, Text*, Text*, int, int, Rune*, int);
 void	paste(Text*, Text*, Text*, int, int, Rune*, int);
 void	put(Text*, Text*, Text*, int, int, Rune*, int);
 void	putall(Text*, Text*, Text*, int, int, Rune*, int);
@@ -85,6 +86,7 @@ static Rune LLoad[] = { 'L', 'o', 'a', 'd', 0 };
 static Rune LLook[] = { 'L', 'o', 'o', 'k', 0 };
 static Rune LNew[] = { 'N', 'e', 'w', 0 };
 static Rune LNewcol[] = { 'N', 'e', 'w', 'c', 'o', 'l', 0 };
+static Rune LPack[] = { 'P', 'a', 'c', 'k', 0 };
 static Rune LPaste[] = { 'P', 'a', 's', 't', 'e', 0 };
 static Rune LPut[] = { 'P', 'u', 't', 0 };
 static Rune LPutall[] = { 'P', 'u', 't', 'a', 'l', 'l', 0 };
@@ -110,6 +112,7 @@ Exectab exectab[] = {
 	{ LLook,		look,		XXX,		XXX		},
 	{ LNew,		new,		XXX,		XXX		},
 	{ LNewcol,	newcol,	XXX,		XXX		},
+	{ LPack,		pack,	XXX,		XXX		},
 	{ LPaste,		paste,	TRUE,	XXX		},
 	{ LPut,		put,		XXX,		XXX		},
 	{ LPutall,		putall,	XXX,		XXX		},
@@ -413,6 +416,20 @@ sort(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 
 	if(et->col)
 		colsort(et->col);
+}
+
+void
+pack(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+{
+	USED(_0);
+	USED(_1);
+	USED(_2);
+	USED(_3);
+	USED(_4);
+	USED(_5);
+
+	if(et->col)
+		colpack(et->col);
 }
 
 uint

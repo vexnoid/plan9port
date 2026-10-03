@@ -17,8 +17,9 @@ static Rune Lheader[] = {
 	'C', 'u', 't', ' ',
 	'P', 'a', 's', 't', 'e', ' ',
 	'C', 'o', 'p', 'y', ' ',
-	'S', 'o', 'r', 't', ' ',
 	'Z', 'e', 'r', 'o', 'x', ' ',
+	'S', 'o', 'r', 't', ' ',
+	'P', 'a', 'c', 'k', ' ',
 	'D', 'e', 'l', 'c', 'o', 'l', ' ',
 	0
 };
@@ -43,7 +44,7 @@ colinit(Column *c, Rectangle r)
 	r1.min.y = r1.max.y;
 	r1.max.y += Border;
 	draw(screen, r1, display->black, nil, ZP);
-	textinsert(t, 0, Lheader, 37, TRUE);
+	textinsert(t, 0, Lheader, 42, TRUE);
 	textsetselect(t, t->file->b.nc, t->file->b.nc);
 	draw(screen, t->scrollr, colbutton, nil, colbutton->r.min);
 	c->safe = TRUE;
@@ -321,6 +322,36 @@ colsort(Column *c)
 	free(rp);
 	free(c->w);
 	c->w = wp;
+}
+
+void
+colpack(Column *c)
+{
+	int i, y;
+	Rectangle r, r1;
+	Window *w;
+
+	if(c->nw == 0)
+		return;
+	clearmouse();
+	r = c->r;
+	r.min.y = c->tag.fr.r.max.y;
+	draw(screen, r, textcols[BACK], nil, ZP);
+	y = r.min.y;
+	for(i=0; i<c->nw; i++){
+		w = c->w[i];
+		r.min.y = y;
+		if(i == c->nw-1)
+			r.max.y = c->r.max.y;
+		else
+			/* shrink to what the window actually needs to show its content */
+			r.max.y = r.min.y+w->taglines*font->height+1+w->body.fr.nlines*w->body.fr.font->height+Border;
+		r1 = r;
+		r1.max.y = r1.min.y+Border;
+		draw(screen, r1, display->black, nil, ZP);
+		r.min.y = r1.max.y;
+		y = winresize(w, r, FALSE, i==c->nw-1);
+	}
 }
 
 void
