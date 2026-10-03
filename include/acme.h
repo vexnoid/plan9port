@@ -4,6 +4,7 @@ typedef struct Event Event;
 typedef struct Win Win;
 
 #define	EVENTSIZE	256
+/* zero before first use; text, arg, loc are malloced */
 struct Event
 {
 	int	c1;
@@ -15,9 +16,9 @@ struct Event
 	int	flag;
 	int	nb;
 	int	nr;
-	char	text[EVENTSIZE*UTFmax+1];
-	char	arg[EVENTSIZE*UTFmax+1];
-	char	loc[EVENTSIZE*UTFmax+1];
+	char	*text;
+	char	*arg;
+	char	*loc;
 };
 
 struct Win

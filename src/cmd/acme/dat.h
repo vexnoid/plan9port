@@ -256,7 +256,8 @@ struct Window
 	Column	*col;
 	Xfid		*eventx;
 	char		*events;
-	int		nevents;
+	int		nevents;	/* bytes in events */
+	int		evstart;	/* bytes of events already read */
 	int		owner;
 	int		maxlines;
 	Dirlist	**dlp;

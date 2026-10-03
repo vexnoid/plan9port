@@ -354,6 +354,7 @@ windelete(Window *w)
 	x = w->eventx;
 	if(x){
 		w->nevents = 0;
+		w->evstart = 0;
 		free(w->events);
 		w->events = nil;
 		w->eventx = nil;
