@@ -2,6 +2,7 @@ AUTOLIB(acme)
 
 typedef struct Event Event;
 typedef struct Win Win;
+typedef struct Winstat Winstat;
 
 #define	EVENTSIZE	256
 /* zero before first use; text, arg, loc are malloced */
@@ -45,6 +46,16 @@ struct Win
 	Event e4;
 };
 
+struct Winstat
+{
+	int	id;
+	int	tagnc;
+	int	bodync;
+	int	isdir;
+	int	dirty;
+	int	isscratch;
+};
+
 Win *newwin(void);
 Win *openwin(int, CFid*);
 CFsys *acmefsys(void);
@@ -56,6 +67,8 @@ char *sysrun(char*, ...);
 int winaddr(Win *w, char *fmt, ...);
 int winctl(Win *w, char *fmt, ...);
 int windel(Win *w, int sure);
+int wincmds(Win *w, char *fmt, ...);
+void winstat(char *buf, Winstat *st);
 int winfd(Win *w, char *name, int);
 char *winmread(Win *w, char *file);
 int winname(Win *w, char *fmt, ...);

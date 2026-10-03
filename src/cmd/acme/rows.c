@@ -765,11 +765,9 @@ rowload(Row *row, char *file, int initing)
 				break;
 		if(dumpid == 0)
 			winsetname(w, r, n);
-		for(; n<nr; n++)
-			if(r[n] == '|')
-				break;
-		wincleartag(w);
-		textinsert(&w->tag, w->tag.file->b.nc, r+n+1, nr-(n+1), TRUE);
+		textdelete(&w->tag, 0, w->tag.file->b.nc, TRUE);
+		textinsert(&w->tag, 0, r, nr, TRUE);
+		textsetselect(&w->tag, w->tag.file->b.nc, w->tag.file->b.nc);
 		if(ndumped >= 0){
 			/* simplest thing is to put it in a file and load that */
 			sprint(buf, "/tmp/d%d.%.4sacme", getpid(), getuser());
