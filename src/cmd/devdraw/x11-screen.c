@@ -314,8 +314,6 @@ xloop(void)
 	}
 }
 
-static int kcodecontrol, kcodealt;
-
 /*
  * Handle an incoming X event.
  */
@@ -323,14 +321,10 @@ static void
 runxevent(XEvent *xev)
 {
 	int c;
-	int modp;
 	KeySym k;
 	static Mouse m;
-	XButtonEvent *be;
 	XKeyEvent *ke;
 	Xwin *w;
-
-	modp = 0;
 
 #ifdef SHOWEVENT
 	static int first = 1;
@@ -412,39 +406,19 @@ runxevent(XEvent *xev)
 		break;
 
 	case ButtonPress:
-		be = (XButtonEvent*)xev;
-		if(be->button == 1) {
-			if(_x.kstate & ControlMask)
-				be->button = 2;
-			else if(_x.kstate & Mod1Mask)
-				be->button = 3;
-			_x.button1map = be->button;
-		}
-		// fall through
 	case ButtonRelease:
-		/*
-		 * X reports the physical button on release, but ButtonPress
-		 * may have remapped button 1 to 2 or 3 (via Ctrl or Alt).
-		 * Use the same mapping so we clear the correct bit.
-		 */
-		if(xev->type == ButtonRelease) {
-			be = (XButtonEvent*)xev;
-			if(be->button == 1 && _x.button1map != 0)
-				be->button = _x.button1map;
-		}
 		_x.altdown = 0;
 		// fall through
 	case MotionNotify:
 		if(_xtoplan9mouse(w, xev, &m) < 0)
 			return;
-		gfx_mousetrack(w->client, m.xy.x, m.xy.y, m.buttons|_x.kbuttons, m.msec);
+		gfx_mousetrack(w->client, m.xy.x, m.xy.y, m.buttons, m.msec);
 		break;
 
 	case KeyRelease:
 	case KeyPress:
 		ke = (XKeyEvent*)xev;
 		XLookupString(ke, NULL, 0, &k, NULL);
-		c = ke->state;
 		switch(k) {
 		case XK_Alt_L:
 		case XK_Meta_L:	/* Shift Alt on PCs */
@@ -458,44 +432,6 @@ runxevent(XEvent *xev)
 				gfx_keystroke(w->client, Kalt);
 			}
 			break;
-		}
-
-		if(xev->type == KeyPress)
-			switch(k) {
-			case XK_Control_L:
-			case XK_Control_R:
-				kcodecontrol = ke->keycode;
-				c |= ControlMask;
-				modp = 1;
-				break;
-			case XK_Alt_L:
-			case XK_Alt_R:
-				kcodealt = ke->keycode;
-				c |= Mod1Mask;
-				modp = 1;
-				break;
-			}
-		else {
-			if(ke->keycode == kcodecontrol){
-				c &= ~ControlMask;
-				modp = 1;
-		        } else if(ke->keycode == kcodealt){
-				c &= ~Mod1Mask;
-				modp = 1;
-			}
-		}
-		if(modp){
-			_x.kstate = c;
-			if(m.buttons || _x.kbuttons) {
-				_x.altdown = 0; // used alt
-				_x.kbuttons = 0;
-				if(c & ControlMask)
-					_x.kbuttons |= 2;
-				if(c & Mod1Mask)
-					_x.kbuttons |= 4;
-				gfx_mousetrack(w->client, m.xy.x, m.xy.y, m.buttons|_x.kbuttons, m.msec);
-			}
-			modp = 0;
 		}
 
 		if(xev->type != KeyPress)
@@ -516,8 +452,6 @@ runxevent(XEvent *xev)
 		 * to see the key down event without the key up event,
 		 * so clear out the keyboard state when we lose the focus.
 		 */
-		_x.kstate = 0;
-		_x.kbuttons = 0;
 		_x.altdown = 0;
 		gfx_abortcompose(w->client);
 		break;
