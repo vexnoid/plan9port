@@ -27,7 +27,6 @@ int		nfontcache;
 char		wdir[512] = ".";
 Reffont	*reffonts[2];
 int		mainpid;
-int		swapscrollbuttons = FALSE;
 char		*mtpt;
 
 enum
@@ -100,9 +99,6 @@ threadmain(int argc, char *argv[])
 		mtpt = ARGF();
 		if(mtpt == nil)
 			goto Usage;
-		break;
-	case 'r':
-		swapscrollbuttons = TRUE;
 		break;
 	case 'W':
 		winsize = ARGF();
@@ -526,16 +522,15 @@ mousethread(void *v)
 				but = 3;
 			wheel = m.buttons & (8|16);
 			if(t->what==Body && ptinrect(m.xy, t->scrollr)){
-				if(but){
-					if(swapscrollbuttons){
-						if(but == 1)
-							but = 3;
-						else if(but == 3)
-							but = 1;
-					}
+				if(but == 2){
 					winlock(w, 'M');
 					t->eq0 = ~0;
-					textscroll(t, but);
+					textscroll(t);
+					winunlock(w);
+				}else if(wheel){
+					winlock(w, 'M');
+					t->eq0 = ~0;
+					textscroll4(t, m.buttons&8);
 					winunlock(w);
 				}
 				goto Continue;
