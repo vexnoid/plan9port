@@ -86,7 +86,7 @@ void *emalloc(uint);
 void *erealloc(void*, uint);
 char	*estrdup(char*);
 Range		address(uint, Text*, Range, Range, void*, uint, uint, int (*)(void*, uint),  int*, uint*);
-int		rxexecute(Text*, Rune*, uint, uint, Rangeset*);
+int		rxexecute(Text*, Rune*, uint, uint, uint, Rangeset*);
 int		rxbexecute(Text*, uint, Rangeset*);
 Window*	makenewwindow(Text *t);
 int	expand(Text*, uint, uint, Expand*);
