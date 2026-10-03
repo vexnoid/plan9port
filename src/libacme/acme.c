@@ -154,7 +154,7 @@ wfid(Win *w, char *name)
 	}
 
 	if(*fid == nil){
-		snprint(buf, sizeof buf, "acme/%d/%s", w->id, name);
+		snprint(buf, sizeof buf, "%d/%s", w->id, name);
 		*fid = fsopen(acmefs, buf, ORDWR);
 		if(*fid == nil)
 			sysfatal("open %s: %r", buf);
@@ -316,7 +316,7 @@ winfd(Win *w, char *name, int mode)
 {
 	char buf[100];
 
-	snprint(buf, sizeof buf, "acme/%d/%s", w->id, name);
+	snprint(buf, sizeof buf, "%d/%s", w->id, name);
 	return fsopenfd(acmefs, buf, mode);
 }
 
