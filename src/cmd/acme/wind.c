@@ -92,7 +92,7 @@ windrawbutton(Window *w)
 	Rectangle br;
 
 	b = button;
-	if(!w->isdir && !w->isscratch && (w->body.file->mod || w->body.ncache))
+	if(!w->isdir && !w->isscratch && (w->body.file->mod || w->body.ncache || w->dirty))
 		b = modbutton;
 	br.min = w->tag.scrollr.min;
 	br.max.x = br.min.x + Dx(b->r);
