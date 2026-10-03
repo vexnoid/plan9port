@@ -14,7 +14,7 @@
 
 enum
 {
-	Ctlsize	= 6*12
+	Ctlsize	= 7*12
 };
 
 char	Edel[]		= "deleted window";
@@ -329,6 +329,8 @@ xfidread(Xfid *x)
 
 	case QWctl:
 		b = winctlprint(w, buf, 1);
+		if(off == 0)
+			w->fromdump = FALSE;
 		goto Readb;
 
 	Readbuf:

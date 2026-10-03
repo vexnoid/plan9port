@@ -24,6 +24,9 @@ snarfinit(void)
 	snarftext.what = Body;
 }
 
+/* guards env/namespace setup in runproc() against concurrent runs */
+static QLock runprocenvlk;
+
 /*
  * These functions get called as:
  *
@@ -1397,10 +1400,13 @@ runproc(void *argvp)
 	iseditcmd = (uintptr)argv[9];
 	free(argv);
 
+	qlock(&runprocenvlk);	/* until child forks, below */
+
 	unsetenv("acmeaddr");
 	unsetenv("winid");
 	unsetenv("%");
 	unsetenv("samfile");
+	unsetenv("mntid");
 
 	t = s;
 	while(*t==' ' || *t=='\n' || *t=='\t')
@@ -1452,16 +1458,22 @@ runproc(void *argvp)
 			putenv("samfile", filename);
 			free(filename);
 		}
-		c->md = fsysmount(rdir, ndir, incl, nincl);
+		if(c->fromdump)
+			c->md = fsysmount(rdir, ndir, incl, nincl, win);
+		else
+			c->md = fsysmount(rdir, ndir, incl, nincl, nil);
 		if(c->md == nil){
 			fprint(2, "child: can't allocate mntdir: %r\n");
+			qunlock(&runprocenvlk);
 			threadexits("fsysmount");
 		}
 		sprint(buf, "%d", c->md->id);
+		putenv("mntid", buf);
 		if((fs = nsmount("acme", buf)) == nil){
 			fprint(2, "child: can't mount acme: %r\n");
 			fsysdelid(c->md);
 			c->md = nil;
+			qunlock(&runprocenvlk);
 			threadexits("nsmount");
 		}
 		if(winid>0 && (pipechar=='|' || pipechar=='>')){
@@ -1491,7 +1503,7 @@ runproc(void *argvp)
 		sfd[1] = open("/dev/null", OWRITE);
 		sfd[2] = dup(erroutfd, -1);
 	}
-	if(win)
+	if(win && !c->fromdump)
 		winclose(win);
 
 	if(argaddr)
@@ -1511,8 +1523,10 @@ runproc(void *argvp)
 			goto Hard;
 		inarg = TRUE;
 	}
-	if(!inarg)
+	if(!inarg){
+		qunlock(&runprocenvlk);
 		goto Fail;
+	}
 
 	ac = 0;
 	av = nil;
@@ -1539,6 +1553,7 @@ runproc(void *argvp)
 	if(rdir != nil)
 		dir = runetobyte(rdir, ndir);
 	ret = threadspawnd(sfd, av[0], av, dir);
+	qunlock(&runprocenvlk);
 	free(dir);
 	if(ret >= 0){
 		if(cpid)
@@ -1602,6 +1617,8 @@ Hard:
 	unsetenv("winid");
 	unsetenv("%");
 	unsetenv("samfile");
+	unsetenv("mntid");
+	qunlock(&runprocenvlk);
 	free(dir);
 	if(ret >= 0){
 		if(cpid)
@@ -1660,6 +1677,7 @@ run(Window *win, char *s, Rune *rdir, int ndir, int newns, char *argaddr, char *
 
 	arg = emalloc(10*sizeof(void*));
 	c = emalloc(sizeof *c);
+	c->fromdump = win!=nil && win->fromdump;
 	cpid = chancreate(sizeof(ulong), 0);
 	chansetname(cpid, "cpid %s", s);
 	arg[0] = win;
