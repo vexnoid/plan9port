@@ -316,7 +316,7 @@ textload(Text *t, uint q0, char *file, int setqid)
 		if(u != t){
 			if(u->org > u->file->b.nc)	/* will be 0 because of reset(), but safety first */
 				u->org = 0;
-			textresize(u, u->all, TRUE);
+			winresize(u->w, u->w->r, FALSE, TRUE);
 			textbacknl(u, u->org, 0);	/* go to beginning of line */
 		}
 		textsetselect(u, q0, q0);
