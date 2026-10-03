@@ -777,13 +777,15 @@ waitthread(void *v)
 			}
 			c->next = command;
 			command = c;
-			qlock(&row.lk);
-			t = &row.tag;
-			textcommit(t, TRUE);
-			textinsert(t, 0, c->name, c->nname, TRUE);
-			textsetselect(t, t->file->b.nc, t->file->b.nc);
-			flushimage(display, 1);
-			qunlock(&row.lk);
+			if(!c->fromdump){
+				qlock(&row.lk);
+				t = &row.tag;
+				textcommit(t, TRUE);
+				textinsert(t, 0, c->name, c->nname, TRUE);
+				textsetselect(t, t->file->b.nc, t->file->b.nc);
+				flushimage(display, 1);
+				qunlock(&row.lk);
+			}
 			break;
 		}
 	}
