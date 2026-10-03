@@ -1267,13 +1267,14 @@ mwrite9p(Ioproc *io, int fd, uchar *pkt)
 	int n, nfd;
 
 	n = GBIT32(pkt);
-	if(verbose > 2) fprint(2, "%T write %d %d %.*H\n", fd, n, n, pkt);
-if(verbose > 1) fprint(2, "%T before iowrite\n");
-	if(iowrite(io, fd, pkt, n) != n){
-		fprint(2, "%T write error: %r\n");
+	if(verbose > 2)
+		fprint(2, "%T write %d %d %.*H\n", fd, n, n, pkt);
+	if(verbose > 1)
+		fprint(2, "%T before iowrite\n");
+	if(iowrite(io, fd, pkt, n) != n)
 		return -1;
-	}
-if(verbose > 1) fprint(2, "%T after iowrite\n");
+	if(verbose > 1)
+		fprint(2, "%T after iowrite\n");
 	if(pkt[4] == Ropenfd){
 		nfd = GBIT32(pkt+n-4);
 		if(iosendfd(io, fd, nfd) < 0){
