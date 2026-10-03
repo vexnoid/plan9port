@@ -222,8 +222,7 @@ threadmain(int argc, char *argv[])
 			readfile(c, wdir);
 		else
 			for(i=0; i<argc; i++){
-				p = utfrrune(argv[i], '/');
-				if((p!=nil && strcmp(p, "/guide")==0) || i/WPERCOL>=row.ncol)
+				if(i/WPERCOL>=row.ncol)
 					readfile(c, argv[i]);
 				else
 					readfile(row.col[i/WPERCOL], argv[i]);
