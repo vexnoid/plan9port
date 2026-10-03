@@ -48,6 +48,7 @@ typedef	struct	Elog Elog;
 typedef	struct	Mntdir Mntdir;
 typedef	struct	Range Range;
 typedef	struct	Rangeset Rangeset;
+typedef	struct	Rangeloop Rangeloop;
 typedef	struct	Reffont Reffont;
 typedef	struct	Row Row;
 typedef	struct	Runestr Runestr;
@@ -435,6 +436,12 @@ void		rfclose(Reffont*);
 struct Rangeset
 {
 	Range	r[NRange];
+};
+
+struct Rangeloop
+{
+	Range r;
+	Rangeset sel;
 };
 
 struct Dirlist

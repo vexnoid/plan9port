@@ -367,16 +367,41 @@ f_cmd(Text *t, Cmd *cp)
 	return TRUE;
 }
 
+static void
+selshift(Rangeset *s, long off)
+{
+	int i;
+
+	for(i=0; i<NRange; i++){
+		if(s->r[i].q0>=0){
+			s->r[i].q0 += off;
+			s->r[i].q1 += off;
+		}
+	}
+}
+
 int
 g_cmd(Text *t, Cmd *cp)
 {
+	long len;
+	Rune *buf;
+	int match;
+
 	if(t->file != addr.f){
 		warning(nil, "internal error: g_cmd f!=addr.f\n");
 		return FALSE;
 	}
 	if(rxcompile(cp->re->r) == FALSE)
 		editerror("bad regexp in g command");
-	if(rxexecute(t, nil, addr.r.q0, addr.r.q1, &sel) ^ cp->cmdc=='v'){
+	len = addr.r.q1 - addr.r.q0;
+	buf = runemalloc(len + 1);
+	bufread(&t->file->b, addr.r.q0, buf, len);
+	buf[len] = 0;
+	match = rxexecute(nil, buf, 0, len, &sel);
+	if(match)
+		selshift(&sel, addr.r.q0);
+	free(buf);
+	if(match ^ cp->cmdc=='v'){
 		t->q0 = addr.r.q0;
 		t->q1 = addr.r.q1;
 		return cmdexec(t, cp->u.cmd);
@@ -839,13 +864,14 @@ pfilename(File *f)
 }
 
 void
-loopcmd(File *f, Cmd *cp, Range *rp, long nrp)
+loopcmd(File *f, Cmd *cp, Rangeloop *rp, long nrp)
 {
 	long i;
 
 	for(i=0; i<nrp; i++){
-		f->curtext->q0 = rp[i].q0;
-		f->curtext->q1 = rp[i].q1;
+		f->curtext->q0 = rp[i].r.q0;
+		f->curtext->q1 = rp[i].r.q1;
+		sel = rp[i].sel;
 		cmdexec(f->curtext, cp);
 	}
 }
@@ -855,7 +881,10 @@ looper(File *f, Cmd *cp, int xy)
 {
 	long p, op, nrp;
 	Range r, tr;
-	Range *rp;
+	Rangeloop *rp;
+	int notbol;
+	long fullen, off;
+	Rune *fullbuf;
 
 	r = addr.r;
 	op= xy? -1 : r.q0;
@@ -864,13 +893,22 @@ looper(File *f, Cmd *cp, int xy)
 		editerror("bad regexp in %c command", cp->cmdc);
 	nrp = 0;
 	rp = nil;
+
+	fullen = r.q1 - r.q0;
+	fullbuf = runemalloc(fullen + 1);
+	bufread(&f->b, r.q0, fullbuf, fullen);
+	fullbuf[fullen] = 0;
+
 	for(p = r.q0; p<=r.q1; ){
-		if(!rxexecute(f->curtext, nil, p, r.q1, &sel)){ /* no match, but y should still run */
+		off = p - r.q0;
+		notbol = (p>r.q0 && fullbuf[off-1]!='\n');
+		if(!rxexecute(nil, fullbuf+off-notbol, notbol, fullen-off+notbol, &sel)){ /* no match, but y should still run */
 			if(xy || op>r.q1)
 				break;
 			tr.q0 = op, tr.q1 = r.q1;
 			p = r.q1+1;	/* exit next loop */
 		}else{
+			selshift(&sel, p - notbol);
 			if(sel.r[0].q0==sel.r[0].q1){	/* empty match? */
 				if(sel.r[0].q0==op){
 					p++;
@@ -886,9 +924,11 @@ looper(File *f, Cmd *cp, int xy)
 		}
 		op = sel.r[0].q1;
 		nrp++;
-		rp = erealloc(rp, nrp*sizeof(Range));
-		rp[nrp-1] = tr;
+		rp = erealloc(rp, nrp*sizeof(Rangeloop));
+		rp[nrp-1].r = tr;
+		rp[nrp-1].sel = sel;
 	}
+	free(fullbuf);
 	loopcmd(f, cp->u.cmd, rp, nrp);
 	free(rp);
 	--nest;
@@ -900,8 +940,12 @@ linelooper(File *f, Cmd *cp)
 	long nrp, p;
 	Range r, linesel;
 	Address a, a3;
-	Range *rp;
+	Rangeloop *rp;
+	Rangeset emptysel;
+	int j;
 
+	for(j=0; j<NRange; j++)
+		emptysel.r[j].q0 = emptysel.r[j].q1 = -1;
 	nest++;
 	nrp = 0;
 	rp = nil;
@@ -924,8 +968,9 @@ linelooper(File *f, Cmd *cp)
 			if(linesel.q0>=a3.r.q1 && linesel.q1>a3.r.q1){
 				a3.r = linesel;
 				nrp++;
-				rp = erealloc(rp, nrp*sizeof(Range));
-				rp[nrp-1] = linesel;
+				rp = erealloc(rp, nrp*sizeof(Rangeloop));
+				rp[nrp-1].r = linesel;
+				rp[nrp-1].sel = emptysel;
 				continue;
 			}
 		break;
