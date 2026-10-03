@@ -557,7 +557,7 @@ rowloadfonts(char *file)
 int
 rowload(Row *row, char *file, int initing)
 {
-	int i, j, line, y, nr, nfontr, n, ns, ndumped, dumpid, x, fd, done;
+	int i, j, line, y, nr, nfontr, n, ndumped, dumpid, x, fd, done;
 	double percent;
 	Biobuf *b, *bout;
 	char *buf, *l, *t, *fontname;
@@ -647,13 +647,9 @@ rowload(Row *row, char *file, int initing)
 			l[Blinelen(b)-1] = 0;
 			i = atoi(l+1+0*12);
 			r = bytetorune(l+1*12, &nr);
-			ns = -1;
-			for(n=0; n<nr; n++){
-				if(r[n] == '/')
-					ns = n;
+			for(n=0; n<nr; n++)
 				if(r[n] == ' ')
 					break;
-			}
 			textdelete(&row->col[i]->tag, 0, row->col[i]->tag.file->b.nc, TRUE);
 			textinsert(&row->col[i]->tag, 0, r+n+1, nr-(n+1), TRUE);
 			free(r);
@@ -661,13 +657,9 @@ rowload(Row *row, char *file, int initing)
 		case 'w':
 			l[Blinelen(b)-1] = 0;
 			r = bytetorune(l+2, &nr);
-			ns = -1;
-			for(n=0; n<nr; n++){
-				if(r[n] == '/')
-					ns = n;
+			for(n=0; n<nr; n++)
 				if(r[n] == ' ')
 					break;
-			}
 			textdelete(&row->tag, 0, row->tag.file->b.nc, TRUE);
 			textinsert(&row->tag, 0, r, nr, TRUE);
 			free(r);
@@ -767,13 +759,9 @@ rowload(Row *row, char *file, int initing)
 			if((uchar)l[i] == 0xff)
 				l[i] = '\n';
 		r = bytetorune(l+5*12, &nr);
-		ns = -1;
-		for(n=0; n<nr; n++){
-			if(r[n] == '/')
-				ns = n;
+		for(n=0; n<nr; n++)
 			if(r[n] == ' ')
 				break;
-		}
 		if(dumpid == 0)
 			winsetname(w, r, n);
 		for(; n<nr; n++)
@@ -815,7 +803,7 @@ rowload(Row *row, char *file, int initing)
 			for(n=0; n<w->body.file->ntext; n++)
 				w->body.file->text[n]->w->dirty = TRUE;
 			winsettag(w);
-		}else if(dumpid==0 && r[ns+1]!='+' && r[ns+1]!='-')
+		}else if(dumpid==0)
 			get(&w->body, nil, nil, FALSE, XXX, nil, 0);
 		if(fontr){
 			fontx(&w->body, nil, nil, 0, 0, fontr, nfontr);
