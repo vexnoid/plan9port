@@ -477,7 +477,7 @@ wininittag(Window *w)
 	Rune *new;
 	static Rune Lpipe[] = { ' ', '|', 0 };
 	static Rune Ldel[] = { ' ', 'D', 'e', 'l', 0 };
-	static Rune Lsnarf[] = { ' ', 'S', 'n', 'a', 'r', 'f', 0 };
+	static Rune Lcopy[] = { ' ', 'C', 'o', 'p', 'y', 0 };
 	static Rune Lput[] = { ' ', 'P', 'u', 't', 0 };
 	static Rune Llook[] = { ' ', 'L', 'o', 'o', 'k', 0 };
 	static Rune Lget[] = { ' ', 'G', 'e', 't', 0 };
@@ -492,8 +492,8 @@ wininittag(Window *w)
 	i += 2;
 	runemove(new+i, Ldel, 4);
 	i += 4;
-	runemove(new+i, Lsnarf, 6);
-	i += 6;
+	runemove(new+i, Lcopy, 5);
+	i += 5;
 	if(w->filecmds && !w->isdir && !w->isscratch){
 		runemove(new+i, Lput, 4);
 		i += 4;

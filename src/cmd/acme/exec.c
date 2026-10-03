@@ -32,7 +32,7 @@ snarfinit(void)
  * Where the arguments are:
  *
  *	et: the Text* in which the executing event (click) occurred
- *	t: the Text* containing the current selection (Edit, Cut, Snarf, Paste)
+ *	t: the Text* containing the current selection (Edit, Cut, Copy, Paste)
  *	argt: the Text* containing the argument for a 2-1 or 2-3 click.
  *	e->flag1: from Exectab entry
  * 	e->flag2: from Exectab entry
@@ -68,6 +68,7 @@ struct Exectab
 	int		flag2;
 };
 
+static Rune LCopy[] = { 'C', 'o', 'p', 'y', 0 };
 static Rune LCut[] = { 'C', 'u', 't', 0 };
 static Rune LDel[] = { 'D', 'e', 'l', 0 };
 static Rune LDelcol[] = { 'D', 'e', 'l', 'c', 'o', 'l', 0 };
@@ -87,12 +88,12 @@ static Rune LNewcol[] = { 'N', 'e', 'w', 'c', 'o', 'l', 0 };
 static Rune LPaste[] = { 'P', 'a', 's', 't', 'e', 0 };
 static Rune LPut[] = { 'P', 'u', 't', 0 };
 static Rune LPutall[] = { 'P', 'u', 't', 'a', 'l', 'l', 0 };
-static Rune LSnarf[] = { 'S', 'n', 'a', 'r', 'f', 0 };
 static Rune LSort[] = { 'S', 'o', 'r', 't', 0 };
 static Rune LTab[] = { 'T', 'a', 'b', 0 };
 static Rune LZerox[] = { 'Z', 'e', 'r', 'o', 'x', 0 };
 
 Exectab exectab[] = {
+	{ LCopy,		cut,		TRUE,	FALSE	},
 	{ LCut,		cut,		TRUE,	TRUE	},
 	{ LDel,		del,		FALSE,	XXX		},
 	{ LDelcol,		delcol,	XXX,		XXX		},
@@ -112,7 +113,6 @@ Exectab exectab[] = {
 	{ LPaste,		paste,	TRUE,	XXX		},
 	{ LPut,		put,		XXX,		XXX		},
 	{ LPutall,		putall,	XXX,		XXX		},
-	{ LSnarf,		cut,		TRUE,	FALSE	},
 	{ LSort,		sort,		XXX,		XXX		},
 	{ LTab,		tab,		XXX,		XXX		},
 	{ LZerox,		zeroxx,	XXX,		XXX		},
@@ -960,7 +960,7 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 
 	/*
 	 * if not executing a mouse chord (et != t) and snarfing (dosnarf)
-	 * and executed Cut or Snarf in window tag (et->w != nil),
+	 * and executed Cut or Copy in window tag (et->w != nil),
 	 * then use the window body selection or the tag selection
 	 * or do nothing at all.
 	 */
@@ -1015,7 +1015,7 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 			textscrdraw(t);
 			winsettag(t->w);
 		}
-	}else if(dosnarf)	/* Snarf command */
+	}else if(dosnarf)	/* Copy command */
 		argtext = t;
 	if(locked)
 		winunlock(t->w);

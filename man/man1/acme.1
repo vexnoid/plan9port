@@ -263,6 +263,9 @@ Some commands, all by convention starting with a capital letter, are
 that are executed directly by
 .IR acme :
 .TP
+.B Copy
+Place selected text in snarf buffer.
+.TP
 .B Cut
 Delete most recently selected text and place in snarf buffer.
 .TP
@@ -389,9 +392,6 @@ With no argument, write to the file named in the tag of the window.
 .TP
 .B Putall
 Write all dirty windows whose names indicate existing regular files.
-.TP
-.B Snarf
-Place selected text in snarf buffer.
 .TP
 .B Sort
 Arrange the windows in the column from top to bottom in lexicographical
@@ -559,7 +559,7 @@ and button 3 executes
 .BR Paste .
 After clicking one button, the other undoes
 the first; thus (while holding down button 1) 2 followed by 3 is a
-.B Snarf
+.B Copy
 that leaves the file undirtied;
 3 followed by 2 is a no-op.
 These actions also apply to text selected by double-clicking because
