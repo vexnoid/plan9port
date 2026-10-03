@@ -3,34 +3,19 @@
 #include <thread.h>
 #include <fcall.h>
 #include <9pclient.h>
+#include <acme.h>
 #include "term.h"
 
 const char *termprog = "win";
 
-#define	EVENTSIZE	256
 #define	STACK	32768
 
-typedef struct Event Event;
 typedef struct Q Q;
-
-struct Event
-{
-	int	c1;
-	int	c2;
-	int	q0;
-	int	q1;
-	int	flag;
-	int	nb;
-	int	nr;
-	char	b[EVENTSIZE*UTFmax+1];
-	Rune	r[EVENTSIZE+1];
-};
 
 Event blank = {
 	'M',
 	'X',
-	0, 0, 0, 1, 1,
-	{ ' ', 0 },
+	0, 0, 0, 0, 0, 1, 1,
 	{ ' ', 0 }
 };
 
@@ -43,11 +28,7 @@ struct Q
 
 Q	q;
 
-CFid *eventfd;
-CFid *addrfd;
-CFid *datafd;
-CFid *ctlfd;
-/* int bodyfd; */
+Win *win;
 
 char	*typing;
 int	ntypeb;
@@ -69,26 +50,13 @@ int	label(char*, int);
 void	error(char*, ...);
 void	stdinproc(void*);
 void	stdoutproc(void*);
-void	type(Event*, int, CFid*, CFid*);
-void	sende(Event*, int, CFid*, CFid*, CFid*, int);
+void	type(Event*, int);
+void	sende(Event*, int, int);
 char	*onestring(int, char**);
 int	delete(Event*);
 void	deltype(uint, uint);
 void	sendbs(int, int);
 void	runproc(void*);
-
-int
-fsfidprint(CFid *fid, char *fmt, ...)
-{
-	char buf[256];
-	va_list arg;
-	int n;
-
-	va_start(arg, fmt);
-	n = vsnprint(buf, sizeof buf, fmt, arg);
-	va_end(arg);
-	return fswrite(fid, buf, n);
-}
 
 void
 usage(void)
@@ -129,10 +97,8 @@ hangupnote(void *a, char *msg)
 void
 threadmain(int argc, char **argv)
 {
-	int fd, id;
 	char buf[256];
 	char buf1[128];
-	CFsys *fs;
 	char *dump;
 
 	dump = onestring(argc, argv);
@@ -172,42 +138,23 @@ threadmain(int argc, char **argv)
 	noteenable("sys: child");
 	notify(hangupnote);
 
-	if((fs = nsmount("acme", "")) == 0)
-		sysfatal("nsmount acme: %r");
-	ctlfd = fsopen(fs, "new/ctl", ORDWR|OCEXEC);
-	if(ctlfd == 0 || fsread(ctlfd, buf, 12) != 12)
-		sysfatal("ctl: %r");
-	id = atoi(buf);
-	snprint(buf, sizeof buf, "%d", id);
+	win = newwin();
+	snprint(buf, sizeof buf, "%d", win->id);
 	putenv("winid", buf);
-	sprint(buf, "%d/tag", id);
-	fd = fsopenfd(fs, buf, OWRITE|OCEXEC);
-	write(fd, "Send ", 4+1);
-	close(fd);
-	sprint(buf, "%d/event", id);
-	eventfd = fsopen(fs, buf, ORDWR|OCEXEC);
-	sprint(buf, "%d/addr", id);
-	addrfd = fsopen(fs, buf, ORDWR|OCEXEC);
-	sprint(buf, "%d/data", id);
-	datafd = fsopen(fs, buf, ORDWR|OCEXEC);
-	sprint(buf, "%d/body", id);
-	if(eventfd==nil || addrfd==nil || datafd==nil)
-		sysfatal("data files: %r");
-	fsunmount(fs);
+	getwd(buf1, sizeof buf1);
+	winname(win, "%s/-%s", buf1, name);
+	winprint(win, "tag", "Send ");
+	winctl(win, "dumpdir %s/\n", buf1);
+	winctl(win, "dump %s\n", dump);
+
+	winseek(win, "event", 0, 0);
+	winseek(win, "data", 0, 0);
 
 	cwait = threadwaitchan();
 	threadcreate(waitthread, nil, STACK);
 	pid = rcstart(argc, argv, &rcfd, nil);
 	if(pid == -1)
 		sysfatal("exec failed");
-
-	getwd(buf1, sizeof buf1);
-	sprint(buf, "name %s/-%s\n0\n", buf1, name);
-	fswrite(ctlfd, buf, strlen(buf));
-	sprint(buf, "dumpdir %s/\n", buf1);
-	fswrite(ctlfd, buf, strlen(buf));
-	sprint(buf, "dump %s\n", dump);
-	fswrite(ctlfd, buf, strlen(buf));
 
 	updatewinsize(25, 80, 0, 0);
 	proccreate(stdoutproc, nil, STACK);
@@ -253,79 +200,6 @@ onestring(int argc, char **argv)
 }
 
 int
-getec(CFid *efd)
-{
-	static char buf[8192];
-	static char *bufp;
-	static int nbuf;
-
-	if(nbuf == 0){
-		nbuf = fsread(efd, buf, sizeof buf);
-		if(nbuf <= 0)
-			error(nil);
-		bufp = buf;
-	}
-	--nbuf;
-	return *bufp++;
-}
-
-int
-geten(CFid *efd)
-{
-	int n, c;
-
-	n = 0;
-	while('0'<=(c=getec(efd)) && c<='9')
-		n = n*10+(c-'0');
-	if(c != ' ')
-		error("event number syntax");
-	return n;
-}
-
-int
-geter(CFid *efd, char *buf, int *nb)
-{
-	Rune r;
-	int n;
-
-	r = getec(efd);
-	buf[0] = r;
-	n = 1;
-	if(r < Runeself)
-		goto Return;
-	while(!fullrune(buf, n))
-		buf[n++] = getec(efd);
-	chartorune(&r, buf);
-    Return:
-	*nb = n;
-	return r;
-}
-
-void
-gete(CFid *efd, Event *e)
-{
-	int i, nb;
-
-	e->c1 = getec(efd);
-	e->c2 = getec(efd);
-	e->q0 = geten(efd);
-	e->q1 = geten(efd);
-	e->flag = geten(efd);
-	e->nr = geten(efd);
-	if(e->nr > EVENTSIZE)
-		error("event string too long");
-	e->nb = 0;
-	for(i=0; i<e->nr; i++){
-		e->r[i] = geter(efd, e->b+e->nb, &nb);
-		e->nb += nb;
-	}
-	e->r[e->nr] = 0;
-	e->b[e->nb] = 0;
-	if(getec(efd) != '\n')
-		error("event syntax 2");
-}
-
-int
 nrunes(char *s, int nb)
 {
 	int i, n;
@@ -340,12 +214,8 @@ nrunes(char *s, int nb)
 void
 stdinproc(void *v)
 {
-	CFid *cfd = ctlfd;
-	CFid *efd = eventfd;
-	CFid *dfd = datafd;
-	CFid *afd = addrfd;
 	int fd0 = rcfd;
-	Event e, e2, e3, e4;
+	Event e;
 	int n;
 
 	USED(v);
@@ -353,7 +223,8 @@ stdinproc(void *v)
 	for(;;){
 		if(debug)
 			fprint(2, "typing[%d,%d)\n", q.p, q.p+ntyper);
-		gete(efd, &e);
+		if(winreadevent(win, &e) <= 0)
+			error(nil);
 		if(debug)
 			fprint(2, "msg %c%c q[%d,%d)... ", e.c1, e.c2, e.q0, e.q1);
 		qlock(&q.lk);
@@ -388,10 +259,10 @@ stdinproc(void *v)
 		case 'M':
 			switch(e.c2){
 			case 'I':
-				if(e.nr == 1 && e.r[0] == 0x7F) {
+				if(e.nr == 1 && e.text[0] == 0x7F) {
 					char buf[1];
-					fsprint(addrfd, "#%ud,#%ud", e.q0, e.q1);
-					fswrite(datafd, "", 0);
+					winaddr(win, "#%ud,#%ud", e.q0, e.q1);
+					winwrite(win, "data", "", 0);
 					buf[0] = 0x7F;
 					write(fd0, buf, 1);
 					break;
@@ -404,7 +275,7 @@ stdinproc(void *v)
 				else if(e.q0 <= q.p+ntyper){
 					if(debug)
 						fprint(2, "type... ");
-					type(&e, fd0, afd, dfd);
+					type(&e, fd0);
 				}
 				break;
 
@@ -417,23 +288,15 @@ stdinproc(void *v)
 
 			case 'x':
 			case 'X':
-				if(e.flag & 2)
-					gete(efd, &e2);
-				if(e.flag & 8){
-					gete(efd, &e3);
-					gete(efd, &e4);
-				}
-				if(e.flag&1 || (e.c2=='x' && e.nr==0 && e2.nr==0)){
+				if(e.flag&1 || (e.c2=='x' && e.nr==0 && (!(e.flag&2) || win->e2.nr==0))){
 					/* send it straight back */
-					fsfidprint(efd, "%c%c%d %d\n", e.c1, e.c2, e.q0, e.q1);
+					e.q0 = e.oq0;
+					e.q1 = e.oq1;
+					winwriteevent(win, &e);
 					break;
 				}
-				if(e.q0==e.q1 && (e.flag&2)){
-					e2.flag = e.flag;
-					e = e2;
-				}
 				char buf[100];
-				snprint(buf, sizeof buf, "%.*S", e.nr, e.r);
+				snprint(buf, sizeof buf, "%s", e.text);
 				if(cistrcmp(buf, "cook") == 0) {
 					cook = 1;
 					break;
@@ -444,12 +307,12 @@ stdinproc(void *v)
 				}
 				if(e.flag & 8){
 					if(e.q1 != e.q0){
-						sende(&e, fd0, cfd, afd, dfd, 0);
-						sende(&blank, fd0, cfd, afd, dfd, 0);
+						sende(&e, fd0, 0);
+						sende(&blank, fd0, 0);
 					}
-					sende(&e3, fd0, cfd, afd, dfd, 1);
+					sende(&win->e3, fd0, 1);
 				}else	 if(e.q1 != e.q0)
-					sende(&e, fd0, cfd, afd, dfd, 1);
+					sende(&e, fd0, 1);
 				break;
 
 			case 'l':
@@ -457,9 +320,9 @@ stdinproc(void *v)
 			case 'r':
 			case 'R':
 				/* just send it back */
-				if(e.flag & 2)
-					gete(efd, &e2);
-				fsfidprint(efd, "%c%c%d %d\n", e.c1, e.c2, e.q0, e.q1);
+				e.q0 = e.oq0;
+				e.q1 = e.oq1;
+				winwriteevent(win, &e);
 				break;
 
 			case 'd':
@@ -517,8 +380,6 @@ void
 stdoutproc(void *v)
 {
 	int fd1 = rcfd;
-	CFid *afd = addrfd;
-	CFid *dfd = datafd;
 	int n, m, w, npart;
 	char *buf, *s, *t;
 	Rune r;
@@ -591,21 +452,18 @@ stdoutproc(void *v)
 
 			qlock(&q.lk);
 			m = sprint(x, "#%d", q.p);
-			if(fswrite(afd, x, m) != m){
+			if(winaddr(win, "%s", x) != m){
 				fprint(2, "stdout writing address %s: %r; resetting\n", x);
-				if(fswrite(afd, "$", 1) < 0)
+				if(winaddr(win, "$") < 0)
 					fprint(2, "reset: %r\n");
-				fsseek(afd, 0, 0);
-				m = fsread(afd, x, sizeof x-1);
-				if(m >= 0){
-					x[m] = 0;
-					q.p = atoi(x);
-				}
+				m = winreadaddr(win, nil);
+				if(m >= 0)
+					q.p = m;
 			}
-			if(fswrite(dfd, buf, n) != n)
+			if(winwrite(win, "data", buf, n) != n)
 				error("stdout writing body");
 			/* Make sure acme scrolls to the end of the above write. */
-			if(fswrite(dfd, nil, 0) != 0)
+			if(winwrite(win, "data", nil, 0) != 0)
 				error("stdout flushing body");
 			q.p += nrunes(buf, n);
 			qunlock(&q.lk);
@@ -650,8 +508,7 @@ label(char *sr, int n)
 			*p++ = '-';
 			strcpy(p, name);
 		}
-		strcat(wdir, "\n0\n");
-		fswrite(ctlfd, wdir, strlen(wdir));
+		winctl(win, "%s\n", wdir);
 	}
 
 	memmove(sl, el, er-el);
@@ -811,19 +668,18 @@ deltype(uint p0, uint p1)
 }
 
 void
-type(Event *e, int fd0, CFid *afd, CFid *dfd)
+type(Event *e, int fd0)
 {
 	int m, n, nr;
 	char buf[128];
 
 	if(e->nr > 0)
-		addtype(e->c1, e->q0-q.p, e->b, e->nb, e->nr);
+		addtype(e->c1, e->q0-q.p, e->text, e->nb, e->nr);
 	else{
 		m = e->q0;
 		while(m < e->q1){
-			n = sprint(buf, "#%d", m);
-			fswrite(afd, buf, n);
-			n = fsread(dfd, buf, sizeof buf);
+			winaddr(win, "#%d", m);
+			n = winread(win, "data", buf, sizeof buf);
 			nr = nrunes(buf, n);
 			while(m+nr > e->q1){
 				do; while(n>0 && (buf[--n]&0xC0)==0x80);
@@ -836,36 +692,33 @@ type(Event *e, int fd0, CFid *afd, CFid *dfd)
 		}
 	}
 	if(israw(fd0)) {
-		n = sprint(buf, "#%d,#%d", e->q0, e->q1);
-		fswrite(afd, buf, n);
-		fswrite(dfd, "", 0);
+		winaddr(win, "#%d,#%d", e->q0, e->q1);
+		winwrite(win, "data", "", 0);
 		q.p -= e->q1 - e->q0;
 	}
 	sendtype(fd0);
-	if(e->nb > 0 && e->b[e->nb-1] == '\n')
+	if(e->nb > 0 && e->text[e->nb-1] == '\n')
 		cook = 1;
 }
 
 void
-sende(Event *e, int fd0, CFid *cfd, CFid *afd, CFid *dfd, int donl)
+sende(Event *e, int fd0, int donl)
 {
-	int l, m, n, nr, lastc, end;
-	char abuf[16], buf[128];
+	int m, n, nr, lastc, end;
+	char buf[128];
 
 	end = q.p+ntyper;
-	l = sprint(abuf, "#%d", end);
-	fswrite(afd, abuf, l);
+	winaddr(win, "#%d", end);
 	if(e->nr > 0){
-		fswrite(dfd, e->b, e->nb);
-		addtype(e->c1, ntyper, e->b, e->nb, e->nr);
-		lastc = e->r[e->nr-1];
+		winwrite(win, "data", e->text, e->nb);
+		addtype(e->c1, ntyper, e->text, e->nb, e->nr);
+		lastc = e->text[e->nb-1];
 	}else{
 		m = e->q0;
 		lastc = 0;
 		while(m < e->q1){
-			n = sprint(buf, "#%d", m);
-			fswrite(afd, buf, n);
-			n = fsread(dfd, buf, sizeof buf);
+			winaddr(win, "#%d", m);
+			n = winread(win, "data", buf, sizeof buf);
 			nr = nrunes(buf, n);
 			while(m+nr > e->q1){
 				do; while(n>0 && (buf[--n]&0xC0)==0x80);
@@ -873,9 +726,8 @@ sende(Event *e, int fd0, CFid *cfd, CFid *afd, CFid *dfd, int donl)
 			}
 			if(n == 0)
 				break;
-			l = sprint(abuf, "#%d", end);
-			fswrite(afd, abuf, l);
-			fswrite(dfd, buf, n);
+			winaddr(win, "#%d", end);
+			winwrite(win, "data", buf, n);
 			addtype(e->c1, ntyper, buf, n, nr);
 			lastc = buf[n-1];
 			m += nr;
@@ -883,9 +735,9 @@ sende(Event *e, int fd0, CFid *cfd, CFid *afd, CFid *dfd, int donl)
 		}
 	}
 	if(donl && lastc!='\n'){
-		fswrite(dfd, "\n", 1);
+		winwrite(win, "data", "\n", 1);
 		addtype(e->c1, ntyper, "\n", 1, 1);
 	}
-	fswrite(cfd, "dot=addr", 8);
+	winctl(win, "dot=addr");
 	sendtype(fd0);
 }
