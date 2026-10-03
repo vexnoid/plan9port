@@ -271,6 +271,7 @@ struct Window
 	Dirlist	**dlp;
 	int		ndl;
 	int		putseq;
+	int		delseq;
 	int		nincl;
 	Rune		**incl;
 	Reffont	*reffont;
