@@ -622,7 +622,7 @@ waitthread(void *v)
 {
 	Waitmsg *w;
 	Command *c, *lc;
-	uint pid;
+	uint pid, q1;
 	int found, ncmd;
 	Rune *cmd;
 	char *err;
@@ -699,10 +699,13 @@ waitthread(void *v)
 					pids = p;
 				}
 			}else{
+				q1 = t->q1;
+				t->q1 = 0;
 				if(search(t, c->name, c->nname)){
 					textdelete(t, t->q0, t->q1, TRUE);
 					textsetselect(t, 0, 0);
-				}
+				}else
+					t->q1 = q1;
 				if(shouldwarn(w->msg))
 					warning(c->md, "%.*S: exit %s\n", c->nname-1, c->name, w->msg);
 				flushimage(display, 1);
