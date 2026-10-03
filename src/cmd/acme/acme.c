@@ -32,7 +32,8 @@ int		mainpid;
 int		swapscrollbuttons = FALSE;
 char		*mtpt;
 
-enum{
+enum
+{
 	NSnarf = 1000	/* less than 1024, I/O buffer size */
 };
 Rune	snarfrune[NSnarf+1];
@@ -315,7 +316,7 @@ char *ignotes[] = {
 	nil
 };
 
-char *oknotes[] ={
+char *oknotes[] = {
 	"delete",
 	"hangup",
 	"kill",
@@ -490,7 +491,7 @@ keyboardthread(void *v)
 				t->w->body.file->curtext = &t->w->body;
 			if(timer != nil)
 				timercancel(timer);
-			if(t!=nil && t->what==Tag) {
+			if(t!=nil && t->what==Tag){
 				timer = timerstart(500);
 				alts[KTimer].c = timer->c;
 				alts[KTimer].op = CHANRCV;
@@ -567,18 +568,17 @@ mousethread(void *v)
 			break;
 		case MMouse:
 			/*
-			 * Make a copy so decisions are consistent; mousectl changes
-			 * underfoot.  Can't just receive into m because this introduces
-			 * another race; see /sys/src/libdraw/mouse.c.
+			 * Make a copy so decisions are consistent;
+			 * mousectl changes underfoot. Can't just receive
+			 * into m because this introduces another race;
+			 * see /sys/src/libdraw/mouse.c.
 			 */
 			m = mousectl->m;
 			qlock(&row.lk);
 			t = rowwhich(&row, m.xy);
 
-			if((t!=mousetext && t!=nil && t->w!=nil) &&
-				(mousetext==nil || mousetext->w==nil || t->w->id!=mousetext->w->id)) {
+			if((t!=mousetext && t!=nil && t->w!=nil) && (mousetext==nil || mousetext->w==nil || t->w->id!=mousetext->w->id))
 				xfidlog(t->w, "focus");
-			}
 
 			if(t!=mousetext && mousetext!=nil && mousetext->w!=nil){
 				winlock(mousetext->w, 'M');
@@ -1039,7 +1039,7 @@ iconinit(void)
 	Rectangle r;
 	Image *tmp;
 
-	if(tagcols[BACK] == nil) {
+	if(tagcols[BACK] == nil){
 		/* Blue */
 		tagcols[BACK] = allocimagemix(display, DPalebluegreen, DWhite);
 		tagcols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPalegreygreen);

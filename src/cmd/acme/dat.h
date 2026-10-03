@@ -71,8 +71,7 @@ struct Range
 struct Block
 {
 	vlong		addr;	/* disk address in bytes */
-	union
-	{
+	union{
 		uint	n;		/* number of used runes in block */
 		Block	*next;	/* pointer to next in free list */
 	} u;
@@ -393,7 +392,7 @@ struct Fid
 	Mntdir	*mntdir;
 	int		nrpart;
 	uchar	rpart[UTFmax];
-	vlong	logoff;	// for putlog
+	vlong	logoff;	/* for putlog */
 };
 
 
