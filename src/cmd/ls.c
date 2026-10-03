@@ -23,6 +23,7 @@ int	rflag;
 int	sflag;
 int	tflag;
 int	uflag;
+int	Dflag;
 int	Fflag;
 int	ndirbuf;
 int	ndir;
@@ -50,6 +51,7 @@ main(int argc, char *argv[])
 
 	Binit(&bin, 1, OWRITE);
 	ARGBEGIN{
+	case 'D':	Dflag++; break;
 	case 'F':	Fflag++; break;
 	case 'd':	dflag++; break;
 	case 'l':	lflag++; break;
@@ -62,7 +64,7 @@ main(int argc, char *argv[])
 	case 's':	sflag++; break;
 	case 't':	tflag++; break;
 	case 'u':	uflag++; break;
-	default:	fprint(2, "usage: ls [-dlmnpqrstuFQ] [file ...]\n");
+	default:	fprint(2, "usage: ls [-dlmnpqrstuDFQ] [file ...]\n");
 			exits("usage");
 	}ARGEND
 
@@ -196,11 +198,9 @@ dowidths(Dir *db)
 char*
 fileflag(Dir *db)
 {
-	if(Fflag == 0)
-		return "";
-	if(QTDIR & db->qid.type)
+	if(Dflag && (QTDIR & db->qid.type))
 		return "/";
-	if(0111 & db->mode)
+	if(Fflag && (0111 & db->mode))
 		return "*";
 	return "";
 }
