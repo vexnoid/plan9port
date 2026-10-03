@@ -730,7 +730,7 @@ rowload(Row *row, char *file, int initing)
 			if(Blinelen(b) < 1+6*12+1)
 				goto Rescue2;
 			fontname = l+1+6*12;
-			ndumped = atoi(l+1+5*12+1);
+			ndumped = atoi(l+1+5*12);
 			break;
 		case 'x':
 			if(Blinelen(b) < 1+5*12+1)
