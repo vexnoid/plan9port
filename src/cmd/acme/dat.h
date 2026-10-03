@@ -297,7 +297,7 @@ void	wincommit(Window*, Text*);
 int	winresize(Window*, Rectangle, int, int);
 void	winclose(Window*);
 void	windelete(Window*);
-int	winclean(Window*, int);
+int	winclean(Window*);
 void	windirfree(Window*);
 void	winevent(Window*, char*, ...);
 void	evargclear(Window*);

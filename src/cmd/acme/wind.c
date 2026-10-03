@@ -665,11 +665,9 @@ Rescue:
 }
 
 int
-winclean(Window *w, int conservative)
+winclean(Window *w)
 {
 	if(w->isscratch || w->isdir)	/* don't whine if it's a guide file, error window, etc. */
-		return TRUE;
-	if(!conservative && w->nopen[QWevent]>0)
 		return TRUE;
 	if(w->dirty){
 		if(w->body.file->nname)
