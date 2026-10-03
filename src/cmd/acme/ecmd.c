@@ -572,7 +572,7 @@ u_cmd(Text *t, Cmd *cp)
 	oseq = -1;
 	while(n-->0 && t->file->seq!=oseq){
 		oseq = t->file->seq;
-		undo(t->w, flag);
+		undo(t->w, t, flag);
 	}
 	return TRUE;
 }

@@ -533,9 +533,11 @@ may be selected and applied repeatedly to the
 body by just clicking button 3 over them.
 .SS "Side mouse buttons
 Side mouse buttons are bound to undo and redo.
-Over text, they affect only the window under the pointer,
-except that changes made simultaneously in other windows
-as part of the same action are undone or redone together,
+Over text, they affect only the text under the pointer
+(a window's tag or body, or a column's or row's tag),
+except that for a window's body,
+changes made simultaneously in other windows as part of the same action
+are undone or redone together,
 so that a compound edit spanning multiple files reverts as a unit.
 .PP
 Over a window's scroll bar, they instead undo and redo

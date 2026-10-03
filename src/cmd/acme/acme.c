@@ -598,8 +598,7 @@ mousethread(void *v)
 					if(textselect3(t, &q0, &q1))
 						look3(t, q0, q1, FALSE);
 				}else if(m.buttons & (128|256)){
-					if(w != nil)
-						undo(w, (m.buttons&128)!=0);
+					undo(w, t, (m.buttons&128)!=0);
 					while(mousectl->m.buttons)
 						readmouse(mousectl);
 				}

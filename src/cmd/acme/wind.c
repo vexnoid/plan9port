@@ -20,8 +20,6 @@ wininit(Window *w, Window *clone, Rectangle r)
 	Rectangle r1, br;
 	File *f;
 	Reffont *rf;
-	Rune *rp;
-	int nc;
 
 	w->tag.w = w;
 	w->taglines = 1;
@@ -40,20 +38,12 @@ wininit(Window *w, Window *clone, Rectangle r)
 	r1.max.y = r1.min.y + w->taglines*font->height;
 
 	incref(&reffont.ref);
-	f = fileaddtext(nil, &w->tag);
+	f = nil;
+	if(clone)
+		f = clone->tag.file;
+	f = fileaddtext(f, &w->tag);
 	textinit(&w->tag, f, r1, &reffont, tagcols);
 	w->tag.what = Tag;
-	/* tag is a copy of the contents, not a tracked image */
-	if(clone){
-		textdelete(&w->tag, 0, w->tag.file->b.nc, TRUE);
-		nc = clone->tag.file->b.nc;
-		rp = runemalloc(nc);
-		bufread(&clone->tag.file->b, 0, rp, nc);
-		textinsert(&w->tag, 0, rp, nc, TRUE);
-		free(rp);
-		filereset(w->tag.file);
-		textsetselect(&w->tag, nc, nc);
-	}
 	r1 = r;
 	r1.min.y += w->taglines*font->height + 1;
 	if(r1.max.y < r1.min.y)
@@ -86,6 +76,7 @@ wininit(Window *w, Window *clone, Rectangle r)
 	if(clone){
 		w->dirty = clone->dirty;
 		w->autoindent = clone->autoindent;
+		textsetselect(&w->tag, clone->tag.q0, clone->tag.q1);
 		textsetselect(&w->body, clone->body.q0, clone->body.q1);
 		winsettag(w);
 	}
@@ -366,28 +357,27 @@ windelete(Window *w)
 }
 
 void
-winundo(Window *w, int isundo)
+winundo(Window *w, Text *t, int isundo)
 {
-	Text *body;
 	int i;
 	File *f;
 	Window *v;
 
 	w->utflastqid = -1;
-	body = &w->body;
-	if((isundo ? body->file->delta.nc : body->file->epsilon.nc) == 0)
+	if(!textundo(t, isundo))
 		return;
-	fileundo(body->file, isundo, &body->q0, &body->q1);
-	textshow(body, body->q0, body->q1, 1);
-	f = body->file;
-	for(i=0; i<f->ntext; i++){
-		v = f->text[i]->w;
-		v->dirty = (f->seq != v->putseq);
-		if(v != w){
-			v->body.q0 = v->body.fr.p0+v->body.org;
-			v->body.q1 = v->body.fr.p1+v->body.org;
+	if(t->what == Body){
+		f = t->file;
+		for(i=0; i<f->ntext; i++){
+			v = f->text[i]->w;
+			v->dirty = (f->seq != v->putseq);
+			if(v != w){
+				v->body.q0 = v->body.fr.p0+v->body.org;
+				v->body.q1 = v->body.fr.p1+v->body.org;
+			}
 		}
-	}
+	}else
+		t->file->mod = TRUE;
 	winsettag(w);
 }
 
@@ -570,8 +560,6 @@ wincommit(Window *w, Text *t)
 		return;
 	r = parsetag(w, 0, &i);
 	if(runeeq(r, i, w->body.file->name, w->body.file->nname) == FALSE && i > 0){
-		seq++;
-		filemark(w->body.file);
 		w->body.file->mod = TRUE;
 		w->dirty = TRUE;
 		w->isscratch = FALSE;

@@ -159,7 +159,6 @@ void		filereset(File*);
 void		filesetname(File*, Rune*, int);
 void		fileundelete(File*, Buffer*, uint, uint);
 void		fileuninsert(File*, Buffer*, uint, uint);
-void		fileunsetname(File*, Buffer*);
 void		fileundo(File*, int, uint*, uint*);
 uint		fileredoseq(File*);
 
@@ -190,6 +189,7 @@ struct Text
 
 	uint	iq1;	/* last input position */
 	uint	eq0;	/* start of typing for ESC */
+	uint	iend;	/* end of open undo-group run; ~0 if none */
 	uint	cq0;	/* cache position */
 	int		ncache;	/* storage for insert */
 	int		ncachealloc;
@@ -233,6 +233,7 @@ void		textsetorigin(Text*, uint, int);
 void		textsetselect(Text*, uint, uint);
 void		textshow(Text*, uint, uint, int);
 void		texttype(Text*, Rune);
+int		textundo(Text*, int);
 
 struct Window
 {
@@ -293,7 +294,7 @@ void	winlock(Window*, int);
 void	winlock1(Window*, int);
 void	winunlock(Window*);
 void	wintype(Window*, Text*, Rune);
-void	winundo(Window*, int);
+void	winundo(Window*, Text*, int);
 void	winsetname(Window*, Rune*, int);
 void	winsettag(Window*);
 void	winsettag1(Window*);

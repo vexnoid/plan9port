@@ -32,6 +32,8 @@ textinit(Text *t, File *f, Rectangle r, Reffont *rf, Image *cols[NCOL])
 	t->lastsr = nullrect;
 	r.min.x += Scrollwid+Scrollgap;
 	t->eq0 = ~0;
+	t->iq1 = ~0;
+	t->iend = ~0;
 	t->scundo = nil;
 	t->scredo = nil;
 	t->nscundo = 0;
@@ -394,7 +396,8 @@ textinsert(Text *t, uint q0, Rune *r, uint n, int tofile)
 			for(i=0; i<t->file->ntext; i++){
 				u = t->file->text[i];
 				if(u != t){
-					u->w->dirty = TRUE;	/* always a body */
+					if(t->what == Body)
+						u->w->dirty = TRUE;
 					textinsert(u, q0, r, n, FALSE);
 					textsetselect(u, u->q0, u->q1);
 					textscrdraw(u);
@@ -490,7 +493,8 @@ textdelete(Text *t, uint q0, uint q1, int tofile)
 			for(i=0; i<t->file->ntext; i++){
 				u = t->file->text[i];
 				if(u != t){
-					u->w->dirty = TRUE;	/* always a body */
+					if(t->what == Body)
+						u->w->dirty = TRUE;
 					textdelete(u, q0, q1, FALSE);
 					textsetselect(u, u->q0, u->q1);
 					textscrdraw(u);
@@ -721,7 +725,7 @@ texttype(Text *t, Rune r)
 	}
 	if(r >= KF)
 		return;
-	if(t->what == Body && t->q1 == t->q0){
+	if(t->q1 == t->q0 && t->q0 != t->iend){
 		seq++;
 		filemark(t->file);
 	}
@@ -842,6 +846,7 @@ texttype(Text *t, Rune r)
 	if(r=='\n' && t->w!=nil)
 		wincommit(t->w, t);
 	t->iq1 = t->q0;
+	t->iend = t->q0;
 }
 
 void
@@ -856,6 +861,16 @@ textcommit(Text *t, int tofile)
 		t->w->utflastqid = -1;
 	}
 	t->ncache = 0;
+}
+
+int
+textundo(Text *t, int isundo)
+{
+	if((isundo? t->file->delta.nc : t->file->epsilon.nc) == 0)
+		return FALSE;
+	fileundo(t->file, isundo, &t->q0, &t->q1);
+	textshow(t, t->q0, t->q1, 1);
+	return TRUE;
 }
 
 static	Text	*clicktext;
@@ -969,18 +984,24 @@ textselect(Text *t)
 		b = mouse->buttons;
 		if((b&1) && (b&6)){
 			if(b & 2){
-				if(state==Paste && t->what==Body){
-					winundo(t->w, TRUE);
-					textsetselect(t, q0, t->q1);
+				if(state==Paste){
+					if(t->w != nil)
+						winundo(t->w, t, TRUE);
+					else
+						textundo(t, TRUE);
+					textsetselect(t, t->q0, t->q1);
 					state = None;
 				}else if(state != Cut){
 					cut(t, t, nil, TRUE, TRUE, nil, 0);
 					state = Cut;
 				}
 			}else{
-				if(state==Cut && t->what==Body){
-					winundo(t->w, TRUE);
-					textsetselect(t, q0, t->q1);
+				if(state==Cut){
+					if(t->w != nil)
+						winundo(t->w, t, TRUE);
+					else
+						textundo(t, TRUE);
+					textsetselect(t, t->q0, t->q1);
 					state = None;
 				}else if(state != Paste){
 					paste(t, t, nil, TRUE, FALSE, nil, 0);
