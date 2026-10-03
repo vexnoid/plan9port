@@ -290,8 +290,6 @@ char *oknotes[] = {
 	nil
 };
 
-int	dumping;
-
 static int
 shutdown(void *v, char *msg)
 {
@@ -304,10 +302,6 @@ shutdown(void *v, char *msg)
 			return 1;
 
 	killprocs();
-	if(!dumping && strcmp(msg, "kill")!=0 && strcmp(msg, "exit")!=0 && getpid()==mainpid){
-		dumping = TRUE;
-		rowdump(&row, nil);
-	}
 	for(i=0; oknotes[i]; i++)
 		if(strncmp(oknotes[i], msg, strlen(oknotes[i])) == 0)
 			threadexitsall(msg);
