@@ -445,6 +445,7 @@ winsetname(Window *w, Rune *name, int n)
 		free(r);
 		winsettag(v);
 		v->isscratch = w->isscratch;
+		v->dirty = w->dirty;
 	}
 }
 
