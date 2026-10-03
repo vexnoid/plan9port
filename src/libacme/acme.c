@@ -11,8 +11,15 @@ static Win *last;
 static void
 mountacme(void)
 {
+	char *mntid;
+
 	if(acmefs == nil){
-		acmefs = nsmount("acme", nil);
+		mntid = getenv("mntid");
+		if(mntid != nil && *mntid != '\0')
+			acmefs = nsmount("acme", mntid);
+		else
+			acmefs = nsmount("acme", nil);
+		free(mntid);
 		if(acmefs == nil)
 			sysfatal("cannot mount acme: %r");
 	}
@@ -31,6 +38,7 @@ newwin(void)
 	CFid *fid;
 	char buf[100];
 	int id, n;
+	Win *w;
 
 	mountacme();
 	fid = fsopen(acmefs, "new/ctl", ORDWR);
@@ -44,7 +52,10 @@ newwin(void)
 	if(id == 0)
 		sysfatal("read new/ctl: malformed message: %s", buf);
 
-	return openwin(id, fid);
+	w = openwin(id, fid);
+	if(n >= 7*12)
+		w->fromdump = atoi(buf+6*12);
+	return w;
 }
 
 Win*

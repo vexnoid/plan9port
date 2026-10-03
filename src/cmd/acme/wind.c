@@ -679,8 +679,9 @@ winclean(Window *w)
 char*
 winctlprint(Window *w, char *buf, int fonts)
 {
-	sprint(buf, "%11d %11d %11d %11d %11d %11d ", w->id, w->tag.file->b.nc,
-		w->body.file->b.nc, w->isdir, w->dirty, w->isscratch);
+	sprint(buf, "%11d %11d %11d %11d %11d %11d %11d ", w->id,
+		w->tag.file->b.nc, w->body.file->b.nc, w->isdir, w->dirty,
+		w->isscratch, w->fromdump);
 	if(fonts)
 		return smprint("%s%11d %q %11d %11d %11d ", buf, Dx(w->body.fr.r),
 			w->body.reffont->f->name, w->body.fr.maxtab, seqof(w, 1) != 0, seqof(w, 0) != 0);
