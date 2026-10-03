@@ -49,21 +49,23 @@ isregexc(int r)
 	return FALSE;
 }
 
-// nlcounttopos starts at q0 and advances nl lines,
-// being careful not to walk past the end of the text,
-// and then nr chars, being careful not to walk past
-// the end of the current line.
-// It returns the final position.
+/*
+ * nlcounttopos starts at q0 and advances nl lines,
+ * being careful not to walk past the end of the text,
+ * and then nr chars, being careful not to walk past
+ * the end of the current line.
+ * It returns the final position.
+ */
 long
 nlcounttopos(Text *t, long q0, long nl, long nr)
 {
-	while(nl > 0 && q0 < t->file->b.nc) {
+	while(nl > 0 && q0 < t->file->b.nc){
 		if(textreadc(t, q0++) == '\n')
 			nl--;
 	}
 	if(nl > 0)
 		return q0;
-	while(nr > 0 && q0 < t->file->b.nc && textreadc(t, q0) != '\n') {
+	while(nr > 0 && q0 < t->file->b.nc && textreadc(t, q0) != '\n'){
 		q0++;
 		nr--;
 	}
@@ -99,7 +101,7 @@ number(uint showerr, Text *t, Range r, int line, int dir, int size, int *evalp)
 			if(textreadc(t, q1++) == '\n' || q1==t->file->b.nc)
 				if(--line > 0)
 					q0 = q1;
-		if(line==1 && q1==t->file->b.nc) // 6 goes to end of 5-line file
+		if(line==1 && q1==t->file->b.nc) /* 6 goes to end of 5-line file */
 			break;
 		if(line > 0)
 			goto Rescue;

@@ -78,7 +78,6 @@ startplumbing(void)
 	threadcreate(plumbthread, nil, STACK);
 }
 
-
 void
 look3(Text *t, uint q0, uint q1, int external, int reverse)
 {
@@ -205,7 +204,7 @@ look3(Text *t, uint q0, uint q1, int external, int reverse)
 		ct = &t->w->body;
 		if(t->w != ct->w)
 			winlock(ct->w, 'M');
-		if(t == ct) {
+		if(t == ct){
 			uint q;
 			q = e.q1;
 			if(reverse)
@@ -331,7 +330,7 @@ search(Text *ct, Rune *r, uint n, int reverse)
 	around = 0;
 	if(reverse){
 		uint q1;
-		q1 = ct->q0; // q1 is (past) end of text being searched.
+		q1 = ct->q0; /* q1 is (past) end of text being searched. */
 		for(;;){
 			if(q1 <= 0){
 				q1 = ct->file->b.nc;
@@ -344,7 +343,7 @@ search(Text *ct, Rune *r, uint n, int reverse)
 				for(c=b+nb; c>b; c--)
 					if(c[-1] == r[n-1])
 						break;
-				if(c == b) {
+				if(c == b){
 					q1 -= nb;
 					nb = 0;
 					b[nb] = 0;
@@ -718,8 +717,10 @@ expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 	e->a0 = amin+1;
 	e->reverse = reverse;
 	eval = FALSE;
-	// Note: address is repeated in openfile when
-	// expandfile returns to expand returns to look3.
+	/*
+	 * Note: address is repeated in openfile when
+	 * expandfile returns to expand returns to look3
+	 */
 	address(TRUE, nil, range(-1,-1), range(0,0), t, e->a0, amax, tgetc, &eval, (uint*)&e->a1, e->reverse);
 	return TRUE;
 
@@ -879,7 +880,7 @@ openfile(Text *t, Expand *e)
 	else{
 		eval = TRUE;
 		r = address(TRUE, t, range(-1,-1), range(t->q0, t->q1), e->u.at, e->a0, e->a1, e->agetc, &eval, &dummy, e->reverse);
-		if(r.q0 > r.q1) {
+		if(r.q0 > r.q1){
 			eval = FALSE;
 			warning(nil, "addresses out of order\n");
 		}
@@ -918,7 +919,7 @@ new(Text *et, Text *t, Text *argt, int flag1, int flag2, Rune *arg, int narg)
 	for(ndone=0; ; ndone++){
 		a = findbl(arg, narg, &na);
 		if(a == arg){
-			if(ndone==0 && et->col!=nil) {
+			if(ndone==0 && et->col!=nil){
 				w = coladd(et->col, nil, nil, -1);
 				winsettag(w);
 				xfidlog(w, "new");

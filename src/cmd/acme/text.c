@@ -17,7 +17,8 @@ Image	*tagcols[NCOL];
 Image	*textcols[NCOL];
 static Rune Ldot[] = { '.', 0 };
 
-enum{
+enum
+{
 	TABDIR = 3	/* width of tabs in directory windows */
 };
 
@@ -283,12 +284,11 @@ textload(Text *t, uint q0, char *file, int setqid)
 		q1 = q0 + fileload(t->file, q0, fd, &nulls, h);
 	}
 	if(setqid){
-		if(h != nil) {
+		if(h != nil){
 			sha1(nil, 0, t->file->sha1, h);
 			h = nil;
-		} else {
+		}else
 			memset(t->file->sha1, 0, sizeof t->file->sha1);
-		}
 		t->file->dev = d->dev;
 		t->file->mtime = d->mtime;
 		t->file->qidpath = d->qid.path;
@@ -658,7 +658,7 @@ textcomplete(Text *t)
 			dir.nr, dir.r,
 			dir.nr>0 && dir.r[dir.nr-1]!='/' ? "/" : "",
 			nstr, str,
-			c->nmatch ? "" : ": no matches in:");
+			c->nmatch? "" : ": no matches in:");
 		for(i=0; i<c->nfile; i++)
 			warning(nil, " %s\n", c->filename[i]);
 	}
@@ -845,7 +845,7 @@ texttype(Text *t, Rune r)
 		nr = runestrlen(rp);
 		break;	/* fall through to normal insertion case */
 	case 0x1B:
-		if(t->eq0 != ~0) {
+		if(t->eq0 != ~0){
 			if(t->eq0 <= t->q0)
 				textsetselect(t, t->eq0, t->q0);
 			else
@@ -1007,7 +1007,6 @@ textframescroll(Text *t, int dl)
 	}
 	textsetorigin(t, q0, TRUE);
 }
-
 
 void
 textselect(Text *t)
@@ -1263,7 +1262,8 @@ textsetselect(Text *t, uint q0, uint q1)
  * Release the button in less than DELAY ms and it's considered a null selection
  * if the mouse hardly moved, regardless of whether it crossed a char boundary.
  */
-enum {
+enum
+{
 	DELAY = 2,
 	MINMOVE = 4
 };
@@ -1327,7 +1327,7 @@ xselect(Frame *f, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is
 	}while(mc->m.buttons == b);
 	if(mc->m.msec-msec < DELAY && p0!=p1
 	&& abs(mp.x-mc->m.xy.x)<MINMOVE
-	&& abs(mp.y-mc->m.xy.y)<MINMOVE) {
+	&& abs(mp.y-mc->m.xy.y)<MINMOVE){
 		if(reg > 0)
 			selrestore(f, pt0, p0, p1);
 		else if(reg < 0)
