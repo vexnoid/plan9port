@@ -21,11 +21,6 @@
 #include "wayland-xdg-decoration.h"
 #include "wayland-xdg-shell.h"
 
-// alt+click and ctl+click are mapped to mouse buttons
-// to support single button mice.
-#define ALT_BUTTON 1
-#define CTL_BUTTON 2
-
 struct WaylandBuffer {
 	int w;
 	int h;
@@ -43,10 +38,6 @@ struct WaylandClient {
 	int mouse_x;
 	int mouse_y;
 	int buttons;
-
-	// Booleans indicating whether control or alt are currently held.
-	int ctl;
-	int alt;
 
 	// State for key repeat for keyboard keys.
 	int repeat_rune;
@@ -538,15 +529,6 @@ void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t seria
 		qunlock(&wayland_lock);
 		return;
 	}
-	int abort_compose = 0;
-	if (button == BTN_LEFT) {
-		if (wl->ctl) {
-			mask = 1 << CTL_BUTTON;
-		} else if (wl->alt) {
-			abort_compose = 1;
-			mask = 1 << ALT_BUTTON;
-		}
-	}
 	DEBUG("wl_pointer_button: mask=%x\n", mask);
 
 	switch (state) {
@@ -564,10 +546,6 @@ void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t seria
 	int b = wl->buttons;
 
 	qunlock(&wayland_lock);
-	if (abort_compose) {
-		DEBUG("wl_pointer_button: gfx_abortcompose()\n");
-		gfx_abortcompose(c);
-	}
 	DEBUG("wl_pointer_button: gfx_trackmouse(x=%d, y=%d, b=%d)\n", x, y, b);
 	gfx_mousetrack(c, x, y, b, (uint) time);
 }
@@ -648,8 +626,6 @@ void wl_keyboard_leave(void *data, struct wl_keyboard *wl_keyboard,
 	WaylandClient *wl = (WaylandClient*) c->view;
 	qlock(&wayland_lock);
 
-	wl->ctl = 0;
-	wl->alt = 0;
 	wl->repeat_rune = 0;
 
 	qunlock(&wayland_lock);
@@ -683,25 +659,6 @@ void wl_keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
 	case XKB_KEY_Alt_L:
 	case XKB_KEY_Alt_R:
 		rune = Kalt;
-		if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-			wl->alt = 1;
-		} else {
-			wl->alt = 0;
-		}
-		if (wl->buttons) {
-			if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-				wl->buttons |= 1 << ALT_BUTTON;
-			} else {
-				wl->buttons &= ~(1 << ALT_BUTTON);
-			}
-			int x = wl->mouse_x;
-			int y = wl->mouse_y;
-			int b = wl->buttons;
-
-			qunlock(&wayland_lock);
-			gfx_mousetrack(c, x, y, b, (uint) time);
-			return;
-		}
 		break;
 	case XKB_KEY_Control_L:
 	case XKB_KEY_Control_R:
@@ -711,25 +668,6 @@ void wl_keyboard_key(void *data, struct wl_keyboard *wl_keyboard,
 		// For example ctl+w sends rune 0x17
 		// which erases the previous word.
 		rune = 0; // Kctl;
-		if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-			wl->ctl = 1;
-		} else {
-			wl->ctl = 0;
-		}
-		if (wl->buttons) {
-			if (state == WL_KEYBOARD_KEY_STATE_PRESSED) {
-				wl->buttons |= 1 << CTL_BUTTON;
-			} else {
-				wl->buttons &= ~(1 << CTL_BUTTON);
-			}
-			int x = wl->mouse_x;
-			int y = wl->mouse_y;
-			int b = wl->buttons;
-
-			qunlock(&wayland_lock);
-			gfx_mousetrack(c, x, y, b, (uint) time);
-			return;
-		}
 		break;
 	case XKB_KEY_Delete:
 		rune = Kdel;
