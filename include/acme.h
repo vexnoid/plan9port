@@ -25,6 +25,7 @@ struct Event
 struct Win
 {
 	int id;
+	int fromdump;
 	CFid *ctl;
 	CFid *tag;
 	CFid *body;
