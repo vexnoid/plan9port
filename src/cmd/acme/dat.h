@@ -218,7 +218,8 @@ void		textredraw(Text*, Rectangle, Font*, Image*, int);
 void		textreset(Text*);
 int		textresize(Text*, Rectangle, int);
 void		textscrdraw(Text*);
-void		textscroll(Text*, int);
+void		textscroll(Text*);
+void		textscroll4(Text*, int);
 void		textselect(Text*);
 int		textselect2(Text*, uint*, uint*, Text**);
 int		textselect23(Text*, uint*, uint*, Image*, int);
@@ -549,7 +550,6 @@ extern Text			*mousetext;	/* global because Text.close needs to clear it */
 extern Text			*typetext;		/* global because Text.close needs to clear it */
 extern Text			*barttext;		/* shared between mousetask and keyboardthread */
 extern int			bartflag;
-extern int			swapscrollbuttons;
 extern Window		*activewin;
 extern Column		*activecol;
 extern File		snarffile;

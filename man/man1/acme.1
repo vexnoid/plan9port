@@ -4,7 +4,7 @@ acme, win, awd \- interactive text windows
 .SH SYNOPSIS
 .B acme
 [
-.B -abr
+.B -ab
 ]
 [
 .B -f
@@ -117,21 +117,12 @@ If a window holds a directory, the name (first word of the tag) will end with
 a slash.
 .SS Scrolling
 Each window has a scroll bar to the left of the body.
-The scroll bar behaves much as in
-.MR sam 1
-or
-.MR rio 1
-except that scrolling occurs when the button is pressed, rather than released,
-and continues
-as long as the mouse button is held down in the scroll bar.
+Pressing button 2 in the scroll bar jumps to that position in the file
+and continues to track the pointer as long as the button is held down.
+The scroll wheel scrolls the window.
 For example, to scroll slowly through a file,
-hold button 3 down near the top of the scroll bar.  Moving the mouse
-down the scroll bar speeds up the rate of scrolling.
-(The experimental option
-.B -r
-reverses the scrolling behavior of buttons 1 and 3, to behave
-more like
-.MR xterm 1 .)
+turn the wheel near the top of the scroll bar.  Turning it
+further down scrolls in larger increments.
 .SS Layout
 .I Acme
 windows are arranged in columns.  By default, it creates two columns when starting;
