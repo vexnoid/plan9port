@@ -50,9 +50,9 @@ struct Event
 	int	flag;
 	int	nb;
 	int	nr;
-	char	text[];
-	char	arg[];
-	char	loc[];
+	char	*text;
+	char	*arg;
+	char	*loc;
 };
 .PP
 .ta +\w'\fLxxxxxxxxxx'u
@@ -400,7 +400,29 @@ The chorded location, if present
 reads the next event (q.v.)
 from the window's
 .B event
-file.
+file into the
+.B Event
+that
+.I e
+points to.
+The
+.BR text ,
+.BR arg ,
+and
+.B loc
+fields are allocated by the library to fit the event, however long it is.
+The
+.B Event
+must be zeroed before its first use,
+and a later call with the same
+.B Event
+may replace the memory those fields point to,
+so a program that needs the old contents must copy them.
+When it has finished with an
+.B Event
+that it passed to
+.IR winreadevent ,
+the program should free the three pointers.
 .PP
 .I Winwriteevent
 writes an event back to the window's 
@@ -422,6 +444,14 @@ starts a new thread that loops calling
 .I winreadevent
 and copying the events into the channel.
 Subsequent calls return the same channel.
+The events received belong to the library:
+a program should copy anything it wants to keep
+and should not free the
+.BR text ,
+.BR arg ,
+or
+.B loc
+of an event received this way.
 Clients should not call
 .I winreadevent
 after calling
