@@ -766,9 +766,17 @@ rowload(Row *row, char *file, int initing)
 		w->isscratch = atoi(l+5*12);
 		w->tagexpand = atoi(l+6*12);
 		r = bytetorune(l+7*12, &nr);
-		for(n=0; n<nr; n++)
-			if(r[n] == ' ')
+		n = -1;
+		for(x=0; x<nr; x++){
+			if(n < 0 && r[x] == ' ')
+				n = x;
+			if((r[x] == ' ' || r[x] == '\t') && x+1<nr && r[x+1] == '|'){
+				n = x;
 				break;
+			}
+		}
+		if(n < 0)
+			n = nr;
 		if(dumpid == 0)
 			winsetname(w, r, n);
 		textdelete(&w->tag, 0, w->tag.file->b.nc, TRUE);
