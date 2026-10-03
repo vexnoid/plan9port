@@ -146,7 +146,7 @@ regexp(uint showerr, Text *t, Range lim, Range r, Rune *pat, int dir, int *found
 {
 	int found;
 	Rangeset sel;
-	int q;
+	int bof, q;
 
 	if(pat[0] == '\0' && rxnull()){
 		if(showerr)
@@ -161,11 +161,14 @@ regexp(uint showerr, Text *t, Range lim, Range r, Rune *pat, int dir, int *found
 	if(dir == Back)
 		found = rxbexecute(t, r.q0, &sel);
 	else{
-		if(lim.q0 < 0)
+		if(lim.q0 < 0){
+			bof = 0;
 			q = Infinity;
-		else
+		}else{
+			bof = lim.q0;
 			q = lim.q1;
-		found = rxexecute(t, nil, r.q1, q, &sel);
+		}
+		found = rxexecute(t, nil, bof, r.q1, q, &sel);
 	}
 	if(!found && showerr)
 		warning(nil, "no match for regexp\n");
