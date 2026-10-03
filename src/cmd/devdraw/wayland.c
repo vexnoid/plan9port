@@ -516,8 +516,6 @@ void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t seria
 		mask = 1<<0;
 		break;
 	case BTN_MIDDLE:
-	case BTN_SIDE:
-	case BTN_EXTRA:
 		mask = 1<<1;
 		break;
 	case BTN_RIGHT:
@@ -528,6 +526,12 @@ void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t seria
 		break;
 	case BTN_5:
 		mask = 1<<4;
+		break;
+	case BTN_SIDE:		/* back: undo in acme (button 8) */
+		mask = 1<<7;
+		break;
+	case BTN_EXTRA:		/* forward: redo in acme (button 9) */
+		mask = 1<<8;
 		break;
 	default:
 		DEBUG("wl_pointer_button: unknown button: %d\n", button);

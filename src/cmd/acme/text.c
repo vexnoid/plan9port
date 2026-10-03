@@ -854,11 +854,8 @@ texttype(Text *t, Rune r)
 		 * so that if the window body is resized the
 		 * commit will not find anything in ncache.
 		 */
-		if(u->what==Body && u->ncache == 0){
-			u->needundo = TRUE;
+		if(u->what==Body && u->ncache == 0)
 			winsettag(t->w);
-			u->needundo = FALSE;
-		}
 		textinsert(u, t->q0, rp, nr, FALSE);
 		if(u != t)
 			textsetselect(u, u->q0, u->q1);

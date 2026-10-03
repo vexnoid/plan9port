@@ -20,7 +20,7 @@ Font*	getfont(int, int, char*);
 char*	getarg(Text*, int, int, Rune**, int*);
 char*	getbytearg(Text*, int, int, char**);
 void	new(Text*, Text*, Text*, int, int, Rune*, int);
-void	undo(Text*, Text*, Text*, int, int, Rune*, int);
+void	undo(Window*, int);
 void	scrsleep(uint);
 void	savemouse(Window*);
 int	restoremouse(Window*);

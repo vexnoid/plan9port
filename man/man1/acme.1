@@ -400,10 +400,6 @@ With no argument, write to the file named in the tag of the window.
 .B Putall
 Write all dirty windows whose names indicate existing regular files.
 .TP
-.B Redo
-Complement of
-.BR Undo .
-.TP
 .B Snarf
 Place selected text in snarf buffer.
 .TP
@@ -415,9 +411,6 @@ order based on their names.
 Set the width of tab stops for this window to the value of the argument, in units of widths of the zero
 character.
 With no arguments, it prints the current value.
-.TP
-.B Undo
-Undo last textual change or set of changes.
 .TP
 .B Zerox
 Create a copy of the window containing most recently selected text.
@@ -548,6 +541,12 @@ In all these actions, the mouse motion is not done if the text is a null string
 within a non-null selected string in the tag, so that (for example) complex regular expressions
 may be selected and applied repeatedly to the
 body by just clicking button 3 over them.
+.SS "Side mouse buttons
+Side mouse buttons are bound to undo and redo.
+They affect only the window under the pointer,
+but changes made simultaneously in other windows as part of the same action 
+are undone or redone together,
+so that a compound edit spanning multiple files reverts as a unit.
 .SS "Chords of mouse buttons
 Several operations are bound to multiple-button actions.
 After selecting text, with button 1 still down, pressing button 2

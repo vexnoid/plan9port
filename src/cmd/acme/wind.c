@@ -373,6 +373,8 @@ winundo(Window *w, int isundo)
 
 	w->utflastqid = -1;
 	body = &w->body;
+	if((isundo ? body->file->delta.nc : body->file->epsilon.nc) == 0)
+		return;
 	fileundo(body->file, isundo, &body->q0, &body->q1);
 	textshow(body, body->q0, body->q1, 1);
 	f = body->file;
@@ -486,8 +488,6 @@ winsettag1(Window *w)
 	uint q0, q1;
 	static Rune Ldelsnarf[] = { ' ', 'D', 'e', 'l', ' ',
 		'S', 'n', 'a', 'r', 'f', 0 };
-	static Rune Lundo[] = { ' ', 'U', 'n', 'd', 'o', 0 };
-	static Rune Lredo[] = { ' ', 'R', 'e', 'd', 'o', 0 };
 	static Rune Lget[] = { ' ', 'G', 'e', 't', 0 };
 	static Rune Lput[] = { ' ', 'P', 'u', 't', 0 };
 	static Rune Llook[] = { ' ', 'L', 'o', 'o', 'k', ' ', 0 };
@@ -515,14 +515,6 @@ winsettag1(Window *w)
 	runemove(new+i, Ldelsnarf, 10);
 	i += 10;
 	if(w->filemenu){
-		if(w->body.needundo || w->body.file->delta.nc>0 || w->body.ncache){
-			runemove(new+i, Lundo, 5);
-			i += 5;
-		}
-		if(w->body.file->epsilon.nc > 0){
-			runemove(new+i, Lredo, 5);
-			i += 5;
-		}
 		dirty = w->body.file->nname && (w->body.ncache || w->body.file->seq!=w->putseq);
 		if(!w->isdir && dirty){
 			runemove(new+i, Lput, 4);
