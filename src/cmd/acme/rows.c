@@ -758,6 +758,7 @@ rowload(Row *row, char *file, int initing)
 		for(i = 0; l[i] != 0; i++)
 			if((uchar)l[i] == 0xff)
 				l[i] = '\n';
+		w->isscratch = atoi(l+5*12);
 		r = bytetorune(l+6*12, &nr);
 		for(n=0; n<nr; n++)
 			if(r[n] == ' ')
@@ -800,8 +801,13 @@ rowload(Row *row, char *file, int initing)
 			remove(buf);
 			close(fd);
 			w->body.file->mod = TRUE;
-			for(n=0; n<w->body.file->ntext; n++)
-				w->body.file->text[n]->w->dirty = TRUE;
+			if(w->isscratch){
+				w->dirty = atoi(l+4*12);
+				w->body.file->mod = w->dirty;
+			}else{
+				for(n=0; n<w->body.file->ntext; n++)
+					w->body.file->text[n]->w->dirty = TRUE;
+			}
 			winsettag(w);
 		}else if(dumpid==0)
 			get(&w->body, nil, nil, FALSE, XXX, nil, 0);
