@@ -32,7 +32,6 @@ Buffer	snarfbuf;
  *	n: length of s  (s is *not* NUL-terminated)
  */
 
-void doabort(Text*, Text*, Text*, int, int, Rune*, int);
 void	del(Text*, Text*, Text*, int, int, Rune*, int);
 void	delcol(Text*, Text*, Text*, int, int, Rune*, int);
 void	dump(Text*, Text*, Text*, int, int, Rune*, int);
@@ -64,7 +63,6 @@ struct Exectab
 	int		flag2;
 };
 
-static Rune LAbort[] = { 'A', 'b', 'o', 'r', 't', 0 };
 static Rune LCut[] = { 'C', 'u', 't', 0 };
 static Rune LDel[] = { 'D', 'e', 'l', 0 };
 static Rune LDelcol[] = { 'D', 'e', 'l', 'c', 'o', 'l', 0 };
@@ -94,8 +92,7 @@ static Rune LUndo[] = { 'U', 'n', 'd', 'o', 0 };
 static Rune LZerox[] = { 'Z', 'e', 'r', 'o', 'x', 0 };
 
 Exectab exectab[] = {
-	{ LAbort,		doabort,	FALSE,	XXX,		XXX,		},
-	{ LCut,		cut,		TRUE,	TRUE,	TRUE	},
+	{ LCut,		cut,		FALSE,	TRUE,	TRUE	},
 	{ LDel,		del,		FALSE,	FALSE,	XXX		},
 	{ LDelcol,		delcol,	FALSE,	XXX,		XXX		},
 	{ LDelete,		del,		FALSE,	TRUE,	XXX		},
@@ -321,25 +318,6 @@ getbytearg(Text *argt, int doaddr, int dofile, char **bp)
 	*bp = runetobyte(r, n);
 	free(r);
 	return aa;
-}
-
-void
-doabort(Text *__0, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
-{
-	static int n;
-
-	USED(__0);
-	USED(_0);
-	USED(_1);
-	USED(_2);
-	USED(_3);
-	USED(_4);
-	USED(_5);
-
-	if(n++ == 0)
-		warning(nil, "executing Abort again will call abort()\n");
-	else
-		abort();
 }
 
 void
