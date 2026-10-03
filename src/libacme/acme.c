@@ -278,7 +278,7 @@ winmread(Win *w, char *file)
 	while((n = fsread(wfid(w, file), buf+tot, m-tot)) > 0){
 		tot += n;
 		if(tot >= m){
-			m += 128;
+			m *= 2;
 			buf = erealloc(buf, m+1);
 		}
 	}
