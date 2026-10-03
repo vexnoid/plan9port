@@ -1014,7 +1014,7 @@ textselect(Text *t)
 	q0 = t->q0;
 	q1 = t->q1;
 	selectq = t->org+frcharofpt(&t->fr, mouse->xy);
-	if(clicktext==t && mouse->msec-clickmsec<500)
+	if(clicktext==t && mouse->msec-clickmsec<200)
 	if(q0==q1 && selectq==q0){
 		textdoubleclick(t, &q0, &q1);
 		textsetselect(t, q0, q1);
@@ -1048,7 +1048,7 @@ textselect(Text *t)
 			q1 = t->org+t->fr.p1;
 	}
 	if(q0 == q1){
-		if(q0==t->q0 && clicktext==t && mouse->msec-clickmsec<500){
+		if(q0==t->q0 && clicktext==t && mouse->msec-clickmsec<200){
 			textdoubleclick(t, &q0, &q1);
 			clicktext = nil;
 		}else{
