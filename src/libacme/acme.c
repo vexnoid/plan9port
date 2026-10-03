@@ -113,6 +113,9 @@ winfree(Win *w)
 		chanfree(w->c);
 		w->c = nil;
 	}
+	free(w->e2.text); free(w->e2.arg); free(w->e2.loc);
+	free(w->e3.text); free(w->e3.arg); free(w->e3.loc);
+	free(w->e4.text); free(w->e4.arg); free(w->e4.loc);
 	if(w->next)
 		w->next->prev = w->prev;
 	else
@@ -392,14 +395,12 @@ gete(Win *w, CFid *efd, Event *e)
 	e->q1 = geten(w, efd);
 	e->flag = geten(w, efd);
 	e->nr = geten(w, efd);
-	if(e->nr > EVENTSIZE)
-		error(w, "event string too long");
+	e->text = erealloc(e->text, e->nr*UTFmax+1);
 	e->nb = 0;
 	for(i=0; i<e->nr; i++){
-		/* e->r[i] = */ geter(w, efd, e->text+e->nb, &nb);
+		geter(w, efd, e->text+e->nb, &nb);
 		e->nb += nb;
 	}
-/* 	e->r[e->nr] = 0; */
 	e->text[e->nb] = 0;
 	if(getec(w, efd) != '\n')
 		error(w, "event syntax 2");
@@ -428,7 +429,13 @@ winreadevent(Win *w, Event *e)
 			w->e2.oq0 = e->q0;
 			w->e2.oq1 = e->q1;
 			w->e2.flag = e->flag;
+			free(e->text);
+			free(e->arg);
+			free(e->loc);
 			*e = w->e2;
+			w->e2.text = nil;
+			w->e2.arg = nil;
+			w->e2.loc = nil;
 		}
 	}
 
@@ -436,8 +443,10 @@ winreadevent(Win *w, Event *e)
 	if(e->flag&8){
 		gete(w, efd, &w->e3);	/* arg */
 		gete(w, efd, &w->e4);	/* location */
-		strcpy(e->arg, w->e3.text);
-		strcpy(e->loc, w->e4.text);
+		free(e->arg);
+		e->arg = estrdup(w->e3.text);
+		free(e->loc);
+		e->loc = estrdup(w->e4.text);
 	}
 
 	return 1;
@@ -578,6 +587,7 @@ eventreader(void *v)
 
 	w = v;
 	i = 0;
+	memset(e, 0, sizeof e);
 	for(;;){
 		if(winreadevent(w, &e[i]) <= 0)
 			break;
