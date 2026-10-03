@@ -212,8 +212,6 @@ elogdelete(File *f, int q0, int q1)
 	f->elog.nd = q1-q0;
 }
 
-#define tracelog 0
-
 void
 elogapply(File *f)
 {
@@ -265,9 +263,6 @@ elogapply(File *f)
 			break;
 
 		case Replace:
-			if(tracelog)
-				warning(nil, "elog replace %d %d (%d %d)\n",
-					b.q0, b.q0+b.nd, t->q0, t->q1);
 			if(!mod){
 				mod = TRUE;
 				filemark(f);
@@ -287,9 +282,6 @@ elogapply(File *f)
 			break;
 
 		case Delete:
-			if(tracelog)
-				warning(nil, "elog delete %d %d (%d %d)\n",
-					b.q0, b.q0+b.nd, t->q0, t->q1);
 			if(!mod){
 				mod = TRUE;
 				filemark(f);
@@ -299,9 +291,6 @@ elogapply(File *f)
 			break;
 
 		case Insert:
-			if(tracelog)
-				warning(nil, "elog insert %d %d (%d %d)\n",
-					b.q0, b.q0+b.nr, t->q0, t->q1);
 			if(!mod){
 				mod = TRUE;
 				filemark(f);
