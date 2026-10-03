@@ -1057,7 +1057,7 @@ xfideventread(Xfid *x, Window *w)
 
 	i = 0;
 	x->flushed = FALSE;
-	while(w->nevents == 0){
+	while(w->nevents == w->evstart){
 		if(i){
 			if(!x->flushed)
 				respond(x, &fc, "window shut down");
@@ -1070,19 +1070,21 @@ xfideventread(Xfid *x, Window *w)
 		i++;
 	}
 
-	n = w->nevents;
+	n = w->nevents - w->evstart;
 	if(n > x->fcall.count)
 		n = x->fcall.count;
 	fc.count = n;
-	fc.data = w->events;
+	fc.data = w->events + w->evstart;
 	respond(x, &fc, nil);
-	w->nevents -= n;
-	if(w->nevents){
-		memmove(w->events, w->events+n, w->nevents);
-		w->events = erealloc(w->events, w->nevents);
-	}else{
+	w->evstart += n;
+	if(w->evstart == w->nevents){
 		free(w->events);
 		w->events = nil;
+		w->nevents = w->evstart = 0;
+	}else if(w->evstart >= 65536 && w->evstart >= w->nevents/2){
+		w->nevents -= w->evstart;
+		memmove(w->events, w->events+w->evstart, w->nevents);
+		w->evstart = 0;
 	}
 }
 

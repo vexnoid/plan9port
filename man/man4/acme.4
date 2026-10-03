@@ -374,7 +374,8 @@ If the relevant text has less than 256 characters, it is included in the message
 otherwise it is elided, the fourth number is 0, and the program must read
 it from the
 .B data
-file if needed.  No text is sent on a
+file if needed.  The text of a chorded argument, described below, is the 
+exception: it is always included in full, however long.  No text is sent on a
 .B D
 or
 .B d
@@ -402,6 +403,7 @@ exactly as if it had been indicated explicitly (its flag will always be 0);
 two more complete messages will follow reporting the argument (with
 all numbers 0 except the character count) and where it originated, in the form of
 a fully-qualified button 3 style address.
+The argument is always sent in full.
 .IP
 For
 .B L

@@ -16,7 +16,7 @@ Event blank = {
 	'M',
 	'X',
 	0, 0, 0, 0, 0, 1, 1,
-	{ ' ', 0 }
+	" ",
 };
 
 struct Q
@@ -247,6 +247,7 @@ stdinproc(void *v)
 
 	USED(v);
 
+	memset(&e, 0, sizeof e);
 	for(;;){
 		if(debug)
 			fprint(2, "typing[%d,%d)\n", q.p, q.p+ntyper);

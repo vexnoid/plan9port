@@ -182,16 +182,8 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 			f |= 2;
 		}
 		aa = getbytearg(argt, TRUE, TRUE, &a);
-		if(a){
-			if(strlen(a) > EVENTSIZE){	/* too big; too bad */
-				free(r);
-				free(aa);
-				free(a);
-				warning(nil, "argument string too long\n");
-				return;
-			}
+		if(a)
 			f |= 8;
-		}
 		c = 'x';
 		if(t->what == Body)
 			c = 'X';
