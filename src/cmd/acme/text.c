@@ -213,10 +213,8 @@ textload(Text *t, uint q0, char *file, int setqid)
 		return -1;
 	}
 	fd = open(file, OREAD);
-	if(fd < 0){
-		warning(nil, "can't open %s: %r\n", file);
+	if(fd < 0)
 		return -1;
-	}
 	d = dirfstat(fd);
 	if(d == nil){
 		warning(nil, "can't fstat %s: %r\n", file);
