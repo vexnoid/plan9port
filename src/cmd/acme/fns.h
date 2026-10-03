@@ -74,7 +74,7 @@ Window*	lookid(int, int);
 char*	runetobyte(Rune*, int);
 Rune*	bytetorune(char*, int*);
 void	fsysinit(void);
-Mntdir*	fsysmount(Rune*, int, Rune**, int);
+Mntdir*	fsysmount(Rune*, int, Rune**, int, Window*);
 void		fsysdelid(Mntdir*);
 void		fsysincid(Mntdir*);
 Xfid*		respond(Xfid*, Fcall*, char*);

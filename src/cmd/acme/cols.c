@@ -79,13 +79,14 @@ coladd(Column *c, Window *w, Window *clone, int y)
 		 */
 		minht = v->tag.fr.font->height+Border+1;
 		j = 0;
-		while(!c->safe || v->body.fr.maxlines<=3 || Dy(v->body.all) <= minht){
-			if(++j > 10){
-				buggered = 1;	/* too many windows in column */
-				break;
+		if(!loadingdump)
+			while(!c->safe || v->body.fr.maxlines<=3 || Dy(v->body.all) <= minht){
+				if(++j > 10){
+					buggered = 1;	/* too many windows in column */
+					break;
+				}
+				colgrow(c, v, 1);
 			}
-			colgrow(c, v, 1);
-		}
 
 		/*
 		 * figure out where to split v to make room for w
@@ -114,8 +115,12 @@ coladd(Column *c, Window *w, Window *clone, int y)
 		r.max.y = ymax;
 		draw(screen, r, textcols[BACK], nil, ZP);
 		r1 = r;
-		y = min(y, ymax-(v->tag.fr.font->height*v->taglines+v->body.fr.font->height+Border+1));
-		r1.max.y = min(y, v->body.fr.r.min.y+v->body.fr.nlines*v->body.fr.font->height);
+		if(loadingdump)
+			r1.max.y = y;
+		else{
+			y = min(y, ymax-(v->tag.fr.font->height*v->taglines+v->body.fr.font->height+Border+1));
+			r1.max.y = min(y, v->body.fr.r.min.y+v->body.fr.nlines*v->body.fr.font->height);
+		}
 		r1.min.y = winresize(v, r1, FALSE, FALSE);
 		r1.max.y = r1.min.y+Border;
 		draw(screen, r1, display->black, nil, ZP);

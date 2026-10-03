@@ -190,7 +190,7 @@ fsysproc(void *v)
 }
 
 Mntdir*
-fsysaddid(Rune *dir, int ndir, Rune **incl, int nincl)
+fsysaddid(Rune *dir, int ndir, Rune **incl, int nincl, Window *dumpwin)
 {
 	Mntdir *m;
 	int id;
@@ -205,6 +205,7 @@ fsysaddid(Rune *dir, int ndir, Rune **incl, int nincl)
 	m->next = mnt.md;
 	m->incl = incl;
 	m->nincl = nincl;
+	m->dumpwin = dumpwin;
 	mnt.md = m;
 	qunlock(&mnt.lk);
 	return m;
@@ -239,6 +240,10 @@ fsysdelid(Mntdir *idm)
 				prev->next = m->next;
 			else
 				mnt.md = m->next;
+			if(m->dumpwin){
+				m->dumpwin->fromdump = FALSE;
+				winclose(m->dumpwin);	/* never consumed by new */
+			}
 			for(i=0; i<m->nincl; i++)
 				free(m->incl[i]);
 			free(m->incl);
@@ -258,9 +263,9 @@ fsysdelid(Mntdir *idm)
  * Called only in exec.c:/^run(), from a different FD group
  */
 Mntdir*
-fsysmount(Rune *dir, int ndir, Rune **incl, int nincl)
+fsysmount(Rune *dir, int ndir, Rune **incl, int nincl, Window *dumpwin)
 {
-	return fsysaddid(dir, ndir, incl, nincl);
+	return fsysaddid(dir, ndir, incl, nincl, dumpwin);
 }
 
 void
@@ -356,6 +361,7 @@ fsysattach(Xfid *x, Fid *f)
 	f->dir = dirtab;
 	f->nrpart = 0;
 	f->w = nil;
+	f->fromdump = FALSE;
 	t.qid = f->qid;
 	f->mntdir = nil;
 	id = atoi(x->fcall.aname);
@@ -387,9 +393,11 @@ fsyswalk(Xfid *x, Fid *f)
 	Dirtab *d, *dir;
 	Window *w;
 	char *err;
+	int claimed;
 
 	nf = nil;
 	w = nil;
+	claimed = FALSE;
 	if(f->open)
 		return respond(x, &t, "walk of open file");
 	if(x->fcall.fid != x->fcall.newfid){
@@ -404,6 +412,7 @@ fsyswalk(Xfid *x, Fid *f)
 		nf->dir = f->dir;
 		nf->qid = f->qid;
 		nf->w = f->w;
+		nf->fromdump = f->fromdump;
 		nf->nrpart = 0;	/* not open, so must be zero */
 		if(nf->w)
 			incref(&nf->w->ref);
@@ -468,9 +477,16 @@ fsyswalk(Xfid *x, Fid *f)
 			if(strcmp(x->fcall.wname[i], "new") == 0){
 				if(w)
 					error("w set in walk to new");
-				sendp(cnewwindow, nil);	/* signal newwindowthread */
-				w = recvp(cnewwindow);	/* receive new window */
-				incref(&w->ref);
+				if(f->mntdir && f->mntdir->dumpwin){
+					w = f->mntdir->dumpwin;	/* load; reuse window */
+					f->mntdir->dumpwin = nil;
+					w->fromdump = FALSE;
+					claimed = TRUE;
+				}else{
+					sendp(cnewwindow, nil);	/* signal newwindowthread */
+					w = recvp(cnewwindow);	/* receive new window */
+					incref(&w->ref);
+				}
 				type = QTDIR;
 				path = QID(w->id, Qdir);
 				id = w->id;
@@ -506,6 +522,7 @@ fsyswalk(Xfid *x, Fid *f)
 	}else if(t.nwqid  == x->fcall.nwname){
 		if(w){
 			f->w = w;
+			f->fromdump = claimed;
 			w = nil;	/* don't drop the reference */
 		}
 		if(dir)
