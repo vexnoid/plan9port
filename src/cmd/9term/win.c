@@ -12,13 +12,6 @@ const char *termprog = "win";
 
 typedef struct Q Q;
 
-Event blank = {
-	'M',
-	'X',
-	0, 0, 0, 0, 0, 1, 1,
-	" ",
-};
-
 struct Q
 {
 	QLock	lk;
@@ -55,6 +48,7 @@ void	stdinproc(void*);
 void	stdoutproc(void*);
 void	type(Event*, int);
 void	sende(Event*, int, int);
+void	sendtext(char*, int, int, int);
 char	*onestring(int, char**);
 int	delete(Event*);
 void	deltype(uint, uint);
@@ -336,7 +330,7 @@ stdinproc(void *v)
 				if(e.flag & 8){
 					if(e.q1 != e.q0){
 						sende(&e, fd0, 0);
-						sende(&blank, fd0, 0);
+						sendtext(" ", 1, fd0, 0);
 					}
 					sende(&win->e3, fd0, 1);
 				}else	 if(e.q1 != e.q0)
@@ -714,19 +708,34 @@ type(Event *e, int fd0)
 void
 sende(Event *e, int fd0, int donl)
 {
-	int lastc;
+	sendtext(e->text, e->nb, fd0, donl);
+}
 
-	winaddr(win, "#%d", q.p+ntyper);
-	lastc = 0;
-	if(e->nr > 0){
-		winwrite(win, "data", e->text, e->nb);
-		addtype(e->c1, ntyper, e->text, e->nb, e->nr);
-		lastc = e->text[e->nb-1];
+void
+sendtext(char *s, int n, int fd0, int donl)
+{
+	int raw, nr;
+
+	raw = israw(fd0);
+	nr = nrunes(s, n);
+	if(!raw){
+		winaddr(win, "#%d", q.p+ntyper);
+		if(n > 0)
+			winwrite(win, "data", s, n);
 	}
-	if(donl && lastc!='\n'){
-		winwrite(win, "data", "\n", 1);
-		addtype(e->c1, ntyper, "\n", 1, 1);
+	if(n > 0)
+		addtype('M', ntyper, s, n, nr);
+	if(donl && (n == 0 || s[n-1] != '\n')){
+		if(!raw)
+			winwrite(win, "data", "\n", 1);
+		addtype('M', ntyper, "\n", 1, 1);
+		nr++;
 	}
-	winctl(win, "dot=addr");
+	if(raw)
+		q.p -= nr;	/* not echoed, so it never reaches the body */
+	else{
+		winwrite(win, "data", nil, 0);	/* scroll to the end */
+		winctl(win, "dot=addr");
+	}
 	sendtype(fd0);
 }
