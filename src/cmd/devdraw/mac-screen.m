@@ -929,12 +929,9 @@ rpc_setmouse(Client *c, Point p)
 	LOG(@"keyDown: character0: 0x%x -> 0x%x", c, k);
 	m = [e modifierFlags];
 
-	if(m & NSEventModifierFlagCommand){
-		if((m & NSEventModifierFlagShift) && 'a' <= k && k <= 'z')
-			k += 'A' - 'a';
-		if(' '<=k && k<='~')
-			k += Kcmd;
-	}
+	if((m & NSEventModifierFlagCommand) && k == 'r')
+		k += Kcmd;
+
 	if(k>0)
 		gfx_keystroke(self.client, k);
 }
