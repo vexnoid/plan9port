@@ -194,7 +194,6 @@ struct Text
 	int		ncachealloc;
 	Rune	*cache;
 	int	nofill;
-	int	needundo;
 };
 
 uint		textbacknl(Text*, uint, uint);
