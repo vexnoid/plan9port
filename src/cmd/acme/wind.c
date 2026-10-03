@@ -494,7 +494,7 @@ wininittag(Window *w)
 		runemove(new+i, Lput, 4);
 		i += 4;
 	}
-	if(w->isdir){
+	if(w->filecmds && !w->isscratch){
 		runemove(new+i, Lget, 4);
 		i += 4;
 	}
