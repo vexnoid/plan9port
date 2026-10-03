@@ -126,7 +126,7 @@ Exectab exectab[] = {
 	{ LTab,		tab,		FALSE,	XXX,		XXX		},
 	{ LUndo,		undo,	FALSE,	TRUE,	XXX		},
 	{ LZerox,		zeroxx,	FALSE,	XXX,		XXX		},
-	{ nil, 			0,		0,		0,		0		}
+	{ nil,			0,		0,		0,		0		}
 };
 
 Exectab*
@@ -360,7 +360,7 @@ newcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 	USED(_5);
 
 	c = rowadd(et->row, nil, -1);
-	if(c) {
+	if(c){
 		w = coladd(c, nil, nil, -1);
 		winsettag(w);
 		xfidlog(w, "new");
@@ -576,12 +576,13 @@ zeroxx(Text *et, Text *t, Text *_1, int _2, int _3, Rune *_4, int _5)
 }
 
 typedef struct TextAddr TextAddr;
-struct TextAddr {
-	long lorigin; // line+rune for origin
+struct TextAddr
+{
+	long lorigin; /* line+rune for origin */
 	long rorigin;
-	long lq0; // line+rune for q0
+	long lq0; /* line+rune for q0 */
 	long rq0;
-	long lq1; // line+rune for q1
+	long lq1; /* line+rune for q1 */
 	long rq1;
 };
 
@@ -621,7 +622,7 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		}
 	}
 	addr = emalloc((t->file->ntext)*sizeof(TextAddr));
-	for(i=0; i<t->file->ntext; i++) {
+	for(i=0; i<t->file->ntext; i++){
 		a = &addr[i];
 		u = t->file->text[i];
 		a->lorigin = nlcount(u, 0, u->org, &a->rorigin);
@@ -653,7 +654,7 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 	for(i=0; i<t->file->ntext; i++){
 		u = t->file->text[i];
 		textsetselect(&u->w->tag, u->w->tag.file->b.nc, u->w->tag.file->b.nc);
-		if(samename) {
+		if(samename){
 			a = &addr[i];
 			// warning(nil, "%d %d %d %d %d %d\n", a->lorigin, a->rorigin, a->lq0, a->rq0, a->lq1, a->rq1);
 			q0 = nlcounttopos(u, 0, a->lq0, a->rq0);
@@ -686,7 +687,7 @@ checksha1(char *name, File *f, Dir *d)
 	free(buf);
 	close(fd);
 	sha1(nil, 0, out, h);
-	if(memcmp(out, f->sha1, sizeof out) == 0) {
+	if(memcmp(out, f->sha1, sizeof out) == 0){
 		f->dev = d->dev;
 		f->qidpath = d->qid.path;
 		f->mtime = d->mtime;
@@ -712,7 +713,7 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 	if(d!=nil && runeeq(namer, nname, f->name, f->nname)){
 		if(f->dev!=d->dev || f->qidpath!=d->qid.path || f->mtime != d->mtime)
 			checksha1(name, f, d);
-		if(f->dev!=d->dev || f->qidpath!=d->qid.path || f->mtime != d->mtime) {
+		if(f->dev!=d->dev || f->qidpath!=d->qid.path || f->mtime != d->mtime){
 			if(f->unread)
 				warning(nil, "%s not written; file already exists\n", name);
 			else
@@ -729,11 +730,13 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 		warning(nil, "can't create file %s: %r\n", name);
 		goto Rescue1;
 	}
-	// Use bio in order to force the writes to be large and
-	// block-aligned (bio's default is 8K). This is not strictly
-	// necessary; it works around some buggy underlying
-	// file systems that mishandle unaligned writes.
-	// https://codereview.appspot.com/89550043/
+	/*
+	 * Use bio in order to force the writes to be large and
+	 * block-aligned (bio's default is 8K). This is not strictly
+	 * necessary; it works around some buggy underlying
+	 * file systems that mishandle unaligned writes.
+	 * https://codereview.appspot.com/89550043/
+	 */
 	b = emalloc(sizeof *b);
 	Binit(b, fd, OWRITE);
 	r = fbufalloc();
@@ -759,7 +762,7 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 			goto Rescue2;
 		}
 	}
-	if(Bflush(b) < 0) {
+	if(Bflush(b) < 0){
 		warning(nil, "can't write file %s: %r\n", name);
 		goto Rescue2;
 	}
@@ -767,9 +770,9 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 	retc = close(fd);
 	free(b);
 	b = nil;
-	if(ret < 0 || retc < 0) {
+	if(ret < 0 || retc < 0){
 		warning(nil, "can't write file %s: %r\n", name);
-		goto Rescue2; // flush or close failed
+		goto Rescue2; /* flush or close failed */
 	}
 	if(runeeq(namer, nname, f->name, f->nname)){
 		if(q0!=0 || q1!=f->b.nc){
@@ -777,16 +780,18 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 			w->dirty = TRUE;
 			f->unread = TRUE;
 		}else{
-			// In case the file is on NFS, reopen the fd
-			// before dirfstat to cause the attribute cache
-			// to be updated (otherwise the mtime in the
-			// dirfstat below will be stale and not match
-			// what NFS sees).  The file is already written,
-			// so this should be a no-op when not on NFS.
-			// Opening for OWRITE (but no truncation)
-			// in case we don't have read permission.
-			// (The create above worked, so we probably
-			// still have write permission.)
+			/*
+			 * In case the file is on NFS, reopen the fd
+			 * before dirfstat to cause the attribute cache
+			 * to be updated (otherwise the mtime in the
+			 * dirfstat below will be stale and not match
+			 * what NFS sees).  The file is already written,
+			 * so this should be a no-op when not on NFS.
+			 * Opening for OWRITE (but no truncation)
+			 * in case we don't have read permission.
+			 * (The create above worked, so we probably
+			 * still have write permission.)
+			 */
 			fd = open(name, OWRITE);
 			d1 = dirfstat(fd);
 			close(fd);
@@ -819,7 +824,7 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 	return;
 
     Rescue2:
-	if(b != nil) {
+	if(b != nil){
 		Bterm(b);
 		free(b);
 		close(fd);
@@ -859,24 +864,24 @@ trimspaces(Text *et)
 	r = fbufalloc();
 	q0 = f->b.nc;
 	delstart = q0; /* end of current space run, or 0 if no active run; = q0 to delete spaces before EOF */
-	while(q0 > 0) {
+	while(q0 > 0){
 		n = RBUFSIZE;
 		if(n > q0)
 			n = q0;
 		q0 -= n;
 		bufread(&f->b, q0, r, n);
-		for(i=n; ; i--) {
-			if(i == 0 || (r[i-1] != ' ' && r[i-1] != '\t')) {
-				// Found non-space or start of buffer. Delete active space run.
-				if(q0+i < delstart) {
-					if(!marked) {
+		for(i=n; ; i--){
+			if(i == 0 || (r[i-1] != ' ' && r[i-1] != '\t')){
+				/* Found non-space or start of buffer. Delete active space run. */
+				if(q0+i < delstart){
+					if(!marked){
 						marked = 1;
 						seq++;
 						filemark(f);
 					}
 					textdelete(t, q0+i, delstart, TRUE);
 				}
-				if(i == 0) {
+				if(i == 0){
 					/* keep run active into tail of next buffer */
 					if(delstart > 0)
 						delstart = q0;
@@ -1389,7 +1394,8 @@ static Rune LON[] = { 'O', 'N', 0 };
 static Rune LOFF[] = { 'O', 'F', 'F', 0 };
 static Rune Lon[] = { 'o', 'n', 0 };
 
-enum {
+enum
+{
 	IGlobal = -2,
 	IError = -1,
 	Ion = 0,

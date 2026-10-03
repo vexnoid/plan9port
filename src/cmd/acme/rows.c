@@ -57,7 +57,7 @@ rowadd(Row *row, Column *c, int x)
 	d = nil;
 	r = row->r;
 	r.min.y = row->tag.fr.r.max.y+Border;
-	if(x<r.min.x && row->ncol>0){	/*steal 40% of last column by default */
+	if(x<r.min.x && row->ncol>0){	/* steal 40% of last column by default */
 		d = row->col[row->ncol-1];
 		x = d->r.min.x + 3*Dx(d->r)/5;
 	}
@@ -425,13 +425,13 @@ rowdump1(Row *row, Biobuf *b)
 			m = min(RBUFSIZE, w->tag.file->b.nc);
 			bufread(&w->tag.file->b, 0, r, m);
 			n = 0;
-			while(n<m) {
+			while(n<m){
 				start = n;
 				while(n<m && r[n]!='\n')
 					n++;
 				Bprint(b, "%.*S", n-start, r+start);
-				if(n<m) {
-					Bputc(b, 0xff); // \n in tag becomes 0xff byte (invalid UTF)
+				if(n<m){
+					Bputc(b, 0xff); /* \n in tag becomes 0xff byte (invalid UTF) */
 					n++;
 				}
 			}
@@ -501,10 +501,9 @@ rowdump(Row *row, char *file)
 		free(od);
 	}
 	p = strrchr(file, '/');
-	d.name = p != nil ? p+1 : file;
-	if(dirwstat(tmp, &d) < 0){
+	d.name= p!=nil? p+1 : file;
+	if(dirwstat(tmp, &d) < 0)
 		warning(nil, "can't rename %s to %s: %r\n", tmp, file);
-	}
 
    Rescue:
    	free(tmp);

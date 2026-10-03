@@ -25,7 +25,7 @@ typedef struct Inst Inst;
 struct Inst
 {
 	uint	type;	/* < OPERATOR ==> literal, otherwise action */
-	union {
+	union{
 		int sid;
 		int subid;
 		int class;
