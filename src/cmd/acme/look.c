@@ -297,6 +297,7 @@ plumbshow(Plumbmsg *m)
 	cvttorunes(name, strlen(name), rb, &nb, &nr, nil);
 	free(p);
 	rs = cleanrname(runestr(rb, nr));
+	w->isscratch = TRUE;
 	winsetname(w, rs.r, rs.nr);
 	r = runemalloc(m->ndata);
 	cvttorunes(m->data, m->ndata, r, &nb, &nr, nil);

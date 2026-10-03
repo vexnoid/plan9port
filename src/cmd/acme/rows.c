@@ -758,7 +758,7 @@ rowload(Row *row, char *file, int initing)
 		for(i = 0; l[i] != 0; i++)
 			if((uchar)l[i] == 0xff)
 				l[i] = '\n';
-		r = bytetorune(l+5*12, &nr);
+		r = bytetorune(l+6*12, &nr);
 		for(n=0; n<nr; n++)
 			if(r[n] == ' ')
 				break;
