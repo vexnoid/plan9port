@@ -63,7 +63,7 @@ void	fontx(Text*, Text*, Text*, int, int, Rune*, int);
 #undef isalnum
 #define isalnum acmeisalnum
 int	isalnum(Rune);
-void	execute(Text*, uint, uint, int, Text*);
+void	execute(Text*, uint, uint, int, Text*, char*);
 int	search(Text*, Rune*, uint);
 void	look3(Text*, uint, uint, int);
 void	editcmd(Text*, Rune*, uint);

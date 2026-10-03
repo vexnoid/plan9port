@@ -570,7 +570,7 @@ mousethread(void *v)
 						activewin = t->w;
 				}else if(m.buttons & 2){
 					if(textselect2(t, &q0, &q1, &argt))
-						execute(t, q0, q1, FALSE, argt);
+						execute(t, q0, q1, FALSE, argt, nil);
 				}else if(m.buttons & 4){
 					if(textselect3(t, &q0, &q1))
 						look3(t, q0, q1, FALSE);
