@@ -399,9 +399,10 @@ rowdump1(Row *row, Biobuf *b)
 				a = emalloc(1);
 			if(t->file->dumpid){
 				dumped = FALSE;
-				Bprint(b, "x%11d %11d %11d %11d %11.7f %s\n", i, t->file->dumpid,
+				Bprint(b, "x%11d %11d %11d %11d %11.7f %11d %s\n", i, t->file->dumpid,
 					w->body.q0, w->body.q1,
 					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+					(int)w->body.org,
 					fontname);
 			}else if(w->dumpstr){
 				dumped = FALSE;
@@ -412,17 +413,19 @@ rowdump1(Row *row, Biobuf *b)
 			}else if((w->dirty==FALSE && access(a, 0)==0) || w->isdir){
 				dumped = FALSE;
 				t->file->dumpid = w->id;
-				Bprint(b, "f%11d %11d %11d %11d %11.7f %s\n", i, w->id,
+				Bprint(b, "f%11d %11d %11d %11d %11.7f %11d %s\n", i, w->id,
 					w->body.q0, w->body.q1,
 					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+					(int)w->body.org,
 					fontname);
 			}else{
 				dumped = TRUE;
 				t->file->dumpid = w->id;
-				Bprint(b, "F%11d %11d %11d %11d %11.7f %11d %s\n", i, j,
+				Bprint(b, "F%11d %11d %11d %11d %11.7f %11d %11d %s\n", i, j,
 					w->body.q0, w->body.q1,
 					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
-					w->body.file->b.nc, fontname);
+					w->body.file->b.nc, (int)w->body.org,
+					fontname);
 			}
 			free(fontname);
 			free(a);
@@ -564,7 +567,7 @@ rowloadfonts(char *file)
 int
 rowload(Row *row, char *file, int initing)
 {
-	int i, j, line, y, nr, nfontr, n, ndumped, dumpid, x, fd, done;
+	int i, j, line, y, nr, nfontr, n, ndumped, dumpid, x, fd, done, org;
 	double percent;
 	Biobuf *b, *bout;
 	char *buf, *l, *t, *fontname;
@@ -683,6 +686,7 @@ rowload(Row *row, char *file, int initing)
 		if(l == nil)
 			break;
 		dumpid = 0;
+		org = 0;
 		switch(l[0]){
 		case 'e':
 			if(Blinelen(b) < 1+5*12+1)
@@ -714,23 +718,26 @@ rowload(Row *row, char *file, int initing)
 			/* r is freed in run() */
 			goto Nextline;
 		case 'f':
-			if(Blinelen(b) < 1+5*12+1)
-				goto Rescue2;
-			fontname = l+1+5*12;
-			ndumped = -1;
-			break;
-		case 'F':
 			if(Blinelen(b) < 1+6*12+1)
 				goto Rescue2;
 			fontname = l+1+6*12;
+			ndumped = -1;
+			org = atoi(l+1+5*12);
+			break;
+		case 'F':
+			if(Blinelen(b) < 1+7*12+1)
+				goto Rescue2;
+			fontname = l+1+7*12;
 			ndumped = atoi(l+1+5*12);
+			org = atoi(l+1+6*12);
 			break;
 		case 'x':
-			if(Blinelen(b) < 1+5*12+1)
+			if(Blinelen(b) < 1+6*12+1)
 				goto Rescue2;
-			fontname = l+1+5*12;
+			fontname = l+1+6*12;
 			ndumped = -1;
 			dumpid = atoi(l+1+1*12);
+			org = atoi(l+1+5*12);
 			break;
 		default:
 			goto Rescue2;
@@ -828,7 +835,13 @@ rowload(Row *row, char *file, int initing)
 		free(r);
 		if(q0>w->body.file->b.nc || q1>w->body.file->b.nc || q0>q1)
 			q0 = q1 = 0;
-		textshow(&w->body, q0, q1, 1);
+		/* origin wins over selection; if it's bad, show the selection */
+		if(org<0 || (uint)org>w->body.file->b.nc)
+			textshow(&w->body, q0, q1, 1);
+		else{
+			textsetselect(&w->body, q0, q1);
+			textsetorigin(&w->body, org, TRUE);
+		}
 		w->maxlines = min(w->body.fr.nlines, max(w->maxlines, w->body.fr.maxlines));
 		xfidlog(w, "new");
 Nextline:
