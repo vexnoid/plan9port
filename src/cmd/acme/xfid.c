@@ -732,6 +732,7 @@ out:
 			filemark(w->body.file);
 			filemark(w->tag.file);
 			winsetname(w, r, nr);
+			settag = TRUE;
 			m += (q+1) - pp;
 		}else
 		if(strncmp(p, "font ", 5) == 0){		/* execute font command */
