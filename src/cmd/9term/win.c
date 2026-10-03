@@ -55,6 +55,9 @@ void	stdinproc(void*);
 void	stdoutproc(void*);
 void	type(Event*, int);
 void	sende(Event*, int, int);
+int	issend(Event*);
+void	sendcmd(Event*, int);
+void	sendtext(char*, int, int, int);
 char	*onestring(int, char**);
 int	delete(Event*);
 void	deltype(uint, uint);
@@ -331,6 +334,10 @@ stdinproc(void *v)
 				}
 				if(cistrcmp(buf, "nocook") == 0) {
 					cook = 0;
+					break;
+				}
+				if(issend(&e)){
+					sendcmd(&e, fd0);
 					break;
 				}
 				if(e.flag & 8){
@@ -771,4 +778,71 @@ sende(Event *e, int fd0, int donl)
 	}
 	winctl(win, "dot=addr");
 	sendtype(fd0);
+}
+
+int
+issend(Event *e)
+{
+	return e->nb >= 4 && strncmp(e->text, "Send", 4) == 0
+		&& (e->nb == 4 || e->text[4] == ' ' || e->text[4] == '\t');
+}
+
+void
+sendcmd(Event *e, int fd0)
+{
+	char *p;
+	int n;
+	uint q1;
+	Event sel;
+
+	if(e->flag & 8){
+		sendtext(e->arg, strlen(e->arg), fd0, 1);
+		return;
+	}
+	p = e->text+4;
+	while(*p == ' ' || *p == '\t')
+		p++;
+	if(*p){
+		sendtext(p, strlen(p), fd0, 1);
+		return;
+	}
+	winctl(win, "addr=dot");
+	n = winreadaddr(win, &q1);
+	if(n < 0)
+		return;
+	memset(&sel, 0, sizeof sel);
+	sel.c1 = 'M';
+	sel.q0 = n;
+	sel.q1 = q1;
+	sende(&sel, fd0, 1);
+}
+
+void
+sendtext(char *s, int n, int fd0, int donl)
+{
+	int raw, nr;
+
+	raw = israw(fd0);
+	nr = nrunes(s, n);
+	if(!raw){
+		winaddr(win, "#%d", q.p+ntyper);
+		if(n > 0)
+			winwrite(win, "data", s, n);
+	}
+	if(n > 0)
+		addtype('M', ntyper, s, n, nr);
+	if(donl && (n == 0 || s[n-1] != '\n')){
+		if(!raw)
+			winwrite(win, "data", "\n", 1);
+		addtype('M', ntyper, "\n", 1, 1);
+		nr++;
+	}
+	if(raw)
+		q.p -= nr;	/* not echoed, so it never reaches the body */
+	else{
+		winwrite(win, "data", nil, 0);	/* scroll to the end */
+		winctl(win, "dot=addr");
+	}
+	sendtype(fd0);
+	cook = 1;
 }
