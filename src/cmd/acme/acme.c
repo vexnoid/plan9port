@@ -262,7 +262,6 @@ readfile(Column *c, char *s)
 	winsettag(w);
 	winresize(w, w->r, FALSE, TRUE);
 	textscrdraw(&w->body);
-	textsetselect(&w->tag, w->tag.file->b.nc, w->tag.file->b.nc);
 	xfidlog(w, "new");
 }
 
@@ -709,7 +708,7 @@ waitthread(void *v)
 				t->q1 = 0;
 				if(search(t, c->name, c->nname)){
 					textdelete(t, t->q0, t->q1, TRUE);
-					textsetselect(t, 0, 0);
+					textsetselect(t, t->file->b.nc, t->file->b.nc);
 				}
 				if(shouldwarn(w->msg))
 					warning(c->md, "%.*S: exit %s\n", c->nname-1, c->name, w->msg);
@@ -749,7 +748,7 @@ waitthread(void *v)
 			t = &row.tag;
 			textcommit(t, TRUE);
 			textinsert(t, 0, c->name, c->nname, TRUE);
-			textsetselect(t, 0, 0);
+			textsetselect(t, t->file->b.nc, t->file->b.nc);
 			flushimage(display, 1);
 			qunlock(&row.lk);
 			break;
