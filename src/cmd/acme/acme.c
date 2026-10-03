@@ -689,6 +689,20 @@ struct Pid
 	Pid	*next;
 };
 
+int
+shouldwarn(char *msg)
+{
+	char *end;
+	long n;
+
+	if(msg[0] == '\0')
+		return 0;
+	n = strtol(msg, &end, 10);
+	if(end != msg && *end == '\0')
+		return n >= 2;
+	return 1;	/* killed by a signal/note */
+}
+
 void
 waitthread(void *v)
 {
@@ -775,7 +789,7 @@ waitthread(void *v)
 					textdelete(t, t->q0, t->q1, TRUE);
 					textsetselect(t, 0, 0);
 				}
-				if(w->msg[0])
+				if(shouldwarn(w->msg))
 					warning(c->md, "%.*S: exit %s\n", c->nname-1, c->name, w->msg);
 				flushimage(display, 1);
 			}
@@ -796,7 +810,7 @@ waitthread(void *v)
 			lastp = nil;
 			for(p=pids; p!=nil; p=p->next){
 				if(p->pid == c->pid){
-					if(p->msg[0])
+					if(shouldwarn(p->msg))
 						warning(c->md, "%s\n", p->msg);
 					if(lastp == nil)
 						pids = p->next;
