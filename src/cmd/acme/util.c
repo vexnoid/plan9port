@@ -340,6 +340,8 @@ isalnum(Rune c)
 		return FALSE;
 	if(c==0x2018 || c==0x2019 || c==0x201C || c==0x201D)
 		return FALSE;
+	if(c==0x2013 || c==0x2014)
+		return FALSE;
 	return TRUE;
 }
 
