@@ -13,6 +13,7 @@ void	plumblook(Plumbmsg *m);
 void	plumbshow(Plumbmsg*m);
 void	acmeputsnarf(void);
 void	acmegetsnarf(void);
+void	snarfinit(void);
 int	tempfile(void);
 void	scrlresize(void);
 Font*	getfont(int, int, char*);

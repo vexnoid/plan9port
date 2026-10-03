@@ -549,7 +549,8 @@ extern Text			*barttext;		/* shared between mousetask and keyboardthread */
 extern int			bartflag;
 extern Window		*activewin;
 extern Column		*activecol;
-extern Buffer		snarfbuf;
+extern File		snarffile;
+extern Text		snarftext;
 extern Rectangle		nullrect;
 extern int			fsyspid;
 extern char			*cputype;
