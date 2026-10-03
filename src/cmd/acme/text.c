@@ -760,6 +760,9 @@ texttype(Text *t, Rune r)
 	case 0x17:	/* ^W: erase word */
 		if(t->q0 == 0)	/* nothing to erase */
 			return;
+		typecommit(t);
+		seq++;
+		filemark(t->file);
 		nnb = textbswidth(t, r);
 		q1 = t->q0;
 		q0 = q1-nnb;
