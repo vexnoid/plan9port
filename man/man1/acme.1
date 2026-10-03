@@ -104,17 +104,13 @@ or the output of a
 program, as in an
 .MR rio 1
 window.
-The tag contains a number of
-blank-separated words, followed by a vertical bar character, followed by anything.
-The first word is the name of the window, typically the name of the associated
-file or directory, and the other words are commands available in that window.
-Any text may be added after the bar; examples are strings to search for or
-commands to execute in that window.
-Changes to the text left of the bar will be ignored,
-unless the result is to change the name of the
-window.
+The tag contains the name of the window, typically the name of the
+associated file or directory, followed by a vertical bar character,
+followed by a number of blank-separated commands available in that
+window and any other text, such as strings to search for or commands
+to execute in that window.
 .PP
-If a window holds a directory, the name (first word of the tag) will end with
+If a window holds a directory, the name (the text of the tag before the bar) will end with
 a slash.
 .SS Scrolling
 Each window has a scroll bar to the left of the body.
@@ -177,12 +173,6 @@ but not
 .IR rio ,
 the ESC key selects the text typed since the last mouse action,
 a feature particularly useful when executing commands.
-.PP
-Most text, including the names of windows, may be edited uniformly.
-The only exception is that the command names to the
-left of the bar in a tag are maintained automatically; changes to them are repaired
-by
-.IR acme .
 .PP
 When a window is in autoindent mode
 (see the
@@ -437,10 +427,13 @@ causes the selection to be sent as standard input to the command; and
 does both at once, `piping' the selection through the command and
 replacing it with the output.
 .PP
-A common place to store text for commands is in the tag; in fact
+A common place to store text for commands is in the tag.
+When it creates a window,
 .I acme
-maintains a set of commands appropriate to the state of the window
-to the left of the bar in the tag.
+puts the commands appropriate to that window in the tag;
+they are ordinary text, and
+.I acme
+does not manage them afterwards.
 .PP
 If the text indicated with button 2 is not a recognized built-in, it is executed as
 a shell command.  For example, indicating
