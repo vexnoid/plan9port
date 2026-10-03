@@ -664,6 +664,8 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		dirty = TRUE;
 	}
 	for(i=0; i<t->file->ntext; i++){
+		if(samename)
+			t->file->text[i]->w->putseq = t->file->seq;
 		t->file->text[i]->w->dirty = dirty;
 		t->file->text[i]->w->isscratch = FALSE;
 	}
