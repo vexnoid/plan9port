@@ -102,6 +102,13 @@ textresize(Text *t, Rectangle r, int keepextra)
 	return t->all.max.y;
 }
 
+static void
+clearevarg(Window *w, void *arg)
+{
+	if(w->evargt == (Text*)arg)
+		evargclear(w);
+}
+
 void
 textclose(Text *t)
 {
@@ -118,6 +125,8 @@ textclose(Text *t)
 		seltext = nil;
 	if(mousetext == t)
 		mousetext = nil;
+	/* pending chords may name t */
+	allwindows(clearevarg, t);
 }
 
 int
