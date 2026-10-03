@@ -83,11 +83,31 @@ fileinsert(File *f, uint p0, Rune *s, uint ns)
 		f->mod = TRUE;
 }
 
+static int
+undocoalesce(Buffer *delta, uint seq, uint p0, uint ns)
+{
+	Undo u;
+	uint up;
+
+	if(delta->nc < Undosize)
+		return FALSE;
+	up = delta->nc-Undosize;
+	bufread(delta, up, (Rune*)&u, Undosize);
+	if(u.type!=Delete || u.seq!=seq || u.p0+u.n!=p0)
+		return FALSE;
+	u.n += ns;
+	bufdelete(delta, up, delta->nc);
+	bufinsert(delta, delta->nc, (Rune*)&u, Undosize);
+	return TRUE;
+}
+
 void
 fileuninsert(File *f, Buffer *delta, uint p0, uint ns)
 {
 	Undo u;
 
+	if(undocoalesce(delta, f->seq, p0, ns))
+		return;
 	/* undo an insertion by deleting */
 	u.type = Delete;
 	u.mod = f->mod;
@@ -138,29 +158,11 @@ fileundelete(File *f, Buffer *delta, uint p0, uint p1)
 void
 filesetname(File *f, Rune *name, int n)
 {
-	if(f->seq > 0)
-		fileunsetname(f, &f->delta);
 	free(f->name);
 	f->name = runemalloc(n);
 	runemove(f->name, name, n);
 	f->nname = n;
 	f->unread = TRUE;
-}
-
-void
-fileunsetname(File *f, Buffer *delta)
-{
-	Undo u;
-
-	/* undo a file name change by restoring old name */
-	u.type = Filename;
-	u.mod = f->mod;
-	u.seq = f->seq;
-	u.p0 = 0;	/* unused */
-	u.n = f->nname;
-	if(f->nname)
-		bufinsert(delta, delta->nc, f->name, f->nname);
-	bufinsert(delta, delta->nc, (Rune*)&u, Undosize);
 }
 
 uint
@@ -254,20 +256,6 @@ fileundo(File *f, int isundo, uint *q0p, uint *q1p)
 			}
 			*q0p = u.p0;
 			*q1p = u.p0+u.n;
-			break;
-
-		case Filename:
-			f->seq = u.seq;
-			fileunsetname(f, epsilon);
-			f->mod = u.mod;
-			up -= u.n;
-			free(f->name);
-			if(u.n == 0)
-				f->name = nil;
-			else
-				f->name = runemalloc(u.n);
-			bufread(delta, up, f->name, u.n);
-			f->nname = u.n;
 			break;
 		}
 		bufdelete(delta, up, delta->nc);
