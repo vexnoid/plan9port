@@ -48,7 +48,10 @@ void	stdinproc(void*);
 void	stdoutproc(void*);
 void	type(Event*, int);
 void	sende(Event*, int, int);
+int	issend(Event*);
+void	sendcmd(Event*, int);
 void	sendtext(char*, int, int, int);
+char	*readbody(int, int, int*);
 char	*onestring(int, char**);
 int	delete(Event*);
 void	deltype(uint, uint);
@@ -310,6 +313,10 @@ stdinproc(void *v)
 
 			case 'x':
 			case 'X':
+				if(issend(&e)){
+					sendcmd(&e, fd0);
+					break;
+				}
 				if(e.flag&1 || (e.c2=='x' && e.nr==0 && (!(e.flag&2) || win->e2.nr==0))){
 					/* send it straight back */
 					e.q0 = e.oq0;
@@ -709,6 +716,77 @@ void
 sende(Event *e, int fd0, int donl)
 {
 	sendtext(e->text, e->nb, fd0, donl);
+}
+
+int
+issend(Event *e)
+{
+	return e->nb >= 4 && strncmp(e->text, "Send", 4) == 0
+		&& (e->nb == 4 || e->text[4] == ' ' || e->text[4] == '\t');
+}
+
+void
+sendcmd(Event *e, int fd0)
+{
+	char *s, *t;
+	int q0, nb;
+	uint q1;
+
+	/* remainder, then chord, then selection */
+	t = e->text+4;
+	while(*t == ' ' || *t == '\t')
+		t++;
+	if(*t == 0 && (e->flag & 8))
+		t = e->arg;
+	if(*t)
+		sendtext(t, strlen(t), fd0, 1);
+	else{
+		winctl(win, "addr=dot");
+		q0 = winreadaddr(win, &q1);
+		if(q0 < 0)
+			return;
+		s = readbody(q0, q1, &nb);
+		if(nb == 0){
+			free(s);
+			return;
+		}
+		sendtext(s, nb, fd0, 1);
+		free(s);
+	}
+	cook = 1;	/* like typing a newline */
+}
+
+char*
+readbody(int q0, int q1, int *np)
+{
+	char *s;
+	int n, m, k;
+
+	*np = 0;
+	if(q1 <= q0)
+		return nil;
+	/* xdata stops at the end of the range; data wouldn't */
+	winaddr(win, "#%d,#%d", q0, q1);
+	s = nil;
+	n = m = 0;
+	for(;;){
+		if(m-n < 8192){
+			m = 2*m + 8192;
+			s = realloc(s, m);
+			if(s == nil)
+				error("realloc");
+		}
+		k = winread(win, "xdata", s+n, 8192);
+		if(k <= 0)
+			break;
+		n += k;
+	}
+	if(n == 0){
+		free(s);
+		return nil;
+	}
+	*np = n;
+	return s;
 }
 
 void
