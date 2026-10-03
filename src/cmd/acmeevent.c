@@ -2,7 +2,6 @@
 #include <libc.h>
 #include <bio.h>
 
-
 int
 getn(Biobuf *b)
 {
@@ -52,7 +51,7 @@ getevent(Biobuf *b, int *c1, int *c2, int *q0, int *q1, int *flag, int *nr, char
 	*q1 = getn(b);
 	*flag = getn(b);
 	*nr = getn(b);
-	if(*nr >= 256)
+	if(*nr > 256)
 		sysfatal("event string too long");
 	p = buf;
 	for(i=0; i<*nr; i++)
