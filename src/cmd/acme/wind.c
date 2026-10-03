@@ -151,7 +151,7 @@ wintaglines(Window *w, Rectangle r)
 	w->tag.fr.noredraw = 0;
 	w->tagsafe = FALSE;
 
-	if(!w->tagexpand) {
+	if(!w->tagexpand){
 		/* use just as many lines as needed to show the Del */
 		n = delrunepos(w);
 		if(n < 0)
@@ -457,7 +457,7 @@ parsetag(Window *w, int extra, int *len)
 		pipe = p;
 	if((p = runestrstr(r, Ldelsnarf)) != nil && (pipe == nil || p < pipe))
 		i = p - r;
-	else {
+	else{
 		for(i=0; i<w->tag.file->b.nc; i++)
 			if(r[i]==' ' || r[i]=='\t')
 				break;
