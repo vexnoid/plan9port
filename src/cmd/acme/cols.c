@@ -588,6 +588,6 @@ colclean(Column *c)
 
 	clean = TRUE;
 	for(i=0; i<c->nw; i++)
-		clean &= winclean(c->w[i], TRUE);
+		clean &= winclean(c->w[i]);
 	return clean;
 }
