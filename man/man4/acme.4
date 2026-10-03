@@ -79,15 +79,16 @@ to turn off `echo', for example, under
 .IR acme .
 .TP
 .B index
-holds a sequence of lines of text, one per window.  Each line has 6 decimal numbers,
+holds a sequence of lines of text, one per window.  Each line has 7 decimal numbers,
 each formatted in 11 characters plus a blank\(emthe window ID;
 number of characters (runes) in the tag;
 number of characters in the body;
 a 1 if the window is a directory, 0 otherwise;
 a 1 if the window is modified, 0 otherwise;
-and a 1 if the window is scratch, 0
+a 1 if the window is scratch, 0 otherwise;
+and a 1 if the window is from dump, 0
 otherwise\(emfollowed by the tag up to a newline if present.
-Thus at character position 6×12 starts the name of the window.
+Thus at character position 7×12 starts the name of the window.
 If a file has multiple zeroxed windows open,
 only the most recently used will appear in the
 .B index
@@ -183,7 +184,7 @@ Text written to
 is always appended; the file offset is ignored.
 .TP
 .B ctl
-may be read to recover the six numbers as held in the
+may be read to recover the seven numbers as held in the
 .B index
 file, described above, plus five more fields: the width of the
 window in pixels; the name of the font used in the window;

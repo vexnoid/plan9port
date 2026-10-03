@@ -190,7 +190,7 @@ fsysproc(void *v)
 }
 
 Mntdir*
-fsysaddid(Rune *dir, int ndir, Rune **incl, int nincl)
+fsysaddid(Rune *dir, int ndir, Rune **incl, int nincl, Window *dumpwin)
 {
 	Mntdir *m;
 	int id;
@@ -205,6 +205,7 @@ fsysaddid(Rune *dir, int ndir, Rune **incl, int nincl)
 	m->next = mnt.md;
 	m->incl = incl;
 	m->nincl = nincl;
+	m->dumpwin = dumpwin;
 	mnt.md = m;
 	qunlock(&mnt.lk);
 	return m;
@@ -239,6 +240,8 @@ fsysdelid(Mntdir *idm)
 				prev->next = m->next;
 			else
 				mnt.md = m->next;
+			if(m->dumpwin)
+				winclose(m->dumpwin);	/* never consumed by new */
 			for(i=0; i<m->nincl; i++)
 				free(m->incl[i]);
 			free(m->incl);
@@ -258,9 +261,9 @@ fsysdelid(Mntdir *idm)
  * Called only in exec.c:/^run(), from a different FD group
  */
 Mntdir*
-fsysmount(Rune *dir, int ndir, Rune **incl, int nincl)
+fsysmount(Rune *dir, int ndir, Rune **incl, int nincl, Window *dumpwin)
 {
-	return fsysaddid(dir, ndir, incl, nincl);
+	return fsysaddid(dir, ndir, incl, nincl, dumpwin);
 }
 
 void
@@ -468,9 +471,14 @@ fsyswalk(Xfid *x, Fid *f)
 			if(strcmp(x->fcall.wname[i], "new") == 0){
 				if(w)
 					error("w set in walk to new");
-				sendp(cnewwindow, nil);	/* signal newwindowthread */
-				w = recvp(cnewwindow);	/* receive new window */
-				incref(&w->ref);
+				if(f->mntdir && f->mntdir->dumpwin){
+					w = f->mntdir->dumpwin;	/* load; reuse window */
+					f->mntdir->dumpwin = nil;
+				}else{
+					sendp(cnewwindow, nil);	/* signal newwindowthread */
+					w = recvp(cnewwindow);	/* receive new window */
+					incref(&w->ref);
+				}
 				type = QTDIR;
 				path = QID(w->id, Qdir);
 				id = w->id;

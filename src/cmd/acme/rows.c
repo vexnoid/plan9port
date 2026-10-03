@@ -13,6 +13,8 @@
 #include "dat.h"
 #include "fns.h"
 
+int loadingdump;
+
 static Rune Lcolhdr[] = {
 	'N', 'e', 'w', 'c', 'o', 'l', ' ',
 	'K', 'i', 'l', 'l', ' ',
@@ -316,7 +318,7 @@ rowclean(Row *row)
 static void
 rowdump1(Row *row, Biobuf *b)
 {
-	int i, j, m, n, start, dumped;
+	int i, j, m, n, start, dumped, clean, primary;
 	uint q0, q1;
 	char *buf, *a, *fontname, *fontfmt, *fontnamelo, *fontnamehi;
 	Rune *r;
@@ -364,10 +366,6 @@ rowdump1(Row *row, Biobuf *b)
 			wincommit(w, &w->tag);
 			wincommit(w, &w->body);
 			t = &w->body;
-			/* windows owned by others get special treatment */
-			if(w->nopen[QWevent] > 0)
-				if(w->dumpstr == nil)
-					continue;
 			/* zeroxes of external windows are tossed */
 			if(t->file->ntext > 1)
 				for(n=0; n<t->file->ntext; n++){
@@ -394,30 +392,33 @@ rowdump1(Row *row, Biobuf *b)
 				a = emalloc(1);
 			if(t->file->dumpid){
 				dumped = FALSE;
+				primary = FALSE;
 				Bprint(b, "x%11d %11d %11.7f %11d %s\n", i, t->file->dumpid,
 					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
 					(int)w->body.org,
 					fontname);
-			}else if(w->dumpstr){
-				dumped = FALSE;
-				Bprint(b, "e%11d %11d %11d %11d %11.7f %s\n", i, t->file->dumpid,
-					0, 0,
-					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
-					fontname);
-			}else if((w->dirty==FALSE && access(a, 0)==0) || w->isdir){
-				dumped = FALSE;
-				t->file->dumpid = w->id;
-				Bprint(b, "f%11d %11d %11.7f %11d %s\n", i, w->id,
-					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
-					(int)w->body.org,
-					fontname);
 			}else{
-				dumped = TRUE;
+				primary = TRUE;
 				t->file->dumpid = w->id;
-				Bprint(b, "F%11d %11d %11.7f %11d %11d %s\n", i, j,
-					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
-					w->body.file->b.nc, (int)w->body.org,
-					fontname);
+				if(w->dumpstr){
+					dumped = TRUE;
+					Bprint(b, "e%11d %11d %11.7f %11d %11d %s\n", i, w->id,
+						100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+						w->body.file->b.nc, (int)w->body.org,
+						fontname);
+				}else if((clean = (w->dirty==FALSE && access(a, 0)==0) || w->isdir)){
+					dumped = FALSE;
+					Bprint(b, "f%11d %11d %11.7f %11d %s\n", i, w->id,
+						100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+						(int)w->body.org,
+						fontname);
+				}else{
+					dumped = TRUE;
+					Bprint(b, "F%11d %11d %11.7f %11d %11d %s\n", i, w->id,
+						100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+						w->body.file->b.nc, (int)w->body.org,
+						fontname);
+				}
 			}
 			free(fontname);
 			free(a);
@@ -450,7 +451,7 @@ rowdump1(Row *row, Biobuf *b)
 					q0 += n;
 				}
 			}
-			if(w->dumpstr){
+			if(primary && w->dumpstr){
 				if(w->dumpdir)
 					Bprint(b, "%s\n%s\n", w->dumpdir, w->dumpstr);
 				else
@@ -559,16 +560,17 @@ rowloadfonts(char *file)
 int
 rowload(Row *row, char *file, int initing)
 {
-	int i, j, line, y, nr, nfontr, n, ndumped, dumpid, x, fd, done, org;
+	int i, j, line, y, nr, enr, nfontr, n, ndumped, dumpid, x, fd, done, org, iseventwin;
 	double percent;
 	Biobuf *b, *bout;
-	char *buf, *l, *t, *fontname;
-	Rune *r, *fontr;
+	char *buf, *l, *fontname, *et;
+	Rune *r, *fontr, *er;
 	int rune;
 	Column *c, *c1, *c2;
 	Rectangle r1, r2;
 	Window *w;
 
+	loadingdump = TRUE;
 	buf = fbufalloc();
 	if(file == nil){
 		if(home == nil){
@@ -677,49 +679,24 @@ rowload(Row *row, char *file, int initing)
 			break;
 		dumpid = 0;
 		org = 0;
+		iseventwin = FALSE;
 		switch(l[0]){
 		case 'e':
-			if(Blinelen(b) < 1+5*12+1)
-				goto Rescue2;
-			l = rdline(b, &line);	/* ctl line; ignored */
-			if(l == nil)
-				goto Rescue2;
-			l = rdline(b, &line);	/* directory */
-			if(l == nil)
-				goto Rescue2;
-			l[Blinelen(b)-1] = 0;
-			if(*l == '\0'){
-				if(home == nil)
-					r = bytetorune("./", &nr);
-				else{
-					t = emalloc(strlen(home)+1+1);
-					sprint(t, "%s/", home);
-					r = bytetorune(t, &nr);
-					free(t);
-				}
-			}else
-				r = bytetorune(l, &nr);
-			l = rdline(b, &line);	/* command */
-			if(l == nil)
-				goto Rescue2;
-			t = emalloc(Blinelen(b)+1);
-			memmove(t, l, Blinelen(b));
-			run(nil, t, r, nr, TRUE, nil, nil, FALSE);
-			/* r is freed in run() */
-			goto Nextline;
-		case 'f':
-			if(Blinelen(b) < 1+4*12+1)
-				goto Rescue2;
-			fontname = l+1+4*12;
-			ndumped = -1;
-			org = atoi(l+1+3*12);
-			break;
+			iseventwin = TRUE;
+			/* fall through */
 		case 'F':
 			if(Blinelen(b) < 1+5*12+1)
 				goto Rescue2;
 			fontname = l+1+5*12;
 			ndumped = atoi(l+1+3*12);
 			org = atoi(l+1+4*12);
+			break;
+		case 'f':
+			if(Blinelen(b) < 1+4*12+1)
+				goto Rescue2;
+			fontname = l+1+4*12;
+			ndumped = -1;
+			org = atoi(l+1+3*12);
 			break;
 		case 'x':
 			if(Blinelen(b) < 1+4*12+1)
@@ -764,8 +741,9 @@ rowload(Row *row, char *file, int initing)
 			if((uchar)l[i] == 0xff)
 				l[i] = '\n';
 		w->isscratch = atoi(l+5*12);
-		w->tagexpand = atoi(l+6*12);
-		r = bytetorune(l+7*12, &nr);
+		/* l+6*12 is fromdump from winctlprint */
+		w->tagexpand = atoi(l+7*12);
+		r = bytetorune(l+8*12, &nr);
 		n = -1;
 		for(x=0; x<nr; x++){
 			if(n < 0 && r[x] == ' ')
@@ -833,11 +811,38 @@ rowload(Row *row, char *file, int initing)
 		textsetorigin(&w->body, org, TRUE);
 		w->maxlines = min(w->body.fr.nlines, max(w->maxlines, w->body.fr.maxlines));
 		xfidlog(w, "new");
+		if(iseventwin){
+			l = rdline(b, &line);	/* directory */
+			if(l == nil)
+				goto Rescue2;
+			l[Blinelen(b)-1] = 0;
+			if(*l == '\0'){
+				if(home == nil)
+					er = bytetorune("./", &enr);
+				else{
+					et = emalloc(strlen(home)+1+1);
+					sprint(et, "%s/", home);
+					er = bytetorune(et, &enr);
+					free(et);
+				}
+			}else
+				er = bytetorune(l, &enr);
+			l = rdline(b, &line);	/* command */
+			if(l == nil)
+				goto Rescue2;
+			et = emalloc(Blinelen(b)+1);
+			memmove(et, l, Blinelen(b));
+			incref(&w->ref);
+			w->fromdump = TRUE;
+			run(w, et, er, enr, TRUE, nil, nil, FALSE);
+			/* er is freed in run() */
+		}
 Nextline:
 		l = rdline(b, &line);
 	}
 	Bterm(b);
 	fbuffree(buf);
+	loadingdump = FALSE;
 	return TRUE;
 
 Rescue2:
@@ -845,6 +850,7 @@ Rescue2:
 	Bterm(b);
 Rescue1:
 	fbuffree(buf);
+	loadingdump = FALSE;
 	return FALSE;
 }
 

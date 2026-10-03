@@ -127,6 +127,7 @@ hangupnote(void *a, char *msg)
 void
 threadmain(int argc, char **argv)
 {
+	int n;
 	char buf[256];
 	char buf1[128];
 	char *dump;
@@ -172,14 +173,21 @@ threadmain(int argc, char **argv)
 	snprint(buf, sizeof buf, "%d", win->id);
 	putenv("winid", buf);
 	getwd(buf1, sizeof buf1);
-	winname(win, "%s/-%s", buf1, name);
-	wincmds(win, " Del Look Send ");
-	winctl(win, "scratch");
+	if(!win->fromdump){
+		winname(win, "%s/-%s", buf1, name);
+		wincmds(win, " Del Look Send ");
+		winctl(win, "scratch");
+	}
 	winctl(win, "dumpdir %s/\n", buf1);
 	winctl(win, "dump %s\n", dump);
 
 	winseek(win, "event", 0, 0);
 	winseek(win, "data", 0, 0);
+	/* resume q.p at end of restored body, not 0 */
+	winaddr(win, "$");
+	n = winreadaddr(win, nil);
+	if(n >= 0)
+		q.p = n;
 
 	cwait = threadwaitchan();
 	proccreate(waitthread, nil, STACK);
@@ -546,6 +554,8 @@ label(char *sr, int n)
 			strcpy(p, name);
 		}
 		winctl(win, "%s\n", wdir);
+		*(strrchr(wdir, '/')+1) = 0;
+		winctl(win, "dumpdir %s\n", wdir+5);
 	}
 
 	memmove(sl, el, er-el);
