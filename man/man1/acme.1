@@ -383,32 +383,6 @@ created by the
 .B Dump
 command.
 .TP
-.B Local
-In the Plan 9
-.IR acme ,
-this prefix causes a command to be run in
-.IR acme 's own
-file name space and environment variable group.
-On Unix this is impossible.
-.B Local
-is recognized as a prefix, but has no effect on the command being executed.
-.\" .TP
-.\" .B Local
-.\" When prefixed to a command
-.\" run the
-.\" command in the same file name space and environment variable group as
-.\" .IR acme .
-.\" The environment of the command
-.\" is restricted but is sufficient to run
-.\" .IR bind (1),
-.\" .IR 9fs
-.\" (see
-.\" .IR srv (4)),
-.\" .IR import (4),
-.\" etc.,
-.\" and to set environment variables such as
-.\" .BR $objtype .
-.TP
 .B Look
 Search in body for occurrence of literal text indicated by the argument or,
 if none is given, by the selected text in the body.
