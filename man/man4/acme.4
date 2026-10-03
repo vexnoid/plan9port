@@ -402,7 +402,9 @@ exactly as if it had been indicated explicitly (its flag will always be 0);
 8 if the command has an extra (chorded) argument; if so,
 two more complete messages will follow reporting the argument (with
 all numbers 0 except the character count) and where it originated, in the form of
-a fully-qualified button 3 style address.
+a fully-qualified button 3 style address.  The argument is the text last
+selected with button 1 or, for a chord of buttons 2 and 3, the contents
+of the snarf buffer, which has no address; its origin then has a count of 0.
 The argument is always sent in full.
 .IP
 For

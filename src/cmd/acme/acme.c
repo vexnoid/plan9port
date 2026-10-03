@@ -164,6 +164,7 @@ threadmain(int argc, char *argv[])
 	iconinit();
 	timerinit();
 	rxinit();
+	snarfinit();
 
 	cwait = threadwaitchan();
 	ccommand = chancreate(sizeof(Command**), 0);
@@ -1040,15 +1041,15 @@ acmeputsnarf(void)
 	Fmt f;
 	char *s;
 
-	if(snarfbuf.nc==0)
+	if(snarffile.b.nc==0)
 		return;
 
 	fmtstrinit(&f);
-	for(i=0; i<snarfbuf.nc; i+=n){
-		n = snarfbuf.nc-i;
+	for(i=0; i<snarffile.b.nc; i+=n){
+		n = snarffile.b.nc-i;
 		if(n >= NSnarf)
 			n = NSnarf;
-		bufread(&snarfbuf, i, snarfrune, n);
+		bufread(&snarffile.b, i, snarfrune, n);
 		if(fmtprint(&f, "%.*S", n, snarfrune) < 0)
 			break;
 	}
@@ -1074,8 +1075,8 @@ acmegetsnarf(void)
 	len = strlen(s);
 	r = runemalloc(len+1);
 	cvttorunes(s, len, r, &nb, &nr, &nulls);
-	bufreset(&snarfbuf);
-	bufinsert(&snarfbuf, 0, r, nr);
+	bufreset(&snarffile.b);
+	bufinsert(&snarffile.b, 0, r, nr);
 	free(r);
 	free(s);
 }

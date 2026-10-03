@@ -603,6 +603,16 @@ environment variable
 .B $acmeaddr
 is created that holds, in the form interpreted by button 3,
 the fully-qualified address of the extra argument.
+.PP
+Similarly, a chord of buttons 2 and 3 appends the contents of the
+snarf buffer as the extra argument, so text copied from outside
+acme can be given to any command.
+For example, to search for text copied from a browser, execute
+.B Look
+with button 2, clicking button 3 while 2 is held down.
+The snarf buffer has no address, so
+.B $acmeaddr
+is not set.
 .SS "Simulated buttons
 For systems without a three-button mouse, the keyboard modifier
 keys can be used to modify the effect of the main mouse button.

@@ -1329,11 +1329,18 @@ textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 	int buts;
 
 	*tp = nil;
-	buts = textselect23(t, q0, q1, but2col, 4|8|16|128|256);
-	if(buts & (4|8|16|128|256))
+	buts = textselect23(t, q0, q1, but2col, 8|16|128|256);
+	if(buts & (8|16|128|256))
 		return 0;
 	if(buts & 1){	/* pick up argument */
 		*tp = argtext;
+		return 1;
+	}
+	if(buts & 4){	/* pick up argument */
+		acmegetsnarf();
+		snarftext.q0 = 0;
+		snarftext.q1 = snarffile.b.nc;
+		*tp = &snarftext;
 		return 1;
 	}
 	return 1;
