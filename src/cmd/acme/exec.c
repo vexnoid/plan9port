@@ -35,7 +35,6 @@ Buffer	snarfbuf;
 void doabort(Text*, Text*, Text*, int, int, Rune*, int);
 void	del(Text*, Text*, Text*, int, int, Rune*, int);
 void	delcol(Text*, Text*, Text*, int, int, Rune*, int);
-void	dotfiles(Text*, Text*, Text*, int, int, Rune*, int);
 void	dump(Text*, Text*, Text*, int, int, Rune*, int);
 void	edit(Text*, Text*, Text*, int, int, Rune*, int);
 void	xexit(Text*, Text*, Text*, int, int, Rune*, int);
@@ -656,7 +655,6 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		textsetselect(&u->w->tag, u->w->tag.file->b.nc, u->w->tag.file->b.nc);
 		if(samename){
 			a = &addr[i];
-			// warning(nil, "%d %d %d %d %d %d\n", a->lorigin, a->rorigin, a->lq0, a->rq0, a->lq1, a->rq1);
 			q0 = nlcounttopos(u, 0, a->lq0, a->rq0);
 			q1 = nlcounttopos(u, q0, a->lq1, a->rq1);
 			textsetselect(u, q0, q1);

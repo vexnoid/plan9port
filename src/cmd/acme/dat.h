@@ -552,7 +552,6 @@ extern int			editing;
 extern int			erroutfd;
 extern int			messagesize;		/* negotiated in 9P version setup */
 extern int			globalautoindent;
-extern int			dodollarsigns;
 extern char*		mtpt;
 
 enum
