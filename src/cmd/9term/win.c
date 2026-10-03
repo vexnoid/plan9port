@@ -191,13 +191,8 @@ threadmain(int argc, char **argv)
 	sprint(buf, "%d/data", id);
 	datafd = fsopen(fs, buf, ORDWR|OCEXEC);
 	sprint(buf, "%d/body", id);
-/*	bodyfd = fsopenfd(fs, buf, ORDWR|OCEXEC); */
 	if(eventfd==nil || addrfd==nil || datafd==nil)
 		sysfatal("data files: %r");
-/*
-	if(eventfd<0 || addrfd<0 || datafd<0 || bodyfd<0)
-		sysfatal("data files: %r");
-*/
 	fsunmount(fs);
 
 	cwait = threadwaitchan();
@@ -212,8 +207,6 @@ threadmain(int argc, char **argv)
 	sprint(buf, "dumpdir %s/\n", buf1);
 	fswrite(ctlfd, buf, strlen(buf));
 	sprint(buf, "dump %s\n", dump);
-	fswrite(ctlfd, buf, strlen(buf));
-	sprint(buf, "scroll");
 	fswrite(ctlfd, buf, strlen(buf));
 
 	updatewinsize(25, 80, 0, 0);
