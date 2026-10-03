@@ -1,6 +1,10 @@
 fn newwindow {
-	winctl=`{9p read acme/new/ctl}
+	if(~ $#mntid 0)
+		winctl=`{9p read acme/new/ctl}
+	if not
+		winctl=`{9p -A $mntid read acme/new/ctl}
 	winid=$winctl(1)
+	fromdump=$winctl(7)
 }
 
 fn winctl {	

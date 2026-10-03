@@ -171,9 +171,34 @@ windows.
 A
 .B Win
 structure represents a single window and its control files.
-The contents of the structure should not be accessed directly.
+The contents of the structure should not be accessed directly,
+except for the integer field
+.BR fromdump ,
+described below.
 .I Newwin
 creates a new window and returns a structure corresponding to that window.
+If the program was started by
+.I acme
+to recreate a window from a dump file
+(see the
+.B -l
+option and the
+.B Load
+command in
+.MR acme 1 ),
+.I newwin
+instead returns a structure for that window, which already exists
+with its position, tag, and body as restored,
+and sets
+.B fromdump
+to 1.
+A program that sees
+.B fromdump
+set can skip initializing the window.
+Otherwise
+.B fromdump
+is 0, as it is in structures returned by
+.IR openwin .
 .I Openwin
 allocates a structure corresponding to the existing window with the given
 .IR id .
@@ -214,6 +239,14 @@ of the
 .I acme
 file system that the library uses to reach windows,
 mounting it first if that has not yet been done.
+If the environment variable
+.B mntid
+is set, as it is for commands run by
+.IR acme ,
+the mount uses its value as the attach specifier,
+so that the program's connection is the one
+.I acme
+set up for that command.
 If the mount fails,
 .I acmefsys
 calls

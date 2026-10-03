@@ -238,6 +238,7 @@ struct Window
 	Rectangle	r;
 	uchar	isdir;
 	uchar	isscratch;
+	uchar	fromdump;
 	uchar	filecmds;
 	uchar	dirty;
 	uchar	autoindent;
@@ -368,6 +369,7 @@ struct Command
 	char		*text;
 	char		**av;
 	int		iseditcmd;
+	int		fromdump;
 	Mntdir	*md;
 	Command	*next;
 };
@@ -389,6 +391,7 @@ struct Mntdir
 	Mntdir	*next;
 	int		nincl;
 	Rune		**incl;
+	Window	*dumpwin;	/* target of load */
 };
 
 struct Fid
@@ -408,6 +411,7 @@ struct Fid
 	int		evcap;	/* allocated size of evpart */
 	int		evneed;	/* bytes needed before evpart can be parsed */
 	vlong	logoff;	/* for putlog */
+	int		fromdump;	/* claimed the window being restored */
 };
 
 
@@ -565,6 +569,7 @@ extern int			editing;
 extern int			erroutfd;
 extern int			messagesize;		/* negotiated in 9P version setup */
 extern int			globalautoindent;
+extern int			loadingdump;	/* rowload in progress */
 extern char*		mtpt;
 
 extern Channel	*cplumb;		/* chan(Plumbmsg*) */
