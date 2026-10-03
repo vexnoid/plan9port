@@ -102,8 +102,8 @@ complete(char *dir, char *s)
 		c->advance = c->complete || (minlen > len);
 		c->string = (char*)(c+1);
 		memmove(c->string, name[0]+len, minlen-len);
-		if(c->complete)
-			c->string[minlen++ - len] = (mode[0]&DMDIR)? '/' : ' ';
+		if(c->complete && (mode[0]&DMDIR))
+			c->string[minlen++ - len] = '/';
 		c->string[minlen - len] = '\0';
 		c->nmatch = nfile;
 	} else {
