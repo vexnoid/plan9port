@@ -244,7 +244,6 @@ textload(Text *t, uint q0, char *file, int setqid)
 			goto Rescue;
 		}
 		t->w->isdir = TRUE;
-		t->w->filemenu = FALSE;
 		if(t->file->nname > 0 && t->file->name[t->file->nname-1] != '/'){
 			rp = runemalloc(t->file->nname+1);
 			runemove(rp, t->file->name, t->file->nname);
@@ -280,7 +279,7 @@ textload(Text *t, uint q0, char *file, int setqid)
 		q1 = t->file->b.nc;
 	}else{
 		t->w->isdir = FALSE;
-		t->w->filemenu = TRUE;
+		t->w->filecmds = TRUE;
 		if(q0 == 0)
 			h = sha1(nil, 0, nil, nil);
 		q1 = q0 + fileload(t->file, q0, fd, &nulls, h);

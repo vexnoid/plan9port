@@ -297,6 +297,7 @@ plumbshow(Plumbmsg *m)
 	cvttorunes(name, strlen(name), rb, &nb, &nr, nil);
 	free(p);
 	rs = cleanrname(runestr(rb, nr));
+	w->filecmds = FALSE;
 	w->isscratch = TRUE;
 	winsetname(w, rs.r, rs.nr);
 	r = runemalloc(m->ndata);
@@ -305,6 +306,7 @@ plumbshow(Plumbmsg *m)
 	free(r);
 	w->body.file->mod = FALSE;
 	w->dirty = FALSE;
+	wininittag(w);
 	winsettag(w);
 	textscrdraw(&w->body);
 	textsetselect(&w->tag, w->tag.file->b.nc, w->tag.file->b.nc);
@@ -671,7 +673,8 @@ openfile(Text *t, Expand *e)
 			t->file->unread = FALSE;
 		t->file->mod = FALSE;
 		t->w->dirty = FALSE;
-		winsettag(t->w);
+		wininittag(w);
+		winsettag(w);
 		textsetselect(&t->w->tag, t->w->tag.file->b.nc, t->w->tag.file->b.nc);
 		if(ow != nil){
 			for(i=ow->nincl; --i>=0; ){

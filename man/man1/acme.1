@@ -103,15 +103,11 @@ or the output of a
 program, as in an
 .MR rio 1
 window.
-The tag contains a number of
-blank-separated words, followed by a vertical bar character, followed by anything.
-The first word is the name of the window, typically the name of the associated
-file or directory, and the other words are commands available in that window.
-Any text may be added after the bar; examples are strings to search for or
-commands to execute in that window.
-Changes to the text left of the bar will be ignored,
-unless the result is to change the name of the
-window.
+The tag contains the name of the window, typically the name of the
+associated file or directory, followed by a vertical bar character,
+followed by a number of blank-separated commands available in that
+window and any other text, such as strings to search for or commands
+to execute in that window.
 .PP
 If a window holds a directory, the name (first word of the tag) will end with
 a slash.
@@ -173,12 +169,6 @@ to a
 .B Cut
 command
 .RI ( q.v. ).
-.PP
-Most text, including the names of windows, may be edited uniformly.
-The only exception is that the command names to the
-left of the bar in a tag are maintained automatically; changes to them are repaired
-by
-.IR acme .
 .PP
 When a window is in autoindent mode
 (see the
