@@ -14,7 +14,7 @@
 
 enum
 {
-	Ctlsize	= 5*12
+	Ctlsize	= 6*12
 };
 
 char	Edel[]		= "deleted window";
@@ -705,6 +705,11 @@ xfidctlwrite(Xfid *x, Window *w)
 			w->dirty = TRUE;
 			settag = TRUE;
 			m = 5;
+		}else
+		if(strncmp(p, "scratch", 7) == 0){	/* mark window 'scratch' */
+			w->isscratch = TRUE;
+			settag = TRUE;
+			m = 7;
 		}else
 		if(strncmp(p, "show", 4) == 0){	/* show dot */
 			t = &w->body;
