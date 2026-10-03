@@ -413,13 +413,23 @@ seqof(Window *w, int isundo)
 }
 
 void
-undo(Window *w, int isundo)
+undo(Window *w, Text *t, int isundo)
 {
 	int i, j;
 	Column *c;
 	Window *v;
 	uint seq;
 
+	if(t == nil)
+		return;
+	if(t->what != Body){
+		/* not shared across windows */
+		if(w != nil)
+			winundo(w, t, isundo);
+		else
+			textundo(t, isundo);
+		return;
+	}
 	if(w == nil)
 		return;
 	seq = seqof(w, isundo);
@@ -432,7 +442,7 @@ undo(Window *w, int isundo)
 	 * in the same file will not call show() and jump to a different location in the file.
 	 * Simultaneous changes to other files will be chaotic, however.
 	 */
-	winundo(w, isundo);
+	winundo(w, t, isundo);
 	for(i=0; i<row.ncol; i++){
 		c = row.col[i];
 		for(j=0; j<c->nw; j++){
@@ -440,7 +450,7 @@ undo(Window *w, int isundo)
 			if(v == w)
 				continue;
 			if(seqof(v, isundo) == seq)
-				winundo(v, isundo);
+				winundo(v, &v->body, isundo);
 		}
 	}
 }
@@ -930,7 +940,7 @@ cut(Text *t, int dosnarf, int docut)
 		return;
 	if(t->q0 == t->q1)
 		return;
-	if(docut && t->what==Body){
+	if(docut){
 		seq++;
 		filemark(t->file);
 	}
@@ -972,7 +982,7 @@ paste(Text *t, int selectall)
 	acmegetsnarf();
 	if(t==nil || snarffile.b.nc==0)
 		return;
-	if(t->what == Body && t->q0 == t->q1){
+	if(t->q0 == t->q1){
 		seq++;
 		filemark(t->file);
 	}
