@@ -96,8 +96,16 @@ look3(Text *t, uint q0, uint q1, int external, int reverse)
 	expanded = expand(t, q0, q1, &e, reverse);
 	if(!external && t->w!=nil && t->w->nopen[QWevent]>0){
 		/* send alphanumeric expansion to external client */
-		if(expanded == FALSE)
-			return;
+		if(expanded == FALSE){
+			e.q0 = q0;
+			e.q1 = q1;
+			while(e.q0>0 && (c=tgetc(t, e.q0-1))!=' ' && c!='\t' && c!='\n')
+				e.q0--;
+			while(e.q1<t->file->b.nc && (c=tgetc(t, e.q1))!=' ' && c!='\t' && c!='\n')
+				e.q1++;
+			if(e.q1 == e.q0)
+				return;
+		}
 		f = 0;
 		if((e.u.at!=nil && t->w!=nil) || (e.nname>0 && lookfile(e.name, e.nname)!=nil))
 			f = 1;		/* acme can do it without loading a file */
