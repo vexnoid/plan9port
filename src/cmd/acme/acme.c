@@ -721,6 +721,7 @@ waitthread(void *v)
 					pids = p;
 				}
 			}else{
+				t->q1 = 0;
 				if(search(t, c->name, c->nname)){
 					textdelete(t, t->q0, t->q1, TRUE);
 					textsetselect(t, 0, 0);
