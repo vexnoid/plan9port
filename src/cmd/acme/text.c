@@ -765,7 +765,7 @@ texttype(Text *t, Rune r)
 	}
 	if(r >= KF)
 		return;
-	if(t->what == Body){
+	if(t->what == Body && t->q1 == t->q0){
 		seq++;
 		filemark(t->file);
 	}
@@ -1038,10 +1038,6 @@ textselect(Text *t)
 		mouse->msec = 0;
 		b = mouse->buttons;
 		if((b&1) && (b&6)){
-			if(state==None && t->what==Body){
-				seq++;
-				filemark(t->w->body.file);
-			}
 			if(b & 2){
 				if(state==Paste && t->what==Body){
 					winundo(t->w, TRUE);

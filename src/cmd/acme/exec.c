@@ -64,7 +64,6 @@ struct Exectab
 {
 	Rune	*name;
 	void	(*fn)(Text*, Text*, Text*, int, int, Rune*, int);
-	int		mark;
 	int		flag1;
 	int		flag2;
 };
@@ -96,32 +95,32 @@ static Rune LUndo[] = { 'U', 'n', 'd', 'o', 0 };
 static Rune LZerox[] = { 'Z', 'e', 'r', 'o', 'x', 0 };
 
 Exectab exectab[] = {
-	{ LCut,		cut,		FALSE,	TRUE,	TRUE	},
-	{ LDel,		del,		FALSE,	FALSE,	XXX		},
-	{ LDelcol,		delcol,	FALSE,	XXX,		XXX		},
-	{ LDelete,		del,		FALSE,	TRUE,	XXX		},
-	{ LDump,		dump,	FALSE,	TRUE,	XXX		},
-	{ LEdit,		edit,		FALSE,	XXX,		XXX		},
-	{ LExit,		xexit,	FALSE,	XXX,		XXX		},
-	{ LFont,		fontx,	FALSE,	XXX,		XXX		},
-	{ LGet,		get,		FALSE,	TRUE,	XXX		},
-	{ LID,		id,		FALSE,	XXX,		XXX		},
-	{ LIndent,		indent,	FALSE,	XXX,		XXX		},
-	{ LKill,		xkill,		FALSE,	XXX,		XXX		},
-	{ LLoad,		dump,	FALSE,	FALSE,	XXX		},
-	{ LLook,		look,		FALSE,	XXX,		XXX		},
-	{ LNew,		new,		FALSE,	XXX,		XXX		},
-	{ LNewcol,	newcol,	FALSE,	XXX,		XXX		},
-	{ LPaste,		paste,	TRUE,	TRUE,	XXX		},
-	{ LPut,		put,		FALSE,	XXX,		XXX		},
-	{ LPutall,		putall,	FALSE,	XXX,		XXX		},
-	{ LRedo,		undo,	FALSE,	FALSE,	XXX		},
-	{ LSnarf,		cut,		FALSE,	TRUE,	FALSE	},
-	{ LSort,		sort,		FALSE,	XXX,		XXX		},
-	{ LTab,		tab,		FALSE,	XXX,		XXX		},
-	{ LUndo,		undo,	FALSE,	TRUE,	XXX		},
-	{ LZerox,		zeroxx,	FALSE,	XXX,		XXX		},
-	{ nil,			0,		0,		0,		0		}
+	{ LCut,		cut,		TRUE,	TRUE	},
+	{ LDel,		del,		FALSE,	XXX		},
+	{ LDelcol,		delcol,	XXX,		XXX		},
+	{ LDelete,		del,		TRUE,	XXX		},
+	{ LDump,		dump,	TRUE,	XXX		},
+	{ LEdit,		edit,		XXX,		XXX		},
+	{ LExit,		xexit,	XXX,		XXX		},
+	{ LFont,		fontx,	XXX,		XXX		},
+	{ LGet,		get,		TRUE,	XXX		},
+	{ LID,		id,		XXX,		XXX		},
+	{ LIndent,		indent,	XXX,		XXX		},
+	{ LKill,		xkill,		XXX,		XXX		},
+	{ LLoad,		dump,	FALSE,	XXX		},
+	{ LLook,		look,		XXX,		XXX		},
+	{ LNew,		new,		XXX,		XXX		},
+	{ LNewcol,	newcol,	XXX,		XXX		},
+	{ LPaste,		paste,	TRUE,	XXX		},
+	{ LPut,		put,		XXX,		XXX		},
+	{ LPutall,		putall,	XXX,		XXX		},
+	{ LRedo,		undo,	FALSE,	XXX		},
+	{ LSnarf,		cut,		TRUE,	FALSE	},
+	{ LSort,		sort,		XXX,		XXX		},
+	{ LTab,		tab,		XXX,		XXX		},
+	{ LUndo,		undo,	TRUE,	XXX		},
+	{ LZerox,		zeroxx,	XXX,		XXX		},
+	{ nil,			0,		0,		0		}
 };
 
 Exectab*
@@ -252,11 +251,6 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 		return;
 	}
 	if(e){
-		if(e->mark && seltext!=nil)
-		if(seltext->what == Body){
-			seq++;
-			filemark(seltext->w->body.file);
-		}
 		s = skipbl(r, q1-q0, &n);
 		s = findbl(s, n, &n);
 		s = skipbl(s, n, &n);
@@ -969,11 +963,9 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 	 * or do nothing at all.
 	 */
 	if(et!=t && dosnarf && et->w!=nil){
-		if(et->w->body.q1>et->w->body.q0){
+		if(et->w->body.q1>et->w->body.q0)
 			t = &et->w->body;
-			if(docut)
-				filemark(t->file);	/* seq has been incremented by execute */
-		}else if(et->w->tag.q1>et->w->tag.q0)
+		else if(et->w->tag.q1>et->w->tag.q0)
 			t = &et->w->tag;
 		else
 			t = nil;
@@ -993,6 +985,10 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 		if(locked)
 			winunlock(t->w);
 		return;
+	}
+	if(docut && t->what==Body){
+		seq++;
+		filemark(t->file);
 	}
 	if(dosnarf){
 		q0 = t->q0;
@@ -1035,16 +1031,18 @@ paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
 	USED(_2);
 
 	/* if(tobody), use body of executing window  (Paste command) */
-	if(tobody && et!=nil && et->w!=nil){
+	if(tobody && et!=nil && et->w!=nil)
 		t = &et->w->body;
-		filemark(t->file);	/* seq has been incremented by execute */
-	}
 	if(t == nil)
 		return;
 
 	acmegetsnarf();
 	if(t==nil || snarffile.b.nc==0)
 		return;
+	if(t->what == Body && t->q0 == t->q1){
+		seq++;
+		filemark(t->file);
+	}
 	if(t->w!=nil && et->w!=t->w){
 		c = 'M';
 		if(et->w)
