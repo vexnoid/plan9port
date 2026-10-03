@@ -395,14 +395,10 @@ winsetname(Window *w, Rune *name, int n)
 	Text *t;
 	Window *v;
 	int i;
-	static Rune Lpluserrors[] = { '+', 'E', 'r', 'r', 'o', 'r', 's', 0 };
 
 	t = &w->body;
 	if(runeeq(t->file->name, t->file->nname, name, n) == TRUE)
 		return;
-	w->isscratch = FALSE;
-	if(n>=7 && runeeq(Lpluserrors, 7, name+(n-7), 7))
-		w->isscratch = TRUE;
 	filesetname(t->file, name, n);
 	for(i=0; i<t->file->ntext; i++){
 		v = t->file->text[i]->w;
@@ -615,6 +611,7 @@ wincommit(Window *w, Text *t)
 		filemark(w->body.file);
 		w->body.file->mod = TRUE;
 		w->dirty = TRUE;
+		w->isscratch = FALSE;
 		winsetname(w, r, i);
 		winsettag(w);
 	}
