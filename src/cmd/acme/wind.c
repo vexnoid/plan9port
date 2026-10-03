@@ -478,9 +478,10 @@ wininittag(Window *w)
 	static Rune Lpipe[] = { ' ', '|', 0 };
 	static Rune Ldel[] = { ' ', 'D', 'e', 'l', 0 };
 	static Rune Lsnarf[] = { ' ', 'S', 'n', 'a', 'r', 'f', 0 };
-	static Rune Lget[] = { ' ', 'G', 'e', 't', 0 };
 	static Rune Lput[] = { ' ', 'P', 'u', 't', 0 };
-	static Rune Llook[] = { ' ', 'L', 'o', 'o', 'k', ' ', 0 };
+	static Rune Llook[] = { ' ', 'L', 'o', 'o', 'k', 0 };
+	static Rune Lget[] = { ' ', 'G', 'e', 't', 0 };
+	static Rune Lspc[] = { ' ', 0 };
 
 	new = runemalloc(w->body.file->nname+100);
 	i = 0;
@@ -497,12 +498,14 @@ wininittag(Window *w)
 		runemove(new+i, Lput, 4);
 		i += 4;
 	}
-	if(w->isdir){
+	runemove(new+i, Llook, 5);
+	i += 5;
+	if(w->filecmds && !w->isscratch){
 		runemove(new+i, Lget, 4);
 		i += 4;
 	}
-	runemove(new+i, Llook, 6);
-	i += 6;
+	runemove(new+i, Lspc, 1);
+	i += 1;
 	new[i] = 0;
 	textdelete(&w->tag, 0, w->tag.file->b.nc, TRUE);
 	textinsert(&w->tag, 0, new, i, TRUE);
