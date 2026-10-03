@@ -550,7 +550,7 @@ rowloadfonts(char *file)
 int
 rowload(Row *row, char *file, int initing)
 {
-	int i, j, line, y, nr, enr, nfontr, n, ndumped, dumpid, x, fd, done, org, iseventwin;
+	int i, j, line, y, nr, enr, nfontr, n, ndumped, dumpid, x, fd, done, org, iseventwin, dirty;
 	double percent;
 	Biobuf *b, *bout;
 	char *buf, *l, *fontname, *et;
@@ -730,6 +730,7 @@ rowload(Row *row, char *file, int initing)
 		for(i = 0; l[i] != 0; i++)
 			if((uchar)l[i] == 0xff)
 				l[i] = '\n';
+		dirty = atoi(l+4*12);
 		w->isscratch = atoi(l+5*12);
 		/* l+6*12 is fromdump from winctlprint */
 		w->tagexpand = atoi(l+7*12);
@@ -782,7 +783,7 @@ rowload(Row *row, char *file, int initing)
 			close(fd);
 			w->body.file->mod = TRUE;
 			if(w->isscratch){
-				w->dirty = atoi(l+4*12);
+				w->dirty = dirty;
 				w->body.file->mod = w->dirty;
 			}else{
 				for(n=0; n<w->body.file->ntext; n++)
