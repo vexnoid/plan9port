@@ -422,6 +422,7 @@ rowdump1(Row *row, Biobuf *b)
 			free(a);
 			winctlprint(w, buf, 0);
 			Bwrite(b, buf, strlen(buf));
+			Bprint(b, "%11d ", w->tagexpand);
 			m = min(RBUFSIZE, w->tag.file->b.nc);
 			bufread(&w->tag.file->b, 0, r, m);
 			n = 0;
@@ -761,7 +762,8 @@ rowload(Row *row, char *file, int initing)
 			if((uchar)l[i] == 0xff)
 				l[i] = '\n';
 		w->isscratch = atoi(l+5*12);
-		r = bytetorune(l+6*12, &nr);
+		w->tagexpand = atoi(l+6*12);
+		r = bytetorune(l+7*12, &nr);
 		for(n=0; n<nr; n++)
 			if(r[n] == ' ')
 				break;
