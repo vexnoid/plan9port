@@ -338,6 +338,8 @@ isalnum(Rune c)
 		return FALSE;
 	if(utfrune("!\"#$%&'()*+,-./:;<=>?@[\\]^`{|}~", c))
 		return FALSE;
+	if(c==0x2018 || c==0x2019 || c==0x201C || c==0x201D)
+		return FALSE;
 	return TRUE;
 }
 
