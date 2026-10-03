@@ -675,6 +675,7 @@ openfile(Text *t, Expand *e)
 		t->w->dirty = FALSE;
 		wininittag(w);
 		winsettag(w);
+		textscrdraw(t);
 		if(ow != nil){
 			for(i=ow->nincl; --i>=0; ){
 				n = runestrlen(ow->incl[i]);
@@ -703,13 +704,19 @@ openfile(Text *t, Expand *e)
 		r.q0 = t->q0;
 		r.q1 = t->q1;
 	}
-	o = t->org;
-	textshow(t, r.q0, r.q1, 1);
-	textscrollmark(t, o);
+	if(eval){
+		o = t->org;
+		textshow(t, r.q0, r.q1, 1);
+		textscrollmark(t, o);
+	}
 	winsettag(t->w);
 	seltext = t;
-	if(e->jump)
-		moveto(mousectl, addpt(frptofchar(&t->fr, t->fr.p0), Pt(4, font->height-4)));
+	if(e->jump){
+		if(eval)
+			moveto(mousectl, addpt(frptofchar(&t->fr, t->fr.p0), Pt(4, font->height-4)));
+		else
+			moveto(mousectl, addpt(t->fr.r.min, Pt(4, font->height-4)));
+	}
 	return w;
 }
 
