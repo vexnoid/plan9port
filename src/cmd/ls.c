@@ -30,8 +30,6 @@ NDir*	dirbuf;
 int	ls(char*, int);
 int	compar(NDir*, NDir*);
 char*	asciitime(long);
-char*	darwx(long);
-void	rwx(long, char*);
 void	growto(long);
 void	dowidths(Dir*);
 void	format(Dir*, char*);
