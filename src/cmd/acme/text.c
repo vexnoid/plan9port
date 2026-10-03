@@ -721,7 +721,7 @@ texttype(Text *t, Rune r)
 	}
 	if(r >= KF || r == Kdown)
 		return;
-	if(t->what == Body){
+	if(t->what == Body && t->q1 == t->q0){
 		seq++;
 		filemark(t->file);
 	}
@@ -930,6 +930,7 @@ textselect(Text *t)
 	uint q0, q1;
 	int b, x, y;
 	int state;
+	uint seq0;
 	enum { None, Cut, Paste };
 
 	selecttext = t;
@@ -992,10 +993,7 @@ textselect(Text *t)
 		mouse->msec = 0;
 		b = mouse->buttons;
 		if((b&1) && (b&6)){
-			if(state==None && t->what==Body){
-				seq++;
-				filemark(t->w->body.file);
-			}
+			seq0 = t->file->seq;
 			if(b & 2){
 				if(state==Paste && t->what==Body){
 					winundo(t->w, TRUE);
@@ -1003,7 +1001,8 @@ textselect(Text *t)
 					state = None;
 				}else if(state != Cut){
 					cut(t, t, nil, TRUE, TRUE, nil, 0);
-					state = Cut;
+					if(t->file->seq != seq0)
+						state = Cut;
 				}
 			}else{
 				if(state==Cut && t->what==Body){
@@ -1012,7 +1011,8 @@ textselect(Text *t)
 					state = None;
 				}else if(state != Paste){
 					paste(t, t, nil, TRUE, FALSE, nil, 0);
-					state = Paste;
+					if(t->file->seq != seq0)
+						state = Paste;
 				}
 			}
 			textscrdraw(t);
