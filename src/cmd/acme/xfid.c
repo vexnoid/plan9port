@@ -806,7 +806,7 @@ out:
 			m = 6;
 		}else
 		if(strncmp(p, "del", 3) == 0){	/* delete, but check dirty */
-			if(!winclean(w, TRUE)){
+			if(!winclean(w)){
 				err = "file dirty";
 				break;
 			}
