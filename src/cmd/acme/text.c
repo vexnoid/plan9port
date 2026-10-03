@@ -741,6 +741,8 @@ texttype(Text *t, Rune r)
 	}
 	if(r >= KF)
 		return;
+	if((r==0x08 || r==0x15 || r==0x17) && t->q0==t->q1 && t->q0==0)
+		return;
 	/* a run of typing ends if dot moved or seq changed */
 	if(t->q1 == t->q0 && (t->q0 != t->iend || t->iseq != seq)){
 		seq++;
