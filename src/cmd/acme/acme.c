@@ -549,32 +549,27 @@ mousethread(void *v)
 				}
 				goto Continue;
 			}
-			/* scroll buttons, wheels, etc. */
-			if(w != nil && (m.buttons & (8|16))){
-				if(m.buttons & 8)
-					but = Kscrolloneup;
-				else
-					but = Kscrollonedown;
-				winlock(w, 'M');
-				t->eq0 = ~0;
-				texttype(t, but);
-				winunlock(w);
-				goto Continue;
-			}
 			if(ptinrect(m.xy, t->scrollr)){
 				if(but){
 					if(t->what == Columntag)
 						rowdragcol(&row, t->col, but);
-					else if(t->what == Tag){
+					else if(t->what == Tag && t->w){
 						coldragwin(t->col, t->w, but);
-						if(t->w)
-							barttext = &t->w->body;
+						barttext = &t->w->body;
 					}
+					if(t->col)
+						activecol = t->col;
+				}else if(t->what == Tag && t->w && (m.buttons & (8|16))){
+					wintagexpand(t->w, (m.buttons&16)!=0);
+					barttext = &t->w->body;
 					if(t->col)
 						activecol = t->col;
 				}
 				goto Continue;
 			}
+			/* wheel over text does nothing */
+			if(m.buttons & (8|16))
+				goto Continue;
 			if(m.buttons){
 				if(w)
 					winlock(w, 'M');
