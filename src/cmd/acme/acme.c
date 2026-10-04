@@ -437,7 +437,7 @@ void
 mousethread(void *v)
 {
 	Text *t, *argt;
-	int but;
+	int but, wheel;
 	uint q0, q1;
 	Window *w;
 	Plumbmsg *pm;
@@ -524,6 +524,7 @@ mousethread(void *v)
 				but = 2;
 			else if(m.buttons == 4)
 				but = 3;
+			wheel = m.buttons & (8|16);
 			if(t->what==Body && ptinrect(m.xy, t->scrollr)){
 				if(but){
 					if(swapscrollbuttons){
@@ -539,18 +540,6 @@ mousethread(void *v)
 				}
 				goto Continue;
 			}
-			/* scroll buttons, wheels, etc. */
-			if(w != nil && (m.buttons & (8|16))){
-				if(m.buttons & 8)
-					but = Kscrolloneup;
-				else
-					but = Kscrollonedown;
-				winlock(w, 'M');
-				t->eq0 = ~0;
-				texttype(t, but);
-				winunlock(w);
-				goto Continue;
-			}
 			if(ptinrect(m.xy, t->scrollr)){
 				if(but){
 					if(t->what == Columntag)
@@ -559,9 +548,12 @@ mousethread(void *v)
 						coldragwin(t->col, t->w, but);
 					if(t->col)
 						activecol = t->col;
-				}
+				}else if(wheel && t->what == Tag)
+					wintagexpand(w, (m.buttons&16)!=0);
 				goto Continue;
 			}
+			if(wheel)
+				goto Continue;
 			if(m.buttons){
 				if(w)
 					winlock(w, 'M');

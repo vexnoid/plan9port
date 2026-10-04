@@ -698,26 +698,6 @@ texttype(Text *t, Rune r)
 		if(t->q1 < t->file->b.nc)
 			textshow(t, t->q1+1, t->q1+1, TRUE);
 		return;
-	case Kscrollonedown:
-		if(t->what == Tag)
-			goto Tagdown;
-		n = mousescrollsize(t->fr.maxlines);
-		if(n <= 0)
-			n = 1;
-		goto case_Down;
-	case_Down:
-		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+n*t->fr.font->height));
-		textsetorigin(t, q0, TRUE);
-		return;
-	case Kscrolloneup:
-		if(t->what == Tag)
-			goto Tagup;
-		n = mousescrollsize(t->fr.maxlines);
-		goto case_Up;
-	case_Up:
-		q0 = textbacknl(t, t->org, n);
-		textsetorigin(t, q0, TRUE);
-		return;
 	case 0x01:	/* ^A: beginning of line */
 		typecommit(t);
 		/* go to where ^U would erase, if not already at BOL */
@@ -744,23 +724,6 @@ texttype(Text *t, Rune r)
 	case Kcmd+'Z':	/* %-shift-Z: redo */
 	 	typecommit(t);
 		undo(t, nil, nil, FALSE, 0, nil, 0);
-		return;
-
-	Tagdown:
-		/* expand tag to show all text */
-		if(!t->w->tagexpand){
-			t->w->tagexpand = TRUE;
-			winresize(t->w, t->w->r, FALSE, TRUE);
-		}
-		return;
-
-	Tagup:
-		/* shrink tag to single line */
-		if(t->w->tagexpand){
-			t->w->tagexpand = FALSE;
-			t->w->taglines = 1;
-			winresize(t->w, t->w->r, FALSE, TRUE);
-		}
 		return;
 	}
 	if(r >= KF)
