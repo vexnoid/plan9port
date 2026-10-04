@@ -457,7 +457,6 @@ struct Expand
 	int	nname;
 	char	*bname;
 	int	jump;
-	int	reverse;
 	union{
 		Text	*at;
 		Rune	*ar;
