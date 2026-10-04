@@ -650,17 +650,12 @@ plan9buttons(void)
 
 	b = plan9buttons();
 	if(b){
-		int x;
-		x = 0;
 		if(m & ~omod & NSEventModifierFlagControl)
-			x = 1;
+			b |= 1;
 		if(m & ~omod & NSEventModifierFlagOption)
-			x = 2;
+			b |= 2;
 		if(m & ~omod & NSEventModifierFlagCommand)
-			x = 4;
-		b |= x;
-		if(m & NSEventModifierFlagShift)
-			b <<= 5;
+			b |= 4;
 		[self sendmouse:b];
 	}else if(m & ~omod & NSEventModifierFlagOption)
 		gfx_keystroke(self.client, Kalt);
@@ -724,8 +719,6 @@ plan9buttons(void)
 		if(m & NSEventModifierFlagCommand)
 			b = 4;
 	}
-	if(m & NSEventModifierFlagShift)
-		b <<= 5;
 	[self sendmouse:b];
 }
 

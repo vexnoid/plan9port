@@ -302,7 +302,7 @@ getarg(Text *argt, int doaddr, int dofile, Rune **rp, int *nrp)
 		return nil;
 	a = nil;
 	textcommit(argt, TRUE);
-	if(expand(argt, argt->q0, argt->q1, &e, FALSE)){
+	if(expand(argt, argt->q0, argt->q1, &e)){
 		free(e.bname);
 		if(e.nname && dofile){
 			e.name = runerealloc(e.name, e.nname+1);
@@ -1090,7 +1090,7 @@ look(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
 	if(et && et->w){
 		t = &et->w->body;
 		if(narg > 0){
-			search(t, arg, narg, FALSE);
+			search(t, arg, narg);
 			return;
 		}
 		getarg(argt, FALSE, FALSE, &r, &n);
@@ -1099,7 +1099,7 @@ look(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
 			r = runemalloc(n);
 			bufread(&t->file->b, t->q0, r, n);
 		}
-		search(t, r, n, FALSE);
+		search(t, r, n);
 		free(r);
 	}
 }

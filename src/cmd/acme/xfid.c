@@ -522,7 +522,7 @@ xfidwrite(Xfid *x)
 		t = &w->body;
 		wincommit(w, t);
 		eval = TRUE;
-		a = address(FALSE, t, w->limit, w->addr, r, 0, nr, rgetc, &eval, (uint*)&nb, FALSE);
+		a = address(FALSE, t, w->limit, w->addr, r, 0, nr, rgetc, &eval, (uint*)&nb);
 		free(r);
 		if(nb < nr){
 			respond(x, &fc, Ebadaddr);
@@ -951,11 +951,7 @@ xfideventwrite(Xfid *x, Window *w)
 			break;
 		case 'l':
 		case 'L':
-			look3(t, q0, q1, TRUE, FALSE);
-			break;
-		case 'r':
-		case 'R':
-			look3(t, q0, q1, TRUE, TRUE);
+			look3(t, q0, q1, TRUE);
 			break;
 		default:
 			qunlock(&row.lk);

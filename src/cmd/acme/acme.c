@@ -454,7 +454,6 @@ mousethread(void *v)
 	Mouse m;
 	char *act;
 	enum { MResize, MMouse, MPlumb, MWarnings, NMALT };
-	enum { Shift = 5 };
 	static Alt alts[NMALT+1];
 
 	USED(v);
@@ -597,9 +596,9 @@ mousethread(void *v)
 				}else if(m.buttons & 2){
 					if(textselect2(t, &q0, &q1, &argt))
 						execute(t, q0, q1, FALSE, argt);
-				}else if(m.buttons & (4|(4<<Shift))){
+				}else if(m.buttons & 4){
 					if(textselect3(t, &q0, &q1))
-						look3(t, q0, q1, FALSE, (m.buttons&(4<<Shift))!=0);
+						look3(t, q0, q1, FALSE);
 				}
 				if(w)
 					winunlock(w);
@@ -720,7 +719,7 @@ waitthread(void *v)
 					pids = p;
 				}
 			}else{
-				if(search(t, c->name, c->nname, FALSE)){
+				if(search(t, c->name, c->nname)){
 					textdelete(t, t->q0, t->q1, TRUE);
 					textsetselect(t, 0, 0);
 				}

@@ -352,8 +352,6 @@ stdinproc(void *v)
 
 			case 'l':
 			case 'L':
-			case 'r':
-			case 'R':
 				/* just send it back */
 				e.q0 = e.oq0;
 				e.q1 = e.oq1;
