@@ -127,7 +127,7 @@ look3(Text *t, uint q0, uint q1, int external, int reverse)
 		}else
 			winevent(t->w, "%c%d %d %d 0 \n", c, q0, q1, f, n);
 		if(q0==e.q0 && q1==e.q1)
-			return;
+			goto Return;
 		if(e.nname){
 			n = e.nname;
 			if(e.a1 > e.a0)
