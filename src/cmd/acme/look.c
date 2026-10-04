@@ -79,7 +79,7 @@ startplumbing(void)
 }
 
 void
-look3(Text *t, uint q0, uint q1, int external, int reverse)
+look3(Text *t, uint q0, uint q1, int external)
 {
 	int n, c, f, expanded;
 	Text *ct;
@@ -93,7 +93,7 @@ look3(Text *t, uint q0, uint q1, int external, int reverse)
 	ct = seltext;
 	if(ct == nil)
 		seltext = t;
-	expanded = expand(t, q0, q1, &e, reverse);
+	expanded = expand(t, q0, q1, &e);
 	if(!external && t->w!=nil && t->w->nopen[QWevent]>0){
 		/* send alphanumeric expansion to external client */
 		if(expanded == FALSE){
@@ -116,8 +116,6 @@ look3(Text *t, uint q0, uint q1, int external, int reverse)
 		c = 'l';
 		if(t->what == Body)
 			c = 'L';
-		if(reverse)
-			c += 'R' - 'L';
 		n = q1-q0;
 		if(n <= EVENTSIZE){
 			r = runemalloc(n);
@@ -212,17 +210,12 @@ look3(Text *t, uint q0, uint q1, int external, int reverse)
 		ct = &t->w->body;
 		if(t->w != ct->w)
 			winlock(ct->w, 'M');
-		if(t == ct){
-			uint q;
-			q = e.q1;
-			if(reverse)
-				q = e.q0;
-			textsetselect(ct, q, q);
-		}
+		if(t == ct)
+			textsetselect(ct, e.q1, e.q1);
 		n = e.q1 - e.q0;
 		r = runemalloc(n);
 		bufread(&t->file->b, e.q0, r, n);
-		if(search(ct, r, n, reverse) && e.jump)
+		if(search(ct, r, n) && e.jump)
 			moveto(mousectl, addpt(frptofchar(&ct->fr, ct->fr.p0), Pt(4, ct->fr.font->height-4)));
 		if(t->w != ct->w)
 			winunlock(ct->w);
@@ -318,9 +311,9 @@ plumbshow(Plumbmsg *m)
 }
 
 int
-search(Text *ct, Rune *r, uint n, int reverse)
+search(Text *ct, Rune *r, uint n)
 {
-	uint nb, maxn;
+	uint nb, maxn, q;
 	int around;
 	Rune *s, *b;
 
@@ -336,111 +329,56 @@ search(Text *ct, Rune *r, uint n, int reverse)
 	nb = 0;
 	b[nb] = 0;
 	around = 0;
-	if(reverse){
-		uint q1;
-		q1 = ct->q0; /* q1 is (past) end of text being searched. */
-		for(;;){
-			if(q1 <= 0){
-				q1 = ct->file->b.nc;
-				around = 1;
+	q = ct->q1;
+	for(;;){
+		if(q >= ct->file->b.nc){
+			q = 0;
+			around = 1;
+			nb = 0;
+			b[nb] = 0;
+		}
+		if(nb > 0){
+			Rune *c;
+			c = runestrchr(b, r[0]);
+			if(c == nil){
+				q += nb;
 				nb = 0;
 				b[nb] = 0;
+				if(around && q>=ct->q1)
+					break;
+				continue;
 			}
-			if(nb > 0){
-				Rune *c;
-				for(c=b+nb; c>b; c--)
-					if(c[-1] == r[n-1])
-						break;
-				if(c == b){
-					q1 -= nb;
-					nb = 0;
-					b[nb] = 0;
-					if(around && q1 <= 0)
-						break;
-					continue;
-				}
-				q1 -= nb - (c - b);
-				nb = c - b;
-			}
-			/* reload if buffer covers neither string nor beginning of file */
-			if(nb<n && nb!=q1){
-				nb = q1;
-				if(nb >= maxn)
-					nb = maxn-1;
-				bufread(&ct->file->b, q1-nb, s, nb);
-				b = s;
-				b[nb] = '\0';
-			}
-			if(runeeq(b+nb-n, n, r, n)==TRUE){
-				if(ct->w){
-					textshow(ct, q1-n, q1, 1);
-					winsettag(ct->w);
-				}else{
-					ct->q0 = q1-n;
-					ct->q1 = q1;
-				}
-				seltext = ct;
-				fbuffree(s);
-				return TRUE;
-			}
-			q1--;
-			nb--;
-			if(around && q1 <= 0)
-				break;
+			q += (c-b);
+			nb -= (c-b);
+			b = c;
 		}
-	}else{
-		uint q;
-		q = ct->q1;
-		for(;;){
-			if(q >= ct->file->b.nc){
-				q = 0;
-				around = 1;
-				nb = 0;
-				b[nb] = 0;
-			}
-			if(nb > 0){
-				Rune *c;
-				c = runestrchr(b, r[0]);
-				if(c == nil){
-					q += nb;
-					nb = 0;
-					b[nb] = 0;
-					if(around && q>=ct->q1)
-						break;
-					continue;
-				}
-				q += (c-b);
-				nb -= (c-b);
-				b = c;
-			}
-			/* reload if buffer covers neither string nor rest of file */
-			if(nb<n && nb!=ct->file->b.nc-q){
-				nb = ct->file->b.nc-q;
-				if(nb >= maxn)
-					nb = maxn-1;
-				bufread(&ct->file->b, q, s, nb);
-				b = s;
-				b[nb] = '\0';
-			}
-			/* this runeeq is fishy but the null at b[nb] makes it safe */
-			if(runeeq(b, n, r, n)==TRUE){
-				if(ct->w){
-					textshow(ct, q, q+n, 1);
-					winsettag(ct->w);
-				}else{
-					ct->q0 = q;
-					ct->q1 = q+n;
-				}
-				seltext = ct;
-				fbuffree(s);
-				return TRUE;
-			}
-			--nb;
-			b++;
-			q++;
-			if(around && q>=ct->q1)
-				break;
+		/* reload if buffer covers neither string nor rest of file */
+		if(nb<n && nb!=ct->file->b.nc-q){
+			nb = ct->file->b.nc-q;
+			if(nb >= maxn)
+				nb = maxn-1;
+			bufread(&ct->file->b, q, s, nb);
+			b = s;
+			b[nb] = '\0';
 		}
+		/* this runeeq is fishy but the null at b[nb] makes it safe */
+		if(runeeq(b, n, r, n)==TRUE){
+			if(ct->w){
+				textshow(ct, q, q+n, 1);
+				winsettag(ct->w);
+			}else{
+				ct->q0 = q;
+				ct->q1 = q+n;
+			}
+			seltext = ct;
+			fbuffree(s);
+			return TRUE;
+		}
+		--nb;
+		b++;
+		q++;
+		if(around && q>=ct->q1)
+			break;
 	}
 	fbuffree(s);
 	return FALSE;
@@ -510,7 +448,7 @@ dirname(Text *t, Rune *r, int n)
 }
 
 int
-expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
+expandfile(Text *t, uint q0, uint q1, Expand *e)
 {
 	int i, n, nname, eval;
 	uint amin, amax;
@@ -526,12 +464,6 @@ expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 			q0--;
 		if(q1 > q0)
 			amax = t->file->b.nc;
-		/* reverse only applies when the expansion starts at an explicit ':' address */
-		if(reverse && (q0>=t->file->b.nc || textreadc(t, q0)!=':'))
-			reverse = FALSE;
-	}else if(reverse){
-		if(textreadc(t, q0) != ':')
-			reverse = FALSE;
 	}
 	amin = amax;
 	e->q0 = q0;
@@ -549,7 +481,6 @@ expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 		e->u.at = t;
 		e->a0 = q0+1;
 		e->a1 = q1;
-		e->reverse = reverse;
 		free(r);
 		return TRUE;
 	}
@@ -592,13 +523,12 @@ expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 	e->nname = nname;
 	e->u.at = t;
 	e->a0 = amin+1;
-	e->reverse = reverse;
 	eval = FALSE;
 	/*
 	 * Note: address is repeated in openfile when
 	 * expandfile returns to expand returns to look3
 	 */
-	address(TRUE, nil, range(-1,-1), range(0,0), t, e->a0, amax, tgetc, &eval, (uint*)&e->a1, e->reverse);
+	address(TRUE, nil, range(-1,-1), range(0,0), t, e->a0, amax, tgetc, &eval, (uint*)&e->a1);
 	return TRUE;
 
    Isntfile:
@@ -607,7 +537,7 @@ expandfile(Text *t, uint q0, uint q1, Expand *e, int reverse)
 }
 
 int
-expand(Text *t, uint q0, uint q1, Expand *e, int reverse)
+expand(Text *t, uint q0, uint q1, Expand *e)
 {
 	memset(e, 0, sizeof *e);
 	e->agetc = tgetc;
@@ -620,7 +550,7 @@ expand(Text *t, uint q0, uint q1, Expand *e, int reverse)
 			e->jump = FALSE;
 	}
 
-	if(expandfile(t, q0, q1, e, reverse))
+	if(expandfile(t, q0, q1, e))
 		return TRUE;
 
 	if(q0 == q1){
@@ -756,7 +686,7 @@ openfile(Text *t, Expand *e)
 		eval = FALSE;
 	else{
 		eval = TRUE;
-		r = address(TRUE, t, range(-1,-1), range(t->q0, t->q1), e->u.at, e->a0, e->a1, e->agetc, &eval, &dummy, e->reverse);
+		r = address(TRUE, t, range(-1,-1), range(t->q0, t->q1), e->u.at, e->a0, e->a1, e->agetc, &eval, &dummy);
 		if(r.q0 > r.q1){
 			eval = FALSE;
 			warning(nil, "addresses out of order\n");
