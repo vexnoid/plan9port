@@ -314,7 +314,7 @@ xloop(void)
 	}
 }
 
-static int kcodecontrol, kcodealt, kcodeshift;
+static int kcodecontrol, kcodealt;
 
 /*
  * Handle an incoming X event.
@@ -382,7 +382,6 @@ runxevent(XEvent *xev)
 	if(w == nil)
 		w = _x.windows;
 
-	int shift;
 	switch(xev->type){
 	case MapNotify:
 	case FocusIn:    
@@ -438,10 +437,7 @@ runxevent(XEvent *xev)
 	case MotionNotify:
 		if(_xtoplan9mouse(w, xev, &m) < 0)
 			return;
-		shift = 0;
-		if(_x.kstate & ShiftMask)
-			shift = 5;
-		gfx_mousetrack(w->client, m.xy.x, m.xy.y, (m.buttons|_x.kbuttons)<<shift, m.msec);
+		gfx_mousetrack(w->client, m.xy.x, m.xy.y, m.buttons|_x.kbuttons, m.msec);
 		break;
 
 	case KeyRelease:
@@ -478,12 +474,6 @@ runxevent(XEvent *xev)
 				c |= Mod1Mask;
 				modp = 1;
 				break;
-			case XK_Shift_L:
-			case XK_Shift_R:
-				kcodeshift = ke->keycode;
-				c |= ShiftMask;
-				modp = 1;
-				break;
 			}
 		else {
 			if(ke->keycode == kcodecontrol){
@@ -492,24 +482,18 @@ runxevent(XEvent *xev)
 		        } else if(ke->keycode == kcodealt){
 				c &= ~Mod1Mask;
 				modp = 1;
-			} else if(ke->keycode == kcodeshift) {
-				c &= ~ShiftMask;
-				modp = 1;
 			}
 		}
 		if(modp){
 			_x.kstate = c;
 			if(m.buttons || _x.kbuttons) {
-				int shift = 0;
 				_x.altdown = 0; // used alt
 				_x.kbuttons = 0;
 				if(c & ControlMask)
 					_x.kbuttons |= 2;
 				if(c & Mod1Mask)
 					_x.kbuttons |= 4;
-				if(c & ShiftMask)
-					shift = 5;
-				gfx_mousetrack(w->client, m.xy.x, m.xy.y, (m.buttons|_x.kbuttons)<<shift, m.msec);
+				gfx_mousetrack(w->client, m.xy.x, m.xy.y, m.buttons|_x.kbuttons, m.msec);
 			}
 			modp = 0;
 		}
