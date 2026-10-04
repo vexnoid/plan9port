@@ -300,6 +300,15 @@ winmousebut(Window *w)
 }
 
 void
+wintagexpand(Window *w, int expand)
+{
+	w->tagexpand = expand;
+	if(!expand)
+		w->taglines = 1;
+	winresize(w, w->r, FALSE, TRUE);
+}
+
+void
 windirfree(Window *w)
 {
 	int i;

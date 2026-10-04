@@ -292,6 +292,7 @@ int	winclean(Window*, int);
 void	windirfree(Window*);
 void	winevent(Window*, char*, ...);
 void	winmousebut(Window*);
+void	wintagexpand(Window*, int);
 void	winaddincl(Window*, Rune*, int);
 void	wincleartag(Window*);
 char	*winctlprint(Window*, char*, int);
@@ -559,12 +560,6 @@ extern int			erroutfd;
 extern int			messagesize;		/* negotiated in 9P version setup */
 extern int			globalautoindent;
 extern char*		mtpt;
-
-enum
-{
-	Kscrolloneup		= KF|0x20,
-	Kscrollonedown	= KF|0x21
-};
 
 extern Channel	*cplumb;		/* chan(Plumbmsg*) */
 extern Channel	*cwait;		/* chan(Waitmsg) */
