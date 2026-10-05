@@ -32,6 +32,10 @@ textinit(Text *t, File *f, Rectangle r, Reffont *rf, Image *cols[NCOL])
 	t->lastsr = nullrect;
 	r.min.x += Scrollwid+Scrollgap;
 	t->eq0 = ~0;
+	t->scundo = nil;
+	t->scredo = nil;
+	t->nscundo = 0;
+	t->nscredo = 0;
 	t->ncache = 0;
 	t->reffont = rf;
 	t->tabstop = maxtab;
@@ -109,6 +113,8 @@ void
 textclose(Text *t)
 {
 	free(t->cache);
+	free(t->scundo);
+	free(t->scredo);
 	frclear(&t->fr, 1);
 	filedeltext(t->file, t);
 	t->file = nil;
@@ -1501,6 +1507,8 @@ textreset(Text *t)
 	t->org = 0;
 	t->q0 = 0;
 	t->q1 = 0;
+	t->nscundo = 0;
+	t->nscredo = 0;
 	filereset(t->file);
 	bufreset(&t->file->b);
 }

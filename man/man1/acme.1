@@ -543,10 +543,21 @@ may be selected and applied repeatedly to the
 body by just clicking button 3 over them.
 .SS "Side mouse buttons
 Side mouse buttons are bound to undo and redo.
-They affect only the window under the pointer,
-but changes made simultaneously in other windows as part of the same action 
-are undone or redone together,
+Over text, they affect only the window under the pointer,
+except that changes made simultaneously in other windows
+as part of the same action are undone or redone together,
 so that a compound edit spanning multiple files reverts as a unit.
+.PP
+Over a window's scroll bar, they instead undo and redo
+the position of the view.
+Whenever the view jumps, the position it jumped from is remembered:
+a button 2 drag in the scroll bar (one step for the whole drag),
+a button 3 search, and a button 3 on a file name or address
+all count, provided the view actually moves.
+Undo returns to the position before the last jump;
+redo goes forward again.
+A new jump discards the redo history.
+Wheel scrolling is not remembered.
 .SS "Chords of mouse buttons
 Several operations are bound to multiple-button actions.
 After selecting text, with button 1 still down, pressing button 2

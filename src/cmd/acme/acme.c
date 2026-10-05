@@ -541,6 +541,13 @@ mousethread(void *v)
 					t->eq0 = ~0;
 					textscroll4(t, m.buttons&8);
 					winunlock(w);
+				}else if(m.buttons & (128|256)){
+					winlock(w, 'M');
+					t->eq0 = ~0;
+					textscrollundo(t, (m.buttons&128)!=0);
+					while(mousectl->m.buttons)
+						readmouse(mousectl);
+					winunlock(w);
 				}
 				goto Continue;
 			}

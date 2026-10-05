@@ -313,7 +313,7 @@ plumbshow(Plumbmsg *m)
 int
 search(Text *ct, Rune *r, uint n)
 {
-	uint nb, maxn, q;
+	uint nb, maxn, q, o;
 	int around;
 	Rune *s, *b;
 
@@ -364,7 +364,9 @@ search(Text *ct, Rune *r, uint n)
 		/* this runeeq is fishy but the null at b[nb] makes it safe */
 		if(runeeq(b, n, r, n)==TRUE){
 			if(ct->w){
+				o = ct->org;
 				textshow(ct, q, q+n, 1);
+				textscrollmark(ct, o);
 				winsettag(ct->w);
 			}else{
 				ct->q0 = q;
@@ -622,7 +624,7 @@ openfile(Text *t, Expand *e)
 	int eval, i, n;
 	Rune *rp;
 	Runestr rs;
-	uint dummy;
+	uint dummy, o;
 
 	r.q0 = 0;
 	r.q1 = 0;
@@ -698,7 +700,9 @@ openfile(Text *t, Expand *e)
 		r.q0 = t->q0;
 		r.q1 = t->q1;
 	}
+	o = t->org;
 	textshow(t, r.q0, r.q1, 1);
+	textscrollmark(t, o);
 	winsettag(t->w);
 	seltext = t;
 	if(e->jump)

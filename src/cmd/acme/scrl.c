@@ -106,7 +106,7 @@ scrsleep(uint dt)
 void
 textscroll(Text *t)
 {
-	uint p0, oldp0;
+	uint p0, oldp0, o;
 	Rectangle s;
 	int x, y, my, h;
 
@@ -114,6 +114,7 @@ textscroll(Text *t)
 	h = s.max.y-s.min.y;
 	x = (s.min.x+s.max.x)/2;
 	oldp0 = ~0;
+	o = t->org;
 	do{
 		flushimage(display, 1);
 		my = mouse->xy.y;
@@ -136,6 +137,7 @@ textscroll(Text *t)
 	}while(mouse->buttons & 2);
 	while(mouse->buttons)
 		readmouse(mousectl);
+	textscrollmark(t, o);	/* one undo step for the whole drag */
 }
 
 void
@@ -156,4 +158,44 @@ textscroll4(Text *t, int up)
 	else
 		p0 = t->org+frcharofpt(&t->fr, Pt(s.max.x, my));
 	textsetorigin(t, p0, TRUE);
+}
+
+static void
+scrpush(uint **s, int *n, uint v)
+{
+	*s = erealloc(*s, (*n+1)*sizeof(uint));
+	(*s)[(*n)++] = v;
+}
+
+/* record that the view jumped from "from" to t->org */
+void
+textscrollmark(Text *t, uint from)
+{
+	if(t->w==nil || t!=&t->w->body || from==t->org)
+		return;
+	scrpush(&t->scundo, &t->nscundo, from);
+	t->nscredo = 0;
+}
+
+void
+textscrollundo(Text *t, int isundo)
+{
+	uint org;
+
+	if(t->w==nil || t!=&t->w->body)
+		return;
+	if(isundo){
+		if(t->nscundo == 0)
+			return;
+		scrpush(&t->scredo, &t->nscredo, t->org);
+		org = t->scundo[--t->nscundo];
+	}else{
+		if(t->nscredo == 0)
+			return;
+		scrpush(&t->scundo, &t->nscundo, t->org);
+		org = t->scredo[--t->nscredo];
+	}
+	if(org > t->file->b.nc)
+		org = t->file->b.nc;
+	textsetorigin(t, org, TRUE);
 }
