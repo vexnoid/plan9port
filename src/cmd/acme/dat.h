@@ -195,6 +195,10 @@ struct Text
 	int		ncachealloc;
 	Rune	*cache;
 	int	nofill;
+	uint	*scundo;	/* saved origins for scroll undo */
+	uint	*scredo;
+	int	nscundo;
+	int	nscredo;
 };
 
 uint		textbacknl(Text*, uint, uint);
@@ -219,6 +223,8 @@ int		textresize(Text*, Rectangle, int);
 void		textscrdraw(Text*);
 void		textscroll(Text*);
 void		textscroll4(Text*, int);
+void		textscrollmark(Text*, uint);
+void		textscrollundo(Text*, int);
 void		textselect(Text*);
 int		textselect2(Text*, uint*, uint*, Text**);
 int		textselect23(Text*, uint*, uint*, Image*, int);
