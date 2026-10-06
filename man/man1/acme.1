@@ -284,7 +284,7 @@ Delete window without checking for dirtiness.
 Write the state of
 .I acme
 to the file name, if specified, or
-.B $HOME/acme.dump
+.B $HOME/adump
 by default.
 .TP
 .B Edit
@@ -368,7 +368,7 @@ commands named as arguments.
 Restore the state of
 .I acme
 from a file (default
-.BR $HOME/acme.dump )
+.BR $HOME/adump )
 created by the
 .B Dump
 command.
@@ -636,9 +636,9 @@ windows.  An example definition is
 	fn cd { builtin cd $1 && awd $sysname }
 .EE
 .SH FILES
-.TF $HOME/acme.dump
+.TF $HOME/adump
 .TP
-.B $HOME/acme.dump
+.B $HOME/adump
 default file for
 .B Dump
 and
