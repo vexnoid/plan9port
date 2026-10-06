@@ -615,7 +615,7 @@ rxexecute(Text *t, Rune *r, uint startp, uint eof, Rangeset *rp)
 		nl->inst = nil;
 		ntl = nnl;
 		nnl = 0;
-		if(sel.r[0].q0<0 && (!wrapped || p<startp || startp==eof)){
+		if(sel.r[0].q0<0 && (!wrapped || p<startp || startp==eof || p>=nc)){
 			/* Add first instruction to this list */
 			sempty.r[0].q0 = p;
 			if(addinst(tl, startinst, &sempty))
@@ -660,7 +660,7 @@ rxexecute(Text *t, Rune *r, uint startp, uint eof, Rangeset *rp)
 				}
 				break;
 			case EOL:
-				if(c == '\n')
+				if(c=='\n' || (c==0 && p>=nc && p>0 && (t!=nil? textreadc(t, p-1) : r[p-1])!='\n'))
 					goto Step;
 				break;
 			case CCLASS:
