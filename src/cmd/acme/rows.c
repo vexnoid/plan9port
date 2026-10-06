@@ -490,7 +490,7 @@ rowdump(Row *row, char *file)
 			goto Rescue;
 		}
 		buf = fbufalloc();
-		sprint(buf, "%s/acme.dump", home);
+		sprint(buf, "%s/adump", home);
 		file = buf;
 	}
 	tmp = smprint("%s.XXXXXX", file);
@@ -585,7 +585,7 @@ rowload(Row *row, char *file, int initing)
 			warning(nil, "can't find file for load: $home not defined\n");
 			goto Rescue1;
 		}
-		sprint(buf, "%s/acme.dump", home);
+		sprint(buf, "%s/adump", home);
 		file = buf;
 	}
 	b = Bopen(file, OREAD);
