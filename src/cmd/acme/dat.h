@@ -291,6 +291,7 @@ struct Window
 	int		slotbase;	/* slot height to scale from */
 	int		colbase;	/* column height for slotbase */
 	int		slotnow;	/* slot height colresize left */
+	Rectangle	zoomr;	/* saved geometry */
 };
 
 void	wininit(Window*, Window*, Rectangle);
@@ -325,6 +326,7 @@ struct Column
 	Window	**w;
 	int		nw;
 	int		safe;
+	Window	*zoomw;	/* full-sized window, if any */
 };
 
 void		colinit(Column*, Rectangle);
@@ -335,6 +337,7 @@ void		colresize(Column*, Rectangle);
 Text*	colwhich(Column*, Point);
 void		coldragwin(Column*, Window*, int);
 void		colgrow(Column*, Window*, int);
+void		colunzoom(Column*);
 int		colclean(Column*);
 void		colsort(Column*);
 void		colpack(Column*);
