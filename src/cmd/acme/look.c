@@ -660,7 +660,7 @@ openfile(Text *t, Expand *e)
 	}
 	if(w){
 		t = &w->body;
-		if(!t->col->safe && t->fr.maxlines==0) /* window is obscured by full-column window */
+		if(t->col->zoomw != nil && t->col->zoomw != w) /* window is obscured by full-column window */
 			colgrow(t->col, t->col->w[0], 1);
 	}else{
 		ow = nil;
