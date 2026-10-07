@@ -331,6 +331,7 @@ rowdump1(Row *row, Biobuf *b)
 	Column *c;
 	Window *w, *w1;
 	Text *t;
+	Rectangle wr;
 
 	buf = fbufalloc();
 	r = fbufalloc();
@@ -372,6 +373,7 @@ rowdump1(Row *row, Biobuf *b)
 			wincommit(w, &w->tag);
 			wincommit(w, &w->body);
 			t = &w->body;
+			wr = c->zoomw==w? w->zoomr : w->r;
 			/* zeroxes of external windows are tossed */
 			if(t->file->ntext > 1)
 				for(n=0; n<t->file->ntext; n++){
@@ -400,7 +402,7 @@ rowdump1(Row *row, Biobuf *b)
 				dumped = FALSE;
 				primary = FALSE;
 				Bprint(b, "x%11d %11d %11.7f %11d %s\n", i, t->file->dumpid,
-					100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+					100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
 					(int)w->body.org,
 					fontname);
 			}else{
@@ -409,19 +411,19 @@ rowdump1(Row *row, Biobuf *b)
 				if(w->dumpstr){
 					dumped = TRUE;
 					Bprint(b, "e%11d %11d %11.7f %11d %11d %s\n", i, w->id,
-						100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+						100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
 						w->body.file->b.nc, (int)w->body.org,
 						fontname);
 				}else if((clean = (w->dirty==FALSE && access(a, 0)==0) || w->isdir)){
 					dumped = FALSE;
 					Bprint(b, "f%11d %11d %11.7f %11d %s\n", i, w->id,
-						100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+						100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
 						(int)w->body.org,
 						fontname);
 				}else{
 					dumped = TRUE;
 					Bprint(b, "F%11d %11d %11.7f %11d %11d %s\n", i, w->id,
-						100.0*(w->r.min.y-c->r.min.y)/Dy(c->r),
+						100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
 						w->body.file->b.nc, (int)w->body.org,
 						fontname);
 				}
