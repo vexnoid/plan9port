@@ -551,6 +551,7 @@ extern Keyboardctl	*keyboardctl;
 extern Reffont		reffont;
 extern Image		*modbutton;
 extern Image		*colbutton;
+extern Image		*zoomcolbutton;
 extern Image		*foldmask;
 extern Image		*button;
 extern Image		*but2col;
