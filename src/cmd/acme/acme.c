@@ -983,7 +983,7 @@ Cursor2 boxcursor2 = {
 void
 iconinit(void)
 {
-	Rectangle r;
+	Rectangle r, r1;
 	Image *tmp;
 
 	if(tagcols[BACK] == nil){
@@ -1013,6 +1013,7 @@ iconinit(void)
 		freeimage(button);
 		freeimage(modbutton);
 		freeimage(colbutton);
+		freeimage(zoomcolbutton);
 	}
 
 	button = allocimage(display, r, screen->chan, 0, DNofill);
@@ -1030,6 +1031,16 @@ iconinit(void)
 
 	r = button->r;
 	colbutton = allocimage(display, r, screen->chan, 0, DPurpleblue);
+	zoomcolbutton = allocimage(display, r, screen->chan, 0, DNofill);
+	draw(zoomcolbutton, r, tagcols[BACK], nil, r.min);
+	r1 = r;
+	r1.max.y--;
+	border(zoomcolbutton, r1, 1, tagcols[BORD], ZP);
+	tmp = allocimage(display, Rect(0,0,4,2), GREY1, 1, DWhite);
+	draw(tmp, Rect(0,0,1,1), display->black, nil, ZP);
+	draw(tmp, Rect(2,1,3,2), display->black, nil, ZP);
+	draw(zoomcolbutton, insetrect(r1, 1), tagcols[BORD], tmp, ZP);
+	freeimage(tmp);
 
 	but2col = allocimage(display, r, screen->chan, 1, 0xAA0000FF);
 	but3col = allocimage(display, r, screen->chan, 1, 0x006600FF);
