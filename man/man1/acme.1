@@ -136,9 +136,12 @@ clicking in the layout box grows the window in place: button 1
 grows it a little, button 2 grows it as much as it can, still leaving all other
 tags in that column visible, and button 3 takes over the column completely,
 temporarily hiding other windows in the column.
-(They will return
+Button 3 is a toggle: clicking it again in the layout box of the full-size window
+restores the column to exactly the layout it had before, with every window
+returning to its previous size and position.
+The hidden windows also return
 .I en masse
-if any of them needs attention.)
+if any of them needs attention.
 The layout box in a window is normally white; when it is black in the center,
 it records that the file is `dirty':
 .I acme
