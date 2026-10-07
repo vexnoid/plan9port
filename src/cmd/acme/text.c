@@ -520,6 +520,9 @@ textdelete(Text *t, uint q0, uint q1, int tofile)
 			p0 = q0 - t->org;
 		frdelete(&t->fr, p0, p1);
 		textfill(t);
+		/* keep origin at a line start */
+		if(t->what==Body && t->org>0 && textreadc(t, t->org-1)!='\n')
+			textsetorigin(t, textbacknl(t, t->org, 0), TRUE);
 	}
 	if(t->w){
 		c = 'd';
