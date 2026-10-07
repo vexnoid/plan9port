@@ -56,6 +56,8 @@ coladd(Column *c, Window *w, Window *clone, int y)
 	Window *v;
 	int i, j, minht, ymax, buggered;
 
+	if(c->zoomw != nil)
+		colunzoom(c);
 	v = nil;
 	r = c->r;
 	r.min.y = c->tag.fr.r.max.y+Border;
@@ -168,6 +170,8 @@ colclose(Column *c, Window *w, int dofree)
 	int i, didmouse, up;
 
 	/* w is locked */
+	if(c->zoomw != nil)
+		colunzoom(c);
 	if(!c->safe)
 		colgrow(c, w, 1);
 	for(i=0; i<c->nw; i++)
@@ -241,8 +245,14 @@ colresize(Column *c, Rectangle r)
 {
 	int i, slot;
 	Rectangle r1, r2;
-	Window *w;
+	Window *w, *zw;
 
+	/* lay out unzoomed, then zoom again */
+	zw = c->zoomw;
+	if(zw != nil){
+		zw->r = zw->zoomr;
+		c->zoomw = nil;
+	}
 	clearmouse();
 	r1 = r;
 	r1.max.y = r1.min.y + c->tag.fr.font->height;
@@ -278,6 +288,8 @@ colresize(Column *c, Rectangle r)
 		w->slotnow = Dy(w->r)+Border;
 	}
 	c->r = r;
+	if(zw != nil)
+		colgrow(c, zw, 3);
 }
 
 static
@@ -309,6 +321,8 @@ colsort(Column *c)
 
 	if(c->nw == 0)
 		return;
+	if(c->zoomw != nil)
+		colunzoom(c);
 	clearmouse();
 	rp = emalloc(c->nw*sizeof(Rectangle));
 	wp = emalloc(c->nw*sizeof(Window*));
@@ -347,6 +361,8 @@ colpack(Column *c)
 
 	if(c->nw == 0)
 		return;
+	if(c->zoomw != nil)
+		colunzoom(c);
 	clearmouse();
 	r = c->r;
 	r.min.y = c->tag.fr.r.max.y;
@@ -375,6 +391,10 @@ colgrow(Column *c, Window *w, int but)
 	int i, j, k, l, y1, y2, *nl, *ny, tot, nnl, onl, dnl, h, pass;
 	Window *v;
 
+	/* refilling the full-size window keeps the zoom */
+	if(c->zoomw != nil && but != 3 && !(but < 0 && w == c->zoomw))
+		colunzoom(c);
+
 	for(i=0; i<c->nw; i++)
 		if(c->w[i] == w)
 			goto Found;
@@ -393,15 +413,20 @@ colgrow(Column *c, Window *w, int but)
 	}
 	cr.min.y = c->w[0]->r.min.y;
 	if(but == 3){	/* full size */
-		if(i != 0){
-			v = c->w[0];
-			c->w[0] = w;
-			c->w[i] = v;
+		if(c->zoomw == w){
+			colunzoom(c);
+			return;
 		}
+		if(c->zoomw != nil)
+			colunzoom(c);
+		w->zoomr = w->r;	/* save geometry */
 		draw(screen, cr, textcols[BACK], nil, ZP);
 		winresize(w, cr, FALSE, TRUE);
-		for(i=1; i<c->nw; i++)
-			c->w[i]->body.fr.maxlines = 0;
+		c->zoomw = w;
+		/* output to a covered window unzooms */
+		for(j=0; j<c->nw; j++)
+			if(c->w[j] != w)
+				c->w[j]->body.fr.maxlines = 0;
 		c->safe = FALSE;
 		return;
 	}
@@ -514,6 +539,20 @@ colgrow(Column *c, Window *w, int but)
 }
 
 void
+colunzoom(Column *c)
+{
+	Window *w;
+
+	w = c->zoomw;
+	if(w == nil)
+		return;
+	c->zoomw = nil;
+	w->r = w->zoomr;
+	colresize(c, c->r);
+	c->safe = TRUE;
+}
+
+void
 coldragwin(Column *c, Window *w, int but)
 {
 	Rectangle r;
@@ -549,6 +588,8 @@ coldragwin(Column *c, Window *w, int but)
 		winmousebut(w);
 		return;
 	}
+	if(c->zoomw != nil)
+		colunzoom(c);
 	/* is it a flick to the right? */
 	if(abs(p.y-op.y)<10 && p.x>op.x+30 && rowwhichcol(c->row, p)==c)
 		p.x = op.x+Dx(w->r);	/* yes: toss to next column */
@@ -606,8 +647,21 @@ colwhich(Column *c, Point p)
 		return nil;
 	if(ptinrect(p, c->tag.all))
 		return &c->tag;
+	if(c->zoomw != nil){
+		w = c->zoomw;
+		if(ptinrect(p, w->r)){
+			if(ptinrect(p, w->tagtop) || ptinrect(p, w->tag.all))
+				return &w->tag;
+			/* exclude partial line at bottom */
+			if(p.x >= w->body.scrollr.max.x && p.y >= w->body.fr.r.max.y)
+				return nil;
+			return &w->body;
+		}
+	}
 	for(i=0; i<c->nw; i++){
 		w = c->w[i];
+		if(w == c->zoomw)
+			continue;
 		if(ptinrect(p, w->r)){
 			if(ptinrect(p, w->tagtop) || ptinrect(p, w->tag.all))
 				return &w->tag;

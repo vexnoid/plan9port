@@ -1090,8 +1090,10 @@ textshow(Text *t, uint q0, uint q1, int doselect)
 			textsetselect(t, q0, q1);
 		return;
 	}
+	if(t->w!=nil && t->col!=nil && t->col->zoomw!=nil && t->col->zoomw!=t->w)
+		colunzoom(t->col);	/* covered by the full-size window */
 	if(t->w!=nil && t->fr.maxlines==0)
-		colgrow(t->col, t->w, 1);
+		colgrow(t->col, t->w, 1);	/* squeezed down to its tag */
 	if(doselect)
 		textsetselect(t, q0, q1);
 	qe = t->org+t->fr.nchars;
