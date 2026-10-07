@@ -23,6 +23,15 @@ static Rune Lheader[] = {
 	0
 };
 
+static void
+coldrawbutton(Column *c)
+{
+	Image *b;
+
+	b = c->zoomw!=nil? zoomcolbutton : colbutton;
+	draw(screen, c->tag.scrollr, b, nil, b->r.min);
+}
+
 void
 colinit(Column *c, Rectangle r)
 {
@@ -45,7 +54,8 @@ colinit(Column *c, Rectangle r)
 	draw(screen, r1, display->black, nil, ZP);
 	textinsert(t, 0, Lheader, 37, TRUE);
 	textsetselect(t, t->file->b.nc, t->file->b.nc);
-	draw(screen, t->scrollr, colbutton, nil, colbutton->r.min);
+	c->zoomw = nil;
+	coldrawbutton(c);
 	c->safe = TRUE;
 }
 
@@ -257,7 +267,7 @@ colresize(Column *c, Rectangle r)
 	r1 = r;
 	r1.max.y = r1.min.y + c->tag.fr.font->height;
 	textresize(&c->tag, r1, TRUE);
-	draw(screen, c->tag.scrollr, colbutton, nil, colbutton->r.min);
+	coldrawbutton(c);
 	r1.min.y = r1.max.y;
 	r1.max.y += Border;
 	draw(screen, r1, display->black, nil, ZP);
@@ -420,6 +430,7 @@ colgrow(Column *c, Window *w, int but)
 		if(c->zoomw != nil)
 			colunzoom(c);
 		w->zoomr = w->r;	/* save geometry */
+		c->zoomw = w;
 		draw(screen, cr, textcols[BACK], nil, ZP);
 		winresize(w, cr, FALSE, TRUE);
 		c->zoomw = w;
@@ -428,6 +439,7 @@ colgrow(Column *c, Window *w, int but)
 			if(c->w[j] != w)
 				c->w[j]->body.fr.maxlines = 0;
 		c->safe = FALSE;
+		coldrawbutton(c);
 		return;
 	}
 	/* store old #lines for each window */
