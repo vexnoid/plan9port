@@ -1438,6 +1438,30 @@ tab(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 		warning(nil, "%.*S: Tab %d\n", w->body.file->nname, w->body.file->name, w->body.tabstop);
 }
 
+/*
+ * Quote arg for the shell, returning a malloced string.
+ * rc doubles an embedded quote; sh needs '\'' instead.
+ */
+static char*
+quotearg(char *arg, int rcquote)
+{
+	char *p, *q, *s;
+
+	s = emalloc(4*strlen(arg)+3);
+	q = s;
+	*q++ = '\'';
+	for(p=arg; *p; p++){
+		if(*p == '\''){
+			strcpy(q, rcquote? "''" : "'\\''");
+			q += strlen(q);
+		}else
+			*q++ = *p;
+	}
+	*q++ = '\'';
+	*q = 0;
+	return s;
+}
+
 void
 runproc(void *argvp)
 {
@@ -1464,7 +1488,7 @@ runproc(void *argvp)
 	char *rcarg[4];
 	void **argv;
 	CFsys *fs;
-	char *shell;
+	char *shell, *qarg;
 
 	threadsetname("runproc");
 
@@ -1674,21 +1698,28 @@ Hard:
 		close(fd);
 	}
 
+	shell = acmeshell;
+	if(shell == nil)
+		shell = "rc";
 	if(arg){
-		news = emalloc(strlen(t) + 1 + 1 + strlen(arg) + 1 + 1);
+		e = utfrrune(shell, '/');
+		if(e == nil)
+			e = shell;
+		else
+			e++;
+		qarg = quotearg(arg, strcmp(e, "rc") == 0);
+		news = emalloc(strlen(t) + 1 + strlen(qarg) + 1);
 		if(news){
-			sprint(news, "%s '%s'", t, arg);	/* BUG: what if quote in arg? */
+			sprint(news, "%s %s", t, qarg);
 			free(s);
 			t = news;
 			c->text = news;
 		}
+		free(qarg);
 	}
 	dir = nil;
 	if(rdir != nil)
 		dir = runetobyte(rdir, ndir);
-	shell = acmeshell;
-	if(shell == nil)
-		shell = "rc";
 	rcarg[0] = shell;
 	rcarg[1] = "-c";
 	rcarg[2] = t;
