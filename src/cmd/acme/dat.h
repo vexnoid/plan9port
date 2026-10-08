@@ -544,6 +544,7 @@ extern Keyboardctl	*keyboardctl;
 extern Reffont		reffont;
 extern Image		*modbutton;
 extern Image		*colbutton;
+extern Image		*foldmask;
 extern Image		*button;
 extern Image		*but2col;
 extern Image		*but3col;
