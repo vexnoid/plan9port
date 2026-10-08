@@ -45,6 +45,9 @@ char *name;
 char **prog;
 Channel *cwait;
 int pid = -1;
+int	childdone;
+int	outbusy;
+ulong	outcount;
 
 int	label(char*, int);
 void	error(char*, ...);
@@ -57,6 +60,7 @@ int	delete(Event*);
 void	deltype(uint, uint);
 void	sendbs(int, int);
 void	runproc(void*);
+void	drainout(void);
 
 void
 usage(void)
@@ -65,10 +69,33 @@ usage(void)
 	threadexitsall("usage");
 }
 
+/* let stdoutproc finish reading the pty */
+void
+drainout(void)
+{
+	ulong last;
+	int i, idle;
+
+	idle = 0;
+	for(i=0; i<100 && idle<3; i++){
+		last = outcount;
+		sleep(20);
+		if(!outbusy && outcount == last)
+			idle++;
+		else
+			idle = 0;
+	}
+}
+
 void
 waitthread(void *v)
 {
-	recvp(cwait);
+	for(;;){
+		if(childdone || nbrecvp(cwait) != nil)
+			break;
+		sleep(20);
+	}
+	drainout();
 	threadexitsall(nil);
 }
 
@@ -87,7 +114,7 @@ hangupnote(void *a, char *msg)
 		if(n > 0){
 			buf[n] = 0;
 			if(atoi(buf) == pid)
-				threadexitsall(0);
+				childdone = 1;
 		}
 		noted(NCONT);
 	}
@@ -151,7 +178,7 @@ threadmain(int argc, char **argv)
 	winseek(win, "data", 0, 0);
 
 	cwait = threadwaitchan();
-	threadcreate(waitthread, nil, STACK);
+	proccreate(waitthread, nil, STACK);
 	pid = rcstart(argc, argv, &rcfd, nil);
 	if(pid == -1)
 		sysfatal("exec failed");
@@ -391,7 +418,10 @@ stdoutproc(void *v)
 	for(;;){
 		/* Let typing have a go -- maybe there's a rubout waiting. */
 		yield();
+		outbusy = 0;
 		n = read(fd1, buf+npart, 8192);
+		outbusy = 1;
+		outcount++;
 		if(n <= 0)
 			error(nil);
 
