@@ -175,6 +175,29 @@ tagfolded(Window *w)
 	return w->tag.fr.nchars < w->tag.file->b.nc+w->tag.ncache;
 }
 
+/* divider below the tag, dashed if it is cut off; room: body fits below */
+static void
+windrawdivider(Window *w, Rectangle r1, int room)
+{
+	Rectangle rb, rd;
+	int boxadjacent;
+
+	if(!tagfolded(w)){
+		draw(screen, r1, room ? tagcols[BORD] : textcols[BACK], nil, ZP);
+		return;
+	}
+	draw(screen, r1, room ? tagcols[BACK] : textcols[BACK], nil, ZP);
+	boxadjacent = w->tag.fr.maxlines <= 1;
+	rd = r1;
+	if(boxadjacent){
+		rb = r1;
+		rb.max.x = min(r1.max.x, r1.min.x+Scrollwid);
+		draw(screen, rb, tagcols[BORD], nil, ZP);
+		rd.min.x = rb.max.x;
+	}
+	draw(screen, rd, tagcols[BORD], foldmask, ZP);
+}
+
 int
 winresize(Window *w, Rectangle r, int safe, int keepextra)
 {
@@ -231,7 +254,7 @@ winresize(Window *w, Rectangle r, int safe, int keepextra)
 		if(y+1+w->body.fr.font->height <= r.max.y){	/* room for one line */
 			r1.min.y = y;
 			r1.max.y = y+1;
-			draw(screen, r1, tagcols[BORD], nil, ZP);
+			windrawdivider(w, r1, TRUE);
 			y++;
 			r1.min.y = min(y, r.max.y);
 			r1.max.y = r.max.y;
@@ -247,6 +270,14 @@ winresize(Window *w, Rectangle r, int safe, int keepextra)
 			w->r.max.y = r.max.y;
 		textscrdraw(&w->body);
 		w->body.all.min.y = oy;
+	}
+	/* tag can fold without the body changing */
+	y = w->tag.fr.r.max.y;
+	if(y < r.max.y){
+		r1 = r;
+		r1.min.y = y;
+		r1.max.y = y+1;
+		windrawdivider(w, r1, y+1+w->body.fr.font->height <= r.max.y);
 	}
 	w->maxlines = min(w->body.fr.nlines, max(w->maxlines, w->body.fr.maxlines));
 	return w->r.max.y;
