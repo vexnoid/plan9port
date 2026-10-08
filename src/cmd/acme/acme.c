@@ -995,6 +995,9 @@ iconinit(void)
 		tagcols[BACK] = allocimagemix(display, DPalebluegreen, DWhite);
 		tagcols[HIGH] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPalegreygreen);
 		tagcols[BORD] = allocimage(display, Rect(0,0,1,1), screen->chan, 1, DPurpleblue);
+		/* 3 on, 3 off */
+		foldmask = allocimage(display, Rect(0,0,6,1), GREY1, 1, DBlack);
+		draw(foldmask, Rect(0,0,3,1), display->white, nil, ZP);
 		tagcols[TEXT] = display->black;
 		tagcols[HTEXT] = display->black;
 
