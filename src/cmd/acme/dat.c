@@ -21,6 +21,7 @@ Keyboardctl	*keyboardctl;
 Reffont		reffont;
 Image		*modbutton;
 Image		*colbutton;
+Image		*foldmask;
 Image		*button;
 Image		*but2col;
 Image		*but3col;
