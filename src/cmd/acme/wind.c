@@ -169,6 +169,12 @@ wintaglines(Window *w, Rectangle r)
 	return n;
 }
 
+static int
+tagfolded(Window *w)
+{
+	return w->tag.fr.nchars < w->tag.file->b.nc+w->tag.ncache;
+}
+
 int
 winresize(Window *w, Rectangle r, int safe, int keepextra)
 {
@@ -187,7 +193,7 @@ winresize(Window *w, Rectangle r, int safe, int keepextra)
 	r1.max.y = min(r.max.y, r1.min.y + w->taglines*font->height);
 
 	/* If needed, recompute number of lines in tag. */
-	if(!safe || !w->tagsafe || !eqrect(w->tag.all, r1)){
+	if(!safe || !w->tagsafe || !eqrect(w->tag.all, r1) || (w->tagexpand && tagfolded(w))){
 		w->taglines = wintaglines(w, r);
 		r1.max.y = min(r.max.y, r1.min.y + w->taglines*font->height);
 	}
