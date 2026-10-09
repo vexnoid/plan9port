@@ -97,4 +97,5 @@ int	cmdexec(Text*, Cmd*);
 void	editerror(char*, ...);
 int	cmdlookup(int);
 void	resetxec(void);
+void	filelooperabort(void);
 void	Straddc(String*, int);
