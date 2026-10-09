@@ -322,6 +322,12 @@ gives only the line address unless the command is explicitly
 The `current window' for the command is the body of the window in which the
 .B Edit
 command is executed.
+After an
+.B Edit
+the selection is the one the last address or change left,
+moved along with any edits made before it,
+rather than the dot of the last change as in
+.MR sam 1 .
 Usually the
 .B Edit
 command would be typed in a tag; longer commands may be prepared in a
