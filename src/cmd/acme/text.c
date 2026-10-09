@@ -1403,6 +1403,13 @@ Rune *right[] = {
 	nil
 };
 
+static
+int
+isblankc(Rune r)
+{
+	return r==' ' || r=='\t';
+}
+
 void
 textdoubleclick(Text *t, uint *q0, uint *q1)
 {
@@ -1450,6 +1457,13 @@ textdoubleclick(Text *t, uint *q0, uint *q1)
 		(*q1)++;
 	/* try filling out word to left */
 	while(*q0>0 && isalnum(textreadc(t, *q0-1)))
+		(*q0)--;
+	if(*q0 != *q1)
+		return;
+	/* no word; try filling out blanks */
+	while(*q1<t->file->b.nc && isblankc(textreadc(t, *q1)))
+		(*q1)++;
+	while(*q0>0 && isblankc(textreadc(t, *q0-1)))
 		(*q0)--;
 }
 
