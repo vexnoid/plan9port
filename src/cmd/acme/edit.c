@@ -143,6 +143,7 @@ editerror(char *fmt, ...)
 	s = vsmprint(fmt, arg);
 	va_end(arg);
 	freecmd();
+	filelooperabort();
 	allwindows(allelogterm, nil);	/* truncate the edit logs */
 	sendp(editerrc, s);
 	threadexits(nil);

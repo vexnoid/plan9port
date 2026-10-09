@@ -941,6 +941,8 @@ struct Looper
 	int	XY;
 	Window	**w;
 	int	nw;
+	Text	*t;
+	Text	*targ;
 } loopstruct;	/* only one; X and Y can't nest */
 
 void
@@ -978,6 +980,26 @@ alllocker(Window *w, void *v)
 		winclose(w);
 }
 
+/* restore locks if a command fails inside X or Y */
+void
+filelooperabort(void)
+{
+	if(Glooping == 0)
+		return;
+	if(loopstruct.targ != nil && loopstruct.targ->w != nil)
+		winunlock(loopstruct.targ->w);
+	loopstruct.targ = nil;
+	if(loopstruct.t != nil && loopstruct.t->w != nil)
+		winlock(loopstruct.t->w, loopstruct.cp->cmdc);
+	loopstruct.t = nil;
+	allwindows(alllocker, (void*)0);
+	globalincref = 0;
+	free(loopstruct.w);
+	loopstruct.w = nil;
+	loopstruct.nw = 0;
+	Glooping = 0;
+}
+
 void
 filelooper(Text *t, Cmd *cp, int XY)
 {
@@ -990,6 +1012,8 @@ filelooper(Text *t, Cmd *cp, int XY)
 
 	loopstruct.cp = cp;
 	loopstruct.XY = XY;
+	loopstruct.t = nil;
+	loopstruct.targ = nil;
 	if(loopstruct.w)	/* error'ed out last time */
 		free(loopstruct.w);
 	loopstruct.w = nil;
@@ -1008,20 +1032,28 @@ filelooper(Text *t, Cmd *cp, int XY)
 	 * Unlock the window running the X command.
 	 * We'll need to lock and unlock each target window in turn.
 	 */
-	if(t && t->w)
+	if(t && t->w){
 		winunlock(t->w);
+		loopstruct.t = t;
+	}
 
 	for(i=0; i<loopstruct.nw; i++){
 		targ = &loopstruct.w[i]->body;
-		if(targ && targ->w)
+		if(targ && targ->w){
 			winlock(targ->w, cp->cmdc);
+			loopstruct.targ = targ;
+		}
 		cmdexec(targ, cp->u.cmd);
-		if(targ && targ->w)
+		if(targ && targ->w){
+			loopstruct.targ = nil;
 			winunlock(targ->w);
+		}
 	}
 
-	if(t && t->w)
+	if(t && t->w){
 		winlock(t->w, cp->cmdc);
+		loopstruct.t = nil;
+	}
 
 	allwindows(alllocker, (void*)0);
 	globalincref = 0;
