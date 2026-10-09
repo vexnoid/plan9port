@@ -258,7 +258,10 @@ address(uint showerr, Text *t, Range lim, Range ar, void *a, uint q0, uint q1, i
 			size = Line;
 			break;
 		case '?':
-			dir = Back;
+			if(dir == Back)
+				dir = Fore;
+			else
+				dir = Back;
 			/* fall through */
 		case '/':
 			npat = 0;
