@@ -44,7 +44,7 @@ int cooked;
 void
 usage(void)
 {
-	fprint(2, "usage: 9term [-s] [-f font] [-W winsize] [cmd ...]\n");
+	fprint(2, "usage: 9term [-lcsw] [-f font] [-W winsize] [cmd ...]\n");
 	threadexitsall("usage");
 }
 
