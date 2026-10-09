@@ -197,9 +197,11 @@ address(uint showerr, Text *t, Range lim, Range ar, void *a, uint q0, uint q1, i
 			*qp = q-1;
 			return r;
 		case ';':
-			ar = r;
-			/* fall through */
 		case ',':
+			if(*evalp && (prevc=='+' || prevc=='-'))
+				r = number(showerr, t, r, 1, prevc, Line, evalp);	/* do previous one */
+			if(c == ';')
+				ar = r;
 			if(prevc == 0)	/* lhs defaults to 0 */
 				r.q0 = 0;
 			if(q>=q1 && t!=nil && t->file!=nil)	/* rhs defaults to $ */
@@ -213,8 +215,7 @@ address(uint showerr, Text *t, Range lim, Range ar, void *a, uint q0, uint q1, i
 		case '+':
 		case '-':
 			if(*evalp && (prevc=='+' || prevc=='-'))
-				if((nc=(*getc)(a, q))!='#' && nc!='/' && nc!='?')
-					r = number(showerr, t, r, 1, prevc, Line, evalp);	/* do previous one */
+				r = number(showerr, t, r, 1, prevc, Line, evalp);	/* do previous one */
 			dir = c;
 			break;
 		case '.':
