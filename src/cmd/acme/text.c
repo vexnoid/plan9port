@@ -721,10 +721,6 @@ texttype(Text *t, Rune r)
 			q0++;
 		textshow(t, q0, q0, TRUE);
 		return;
-	case Kcmd+'c':	/* %C: copy */
-		typecommit(t);
-		cut(t, t, nil, TRUE, FALSE, nil, 0);
-		return;
 	}
 	if(r >= KF)
 		return;
@@ -732,33 +728,12 @@ texttype(Text *t, Rune r)
 		seq++;
 		filemark(t->file);
 	}
-	/* cut/paste must be done after the seq++/filemark */
-	switch(r){
-	case Kcmd+'x':	/* %X: cut */
-		typecommit(t);
-		if(t->what == Body){
-			seq++;
-			filemark(t->file);
-		}
-		cut(t, t, nil, TRUE, TRUE, nil, 0);
-		textshow(t, t->q0, t->q0, 1);
-		t->iq1 = t->q0;
-		return;
-	case Kcmd+'v':	/* %V: paste */
-		typecommit(t);
-		if(t->what == Body){
-			seq++;
-			filemark(t->file);
-		}
-		paste(t, t, nil, TRUE, FALSE, nil, 0);
-		textshow(t, t->q0, t->q1, 1);
-		t->iq1 = t->q1;
-		return;
-	}
 	if(t->q1 > t->q0){
+		if(r == 0x1B)
+			return;
 		if(t->ncache != 0)
 			error("text.type");
-		cut(t, t, nil, r==0x1B, TRUE, nil, 0);
+		cut(t, FALSE, TRUE);
 		t->eq0 = ~0;
 	}
 	textshow(t, t->q0, t->q0, 1);
@@ -931,6 +906,36 @@ textframescroll(Text *t, int dl)
 	textsetorigin(t, q0, TRUE);
 }
 
+static void
+textchord(Text *t, int hold)
+{
+	int b;
+
+	while(mouse->buttons){
+		mouse->msec = 0;
+		b = mouse->buttons;
+		if((b&hold) && (b&(2|8|16))){
+			if(b & 2)
+				cut(t, TRUE, FALSE);
+			else if(b & 8)
+				cut(t, TRUE, TRUE);
+			else
+				paste(t, TRUE);
+			textscrdraw(t);
+			clearmouse();
+			flushimage(display, 1);
+			while(mouse->buttons)
+				readmouse(mousectl);
+			clicktext = nil;
+			return;
+		}
+		flushimage(display, 1);
+		while(mouse->buttons == b)
+			readmouse(mousectl);
+		clicktext = nil;
+	}
+}
+
 void
 textselect(Text *t)
 {
@@ -991,29 +996,7 @@ textselect(Text *t)
 		clicktext = nil;
 	textsetselect(t, q0, q1);
 	flushimage(display, 1);
-	while(mouse->buttons){
-		mouse->msec = 0;
-		b = mouse->buttons;
-		if((b&1) && (b&(2|8|16))){
-			if(b & 2)
-				cut(t, t, nil, TRUE, FALSE, nil, 0);
-			else if(b & 8)
-				cut(t, t, nil, TRUE, TRUE, nil, 0);
-			else
-				paste(t, t, nil, TRUE, FALSE, nil, 0);
-			textscrdraw(t);
-			clearmouse();
-			flushimage(display, 1);
-			while(mouse->buttons)
-				readmouse(mousectl);
-			clicktext = nil;
-			return;
-		}
-		flushimage(display, 1);
-		while(mouse->buttons == b)
-			readmouse(mousectl);
-		clicktext = nil;
-	}
+	textchord(t, 1);
 }
 
 void
@@ -1271,9 +1254,6 @@ textselect23(Text *t, uint *q0, uint *q1, Image *high, int mask)
 		*q0 = p0+t->org;
 		*q1 = p1+t->org;
 	}
-
-	while(mousectl->m.buttons)
-		readmouse(mousectl);
 	return buts;
 }
 
@@ -1284,6 +1264,8 @@ textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 
 	*tp = nil;
 	buts = textselect23(t, q0, q1, but2col, 4|128|256);
+	while(mousectl->m.buttons)
+		readmouse(mousectl);
 	if(buts & (4|128|256))
 		return 0;
 	if(buts & 1){	/* pick up argument */
@@ -1296,10 +1278,24 @@ textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 int
 textselect3(Text *t, uint *q0, uint *q1)
 {
-	int h;
+	Expand e;
+	int buts;
 
-	h = (textselect23(t, q0, q1, but3col, 1|2|128|256) == 0);
-	return h;
+	buts = textselect23(t, q0, q1, but3col, 0);
+	if((buts&4) && (buts&(2|8|16))){	/* chord on selection or word under pointer */
+		expand(t, *q0, *q1, &e);
+		textsetselect(t, e.q0, e.q1);
+		free(e.name);
+		free(e.bname);
+		seltext = t;
+		if(t->w!=nil && t==&t->w->body)
+			activewin = t->w;
+		textchord(t, 4);
+		return 0;
+	}
+	while(mousectl->m.buttons)
+		readmouse(mousectl);
+	return buts == 0;
 }
 
 static Rune left1[] =  { '{', '[', '(', '<', 0xab, 0x2018, 0x201c, 0 };

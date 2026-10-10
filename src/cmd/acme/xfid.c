@@ -169,7 +169,7 @@ xfidopen(Xfid *x)
 				seq++;
 				filemark(t->file);
 			}
-			cut(t, t, nil, FALSE, TRUE, nil, 0);
+			cut(t, FALSE, TRUE);
 			w->wrselrange = range(t->q1, t->q1);
 			w->nomark = TRUE;
 			break;
@@ -718,7 +718,7 @@ out:
 				err = "nulls in font string";
 				break;
 			}
-			fontx(&w->body, nil, nil, FALSE, XXX, r, nr);
+			fontx(&w->body, nil, nil, FALSE, r, nr);
 			m += (q+1) - pp;
 		}else
 		if(strncmp(p, "dump ", 5) == 0){	/* set dump string */
@@ -770,11 +770,11 @@ out:
 			m = 3;
 		}else
 		if(strncmp(p, "get", 3) == 0){	/* get file */
-			get(&w->body, nil, nil, FALSE, XXX, nil, 0);
+			get(&w->body, nil, nil, FALSE, nil, 0);
 			m = 3;
 		}else
 		if(strncmp(p, "put", 3) == 0){	/* put file */
-			put(&w->body, nil, nil, XXX, XXX, nil, 0);
+			put(&w->body, nil, nil, XXX, nil, 0);
 			m = 3;
 		}else
 		if(strncmp(p, "dot=addr", 8) == 0){	/* set dot */

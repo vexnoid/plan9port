@@ -41,8 +41,8 @@ acme, win, awd \- interactive text windows
 .SH DESCRIPTION
 .I Acme
 manages windows of text that may be edited interactively or by external programs.
-The interactive interface uses the keyboard and a mouse with three buttons
-and side buttons; external programs
+The interactive interface uses the keyboard and a mouse with three buttons,
+a scroll wheel and side buttons; external programs
 use a set of files served by
 .IR acme ;
 these are discussed in
@@ -124,7 +124,8 @@ Turning the scroll wheel over the scroll bar scrolls the window.
 For example, to scroll slowly through a file,
 turn the wheel near the top of the scroll bar.  Turning it
 further down scrolls in larger increments.
-(With button 1 held down after selecting text, the wheel instead cuts or pastes;
+(With button 1 held down after selecting text, or button 3 held down on text,
+the wheel instead cuts or pastes;
 see
 .I Chords of mouse buttons
 below.)
@@ -176,11 +177,6 @@ but not
 .IR rio ,
 the ESC key selects the text typed since the last mouse action,
 a feature particularly useful when executing commands.
-A side effect is that typing ESC with text already selected is identical
-to a
-.B Cut
-command
-.RI ( q.v. ).
 .PP
 Most text, including the names of windows, may be edited uniformly.
 The only exception is that the command names to the
@@ -282,9 +278,6 @@ Some commands, all by convention starting with a capital letter, are
 .I built-ins
 that are executed directly by
 .IR acme :
-.TP
-.B Cut
-Delete most recently selected text and place in snarf buffer.
 .TP
 .B Del
 Delete window.  If window is dirty, instead print a warning; a second
@@ -394,9 +387,6 @@ Make new window.  With arguments, load the named files into windows.
 .B Newcol
 Make new column.
 .TP
-.B Paste
-Replace most recently selected text with contents of snarf buffer.
-.TP
 .B Put
 Write window to the named file.
 With no argument, write to the file named in the tag of the window.
@@ -407,9 +397,6 @@ Write all dirty windows whose names indicate existing regular files.
 .B Send
 Append selected text or snarf buffer to end of body; used mainly with
 .IR win .
-.TP
-.B Snarf
-Place selected text in snarf buffer.
 .TP
 .B Sort
 Arrange the windows in the column from top to bottom in lexicographical
@@ -580,6 +567,15 @@ once the mouse buttons are released, which leaves the restored text selected.
 These actions also apply to text selected by double-clicking because
 the double-click expansion is made when the second
 click starts, not when it ends.
+.PP
+Button 3 chords act on the text button 3 points at.
+Holding down button 3, button 2 copies it, and turning the scroll wheel
+up cuts it and down pastes over it, as above.
+If button 3 is clicked without sweeping, a click within the selection
+applies the chord to all of it;
+a click elsewhere selects the file name or word containing the click,
+expanded as for a button 3 action, and applies the chord to that.
+If button 3 sweeps out text, the chord applies to that text instead.
 .PP
 Commands may be given extra arguments by a mouse chord with buttons 2 and 1.
 While holding down button 2 on text to be executed as a command, clicking button 1

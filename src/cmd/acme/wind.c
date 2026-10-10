@@ -484,8 +484,7 @@ winsettag1(Window *w)
 	int i, j, k, n, bar, dirty, resize;
 	Rune *new, *old, *r;
 	uint q0, q1;
-	static Rune Ldelsnarf[] = { ' ', 'D', 'e', 'l', ' ',
-		'S', 'n', 'a', 'r', 'f', 0 };
+	static Rune Ldel[] = { ' ', 'D', 'e', 'l', 0 };
 	static Rune Lget[] = { ' ', 'G', 'e', 't', 0 };
 	static Rune Lput[] = { ' ', 'P', 'u', 't', 0 };
 	static Rune Llook[] = { ' ', 'L', 'o', 'o', 'k', ' ', 0 };
@@ -510,8 +509,8 @@ winsettag1(Window *w)
 	if(w->body.file->nname != 0)
 		runemove(new, w->body.file->name, w->body.file->nname);
 	i += w->body.file->nname;
-	runemove(new+i, Ldelsnarf, 10);
-	i += 10;
+	runemove(new+i, Ldel, 4);
+	i += 4;
 	if(w->filemenu){
 		dirty = w->body.file->nname && (w->body.ncache || w->body.file->seq!=w->putseq);
 		if(!w->isdir && dirty){

@@ -198,11 +198,11 @@ B_cmd(Text *t, Cmd *cp)
 	nr = runestrlen(r);
 	r = skipbl(r, nr, &nr);
 	if(nr == 0)
-		new(t, t, nil, 0, 0, r, 0);
+		new(t, t, nil, 0, r, 0);
 	else while(nr > 0){
 		s = findbl(r, nr, &nr);
 		*s = '\0';
-		new(t, t, nil, 0, 0, r, runestrlen(r));
+		new(t, t, nil, 0, r, runestrlen(r));
 		if(nr > 0)
 			r = skipbl(s+1, nr-1, &nr);
 	}
