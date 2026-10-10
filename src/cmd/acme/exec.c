@@ -19,49 +19,45 @@ Buffer	snarfbuf;
 /*
  * These functions get called as:
  *
- *	fn(et, t, argt, flag1, flag1, flag2, s, n);
+ *	fn(et, t, argt, flag, s, n);
  *
  * Where the arguments are:
  *
  *	et: the Text* in which the executing event (click) occurred
- *	t: the Text* containing the current selection (Edit, Cut, Snarf, Paste)
+ *	t: the Text* containing the current selection (Edit)
  *	argt: the Text* containing the argument for a 2-1 click.
- *	e->flag1: from Exectab entry
- * 	e->flag2: from Exectab entry
+ *	e->flag: from Exectab entry
  *	s: the command line remainder (e.g., "x" if executing "Dump x")
  *	n: length of s  (s is *not* NUL-terminated)
  */
 
-void	del(Text*, Text*, Text*, int, int, Rune*, int);
-void	delcol(Text*, Text*, Text*, int, int, Rune*, int);
-void	dump(Text*, Text*, Text*, int, int, Rune*, int);
-void	edit(Text*, Text*, Text*, int, int, Rune*, int);
-void	xexit(Text*, Text*, Text*, int, int, Rune*, int);
-void	fontx(Text*, Text*, Text*, int, int, Rune*, int);
-void	get(Text*, Text*, Text*, int, int, Rune*, int);
-void	id(Text*, Text*, Text*, int, int, Rune*, int);
-void	indent(Text*, Text*, Text*, int, int, Rune*, int);
-void	xkill(Text*, Text*, Text*, int, int, Rune*, int);
-void	look(Text*, Text*, Text*, int, int, Rune*, int);
-void	newcol(Text*, Text*, Text*, int, int, Rune*, int);
-void	paste(Text*, Text*, Text*, int, int, Rune*, int);
-void	put(Text*, Text*, Text*, int, int, Rune*, int);
-void	putall(Text*, Text*, Text*, int, int, Rune*, int);
-void	sendx(Text*, Text*, Text*, int, int, Rune*, int);
-void	sort(Text*, Text*, Text*, int, int, Rune*, int);
-void	tab(Text*, Text*, Text*, int, int, Rune*, int);
-void	zeroxx(Text*, Text*, Text*, int, int, Rune*, int);
+void	del(Text*, Text*, Text*, int, Rune*, int);
+void	delcol(Text*, Text*, Text*, int, Rune*, int);
+void	dump(Text*, Text*, Text*, int, Rune*, int);
+void	edit(Text*, Text*, Text*, int, Rune*, int);
+void	xexit(Text*, Text*, Text*, int, Rune*, int);
+void	fontx(Text*, Text*, Text*, int, Rune*, int);
+void	get(Text*, Text*, Text*, int, Rune*, int);
+void	id(Text*, Text*, Text*, int, Rune*, int);
+void	indent(Text*, Text*, Text*, int, Rune*, int);
+void	xkill(Text*, Text*, Text*, int, Rune*, int);
+void	look(Text*, Text*, Text*, int, Rune*, int);
+void	newcol(Text*, Text*, Text*, int, Rune*, int);
+void	put(Text*, Text*, Text*, int, Rune*, int);
+void	putall(Text*, Text*, Text*, int, Rune*, int);
+void	sendx(Text*, Text*, Text*, int, Rune*, int);
+void	sort(Text*, Text*, Text*, int, Rune*, int);
+void	tab(Text*, Text*, Text*, int, Rune*, int);
+void	zeroxx(Text*, Text*, Text*, int, Rune*, int);
 
 typedef struct Exectab Exectab;
 struct Exectab
 {
 	Rune	*name;
-	void	(*fn)(Text*, Text*, Text*, int, int, Rune*, int);
-	int		flag1;
-	int		flag2;
+	void	(*fn)(Text*, Text*, Text*, int, Rune*, int);
+	int		flag;
 };
 
-static Rune LCut[] = { 'C', 'u', 't', 0 };
 static Rune LDel[] = { 'D', 'e', 'l', 0 };
 static Rune LDelcol[] = { 'D', 'e', 'l', 'c', 'o', 'l', 0 };
 static Rune LDelete[] = { 'D', 'e', 'l', 'e', 't', 'e', 0 };
@@ -77,41 +73,36 @@ static Rune LLoad[] = { 'L', 'o', 'a', 'd', 0 };
 static Rune LLook[] = { 'L', 'o', 'o', 'k', 0 };
 static Rune LNew[] = { 'N', 'e', 'w', 0 };
 static Rune LNewcol[] = { 'N', 'e', 'w', 'c', 'o', 'l', 0 };
-static Rune LPaste[] = { 'P', 'a', 's', 't', 'e', 0 };
 static Rune LPut[] = { 'P', 'u', 't', 0 };
 static Rune LPutall[] = { 'P', 'u', 't', 'a', 'l', 'l', 0 };
 static Rune LSend[] = { 'S', 'e', 'n', 'd', 0 };
-static Rune LSnarf[] = { 'S', 'n', 'a', 'r', 'f', 0 };
 static Rune LSort[] = { 'S', 'o', 'r', 't', 0 };
 static Rune LTab[] = { 'T', 'a', 'b', 0 };
 static Rune LZerox[] = { 'Z', 'e', 'r', 'o', 'x', 0 };
 
 Exectab exectab[] = {
-	{ LCut,		cut,		TRUE,	TRUE	},
-	{ LDel,		del,		FALSE,	XXX		},
-	{ LDelcol,		delcol,	XXX,		XXX		},
-	{ LDelete,		del,		TRUE,	XXX		},
-	{ LDump,		dump,	TRUE,	XXX		},
-	{ LEdit,		edit,		XXX,		XXX		},
-	{ LExit,		xexit,	XXX,		XXX		},
-	{ LFont,		fontx,	XXX,		XXX		},
-	{ LGet,		get,		TRUE,	XXX		},
-	{ LID,		id,		XXX,		XXX		},
-	{ LIndent,		indent,	XXX,		XXX		},
-	{ LKill,		xkill,		XXX,		XXX		},
-	{ LLoad,		dump,	FALSE,	XXX		},
-	{ LLook,		look,		XXX,		XXX		},
-	{ LNew,		new,		XXX,		XXX		},
-	{ LNewcol,	newcol,	XXX,		XXX		},
-	{ LPaste,		paste,	TRUE,	XXX		},
-	{ LPut,		put,		XXX,		XXX		},
-	{ LPutall,		putall,	XXX,		XXX		},
-	{ LSend,		sendx,	XXX,		XXX		},
-	{ LSnarf,		cut,		TRUE,	FALSE	},
-	{ LSort,		sort,		XXX,		XXX		},
-	{ LTab,		tab,		XXX,		XXX		},
-	{ LZerox,		zeroxx,	XXX,		XXX		},
-	{ nil,			0,		0,		0		}
+	{ LDel,		del,		FALSE	},
+	{ LDelcol,		delcol,	XXX		},
+	{ LDelete,		del,		TRUE	},
+	{ LDump,		dump,	TRUE	},
+	{ LEdit,		edit,		XXX		},
+	{ LExit,		xexit,	XXX		},
+	{ LFont,		fontx,	XXX		},
+	{ LGet,		get,		TRUE	},
+	{ LID,		id,		XXX		},
+	{ LIndent,		indent,	XXX		},
+	{ LKill,		xkill,		XXX		},
+	{ LLoad,		dump,	FALSE	},
+	{ LLook,		look,		XXX		},
+	{ LNew,		new,		XXX		},
+	{ LNewcol,	newcol,	XXX		},
+	{ LPut,		put,		XXX		},
+	{ LPutall,		putall,	XXX		},
+	{ LSend,		sendx,	XXX		},
+	{ LSort,		sort,		XXX		},
+	{ LTab,		tab,		XXX		},
+	{ LZerox,		zeroxx,	XXX		},
+	{ nil,			0,		0		}
 };
 
 Exectab*
@@ -219,7 +210,7 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 		s = skipbl(r, q1-q0, &n);
 		s = findbl(s, n, &n);
 		s = skipbl(s, n, &n);
-		(*e->fn)(t, seltext, argt, e->flag1, e->flag2, s, n);
+		(*e->fn)(t, seltext, argt, e->flag, s, n);
 		free(r);
 		return;
 	}
@@ -308,7 +299,7 @@ getbytearg(Text *argt, int doaddr, int dofile, char **bp)
 }
 
 void
-newcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+newcol(Text *et, Text *_0, Text *_1, int _2, Rune *_4, int _5)
 {
 	Column *c;
 	Window *w;
@@ -316,7 +307,6 @@ newcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 	USED(_0);
 	USED(_1);
 	USED(_2);
-	USED(_3);
 	USED(_4);
 	USED(_5);
 
@@ -329,7 +319,7 @@ newcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 }
 
 void
-delcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+delcol(Text *et, Text *_0, Text *_1, int _2, Rune *_4, int _5)
 {
 	int i;
 	Column *c;
@@ -338,7 +328,6 @@ delcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 	USED(_0);
 	USED(_1);
 	USED(_2);
-	USED(_3);
 	USED(_4);
 	USED(_5);
 
@@ -356,27 +345,25 @@ delcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 }
 
 void
-del(Text *et, Text *_0, Text *_1, int flag1, int _2, Rune *_3, int _4)
+del(Text *et, Text *_0, Text *_1, int flag, Rune *_3, int _4)
 {
 	USED(_0);
 	USED(_1);
-	USED(_2);
 	USED(_3);
 	USED(_4);
 
 	if(et->col==nil || et->w == nil)
 		return;
-	if(flag1 || et->w->body.file->ntext>1 || winclean(et->w, FALSE))
+	if(flag || et->w->body.file->ntext>1 || winclean(et->w, FALSE))
 		colclose(et->col, et->w, TRUE);
 }
 
 void
-sort(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+sort(Text *et, Text *_0, Text *_1, int _2, Rune *_4, int _5)
 {
 	USED(_0);
 	USED(_1);
 	USED(_2);
-	USED(_3);
 	USED(_4);
 	USED(_5);
 
@@ -494,14 +481,13 @@ getname(Text *t, Text *argt, Rune *arg, int narg, int isput)
 }
 
 void
-zeroxx(Text *et, Text *t, Text *_1, int _2, int _3, Rune *_4, int _5)
+zeroxx(Text *et, Text *t, Text *_1, int _2, Rune *_4, int _5)
 {
 	Window *nw;
 	int c, locked;
 
 	USED(_1);
 	USED(_2);
-	USED(_3);
 	USED(_4);
 	USED(_5);
 
@@ -542,7 +528,7 @@ struct TextAddr
 };
 
 void
-get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
+get(Text *et, Text *t, Text *argt, int flag, Rune *arg, int narg)
 {
 	char *name;
 	Rune *r;
@@ -553,9 +539,8 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 	Dir *d;
 	long q0, q1;
 
-	USED(_0);
 
-	if(flag1)
+	if(flag)
 		if(et==nil || et->w==nil)
 			return;
 	if(!et->w->isdir && (et->w->body.file->b.nc>0 && !winclean(et->w, TRUE)))
@@ -854,7 +839,7 @@ trimspaces(Text *et)
 }
 
 void
-put(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
+put(Text *et, Text *_0, Text *argt, int _1, Rune *arg, int narg)
 {
 	int nname;
 	Rune  *namer;
@@ -864,7 +849,6 @@ put(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 
 	USED(_0);
 	USED(_1);
-	USED(_2);
 
 	if(et==nil || et->w==nil || et->w->isdir)
 		return;
@@ -884,13 +868,12 @@ put(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 }
 
 void
-dump(Text *_0, Text *_1, Text *argt, int isdump, int _2, Rune *arg, int narg)
+dump(Text *_0, Text *_1, Text *argt, int isdump, Rune *arg, int narg)
 {
 	char *name;
 
 	USED(_0);
 	USED(_1);
-	USED(_2);
 
 	while(narg>0 && (arg[narg-1]==' ' || arg[narg-1]=='\t'))
 		narg--;
@@ -906,45 +889,15 @@ dump(Text *_0, Text *_1, Text *argt, int isdump, int _2, Rune *arg, int narg)
 }
 
 void
-cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
+cut(Text *t, int dosnarf, int docut)
 {
-	uint q0, q1, n, locked, c;
+	uint q0, q1, n;
 	Rune *r;
 
-	USED(_0);
-	USED(_2);
-	USED(_3);
-
-	/*
-	 * if not executing a mouse chord (et != t) and snarfing (dosnarf)
-	 * and executed Cut or Snarf in window tag (et->w != nil),
-	 * then use the window body selection or the tag selection
-	 * or do nothing at all.
-	 */
-	if(et!=t && dosnarf && et->w!=nil){
-		if(et->w->body.q1>et->w->body.q0)
-			t = &et->w->body;
-		else if(et->w->tag.q1>et->w->tag.q0)
-			t = &et->w->tag;
-		else
-			t = nil;
-	}
 	if(t == nil)	/* no selection */
 		return;
-
-	locked = FALSE;
-	if(t->w!=nil && et->w!=t->w){
-		locked = TRUE;
-		c = 'M';
-		if(et->w)
-			c = et->w->owner;
-		winlock(t->w, c);
-	}
-	if(t->q0 == t->q1){
-		if(locked)
-			winunlock(t->w);
+	if(t->q0 == t->q1)
 		return;
-	}
 	if(docut && t->what==Body){
 		seq++;
 		filemark(t->file);
@@ -972,26 +925,15 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 			textscrdraw(t);
 			winsettag(t->w);
 		}
-	}else if(dosnarf)	/* Snarf command */
-		argtext = t;
-	if(locked)
-		winunlock(t->w);
+	}
 }
 
 void
-paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
+paste(Text *t, int selectall)
 {
-	int c;
 	uint q, q0, q1, n;
 	Rune *r;
 
-	USED(_0);
-	USED(_1);
-	USED(_2);
-
-	/* if(tobody), use body of executing window  (Paste or Send command) */
-	if(tobody && et!=nil && et->w!=nil)
-		t = &et->w->body;
 	if(t == nil)
 		return;
 
@@ -1002,13 +944,7 @@ paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
 		seq++;
 		filemark(t->file);
 	}
-	if(t->w!=nil && et->w!=t->w){
-		c = 'M';
-		if(et->w)
-			c = et->w->owner;
-		winlock(t->w, c);
-	}
-	cut(t, t, nil, FALSE, TRUE, nil, 0);
+	cut(t, FALSE, TRUE);
 	q = 0;
 	q0 = t->q0;
 	q1 = t->q0+snarfbuf.nc;
@@ -1033,18 +969,15 @@ paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
 		textscrdraw(t);
 		winsettag(t->w);
 	}
-	if(t->w!=nil && et->w!=t->w)
-		winunlock(t->w);
 }
 
 void
-look(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
+look(Text *et, Text *t, Text *argt, int _0, Rune *arg, int narg)
 {
 	Rune *r;
 	int n;
 
 	USED(_0);
-	USED(_1);
 
 	if(et && et->w){
 		t = &et->w->body;
@@ -1066,11 +999,10 @@ look(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
 static Rune Lnl[] = { '\n', 0 };
 
 void
-sendx(Text *et, Text *t, Text *_0, int _1, int _2, Rune *_3, int _4)
+sendx(Text *et, Text *t, Text *_0, int _1, Rune *_3, int _4)
 {
 	USED(_0);
 	USED(_1);
-	USED(_2);
 	USED(_3);
 	USED(_4);
 
@@ -1078,9 +1010,9 @@ sendx(Text *et, Text *t, Text *_0, int _1, int _2, Rune *_3, int _4)
 		return;
 	t = &et->w->body;
 	if(t->q0 != t->q1)
-		cut(t, t, nil, TRUE, FALSE, nil, 0);
+		cut(t, TRUE, FALSE);
 	textsetselect(t, t->file->b.nc, t->file->b.nc);
-	paste(t, t, nil, TRUE, TRUE, nil, 0);
+	paste(t, TRUE);
 	if(textreadc(t, t->file->b.nc-1) != '\n'){
 		textinsert(t, t->file->b.nc, Lnl, 1, TRUE);
 		textsetselect(t, t->file->b.nc, t->file->b.nc);
@@ -1090,14 +1022,13 @@ sendx(Text *et, Text *t, Text *_0, int _1, int _2, Rune *_3, int _4)
 }
 
 void
-edit(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
+edit(Text *et, Text *_0, Text *argt, int _1, Rune *arg, int narg)
 {
 	Rune *r;
 	int len;
 
 	USED(_0);
 	USED(_1);
-	USED(_2);
 
 	if(et == nil)
 		return;
@@ -1111,13 +1042,12 @@ edit(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 }
 
 void
-xexit(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+xexit(Text *et, Text *_0, Text *_1, int _2, Rune *_4, int _5)
 {
 	USED(et);
 	USED(_0);
 	USED(_1);
 	USED(_2);
-	USED(_3);
 	USED(_4);
 	USED(_5);
 
@@ -1128,7 +1058,7 @@ xexit(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 }
 
 void
-putall(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+putall(Text *et, Text *_0, Text *_1, int _2, Rune *_4, int _5)
 {
 	int i, j, e;
 	Window *w;
@@ -1139,7 +1069,6 @@ putall(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 	USED(_0);
 	USED(_1);
 	USED(_2);
-	USED(_3);
 	USED(_4);
 	USED(_5);
 
@@ -1158,7 +1087,7 @@ putall(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 					warning(nil, "no auto-Put of %s: %r\n", a);
 				else{
 					wincommit(w, &w->body);
-					put(&w->body, nil, nil, XXX, XXX, nil, 0);
+					put(&w->body, nil, nil, XXX, nil, 0);
 				}
 			free(a);
 		}
@@ -1167,12 +1096,11 @@ putall(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 
 
 void
-id(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+id(Text *et, Text *_0, Text *_1, int _2, Rune *_4, int _5)
 {
 	USED(_0);
 	USED(_1);
 	USED(_2);
-	USED(_3);
 	USED(_4);
 	USED(_5);
 
@@ -1181,7 +1109,7 @@ id(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 }
 
 void
-xkill(Text *_0, Text *_1, Text *argt, int _2, int _3, Rune *arg, int narg)
+xkill(Text *_0, Text *_1, Text *argt, int _2, Rune *arg, int narg)
 {
 	Rune *a, *cmd, *r;
 	int na;
@@ -1189,11 +1117,10 @@ xkill(Text *_0, Text *_1, Text *argt, int _2, int _3, Rune *arg, int narg)
 	USED(_0);
 	USED(_1);
 	USED(_2);
-	USED(_3);
 
 	getarg(argt, FALSE, FALSE, &r, &na);
 	if(r)
-		xkill(nil, nil, nil, 0, 0, r, na);
+		xkill(nil, nil, nil, 0, r, na);
 	/* loop condition: *arg is not a blank */
 	for(;;){
 		a = findbl(arg, narg, &na);
@@ -1210,7 +1137,7 @@ static Rune Lfix[] = { 'f', 'i', 'x', 0 };
 static Rune Lvar[] = { 'v', 'a', 'r', 0 };
 
 void
-fontx(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
+fontx(Text *et, Text *t, Text *argt, int _0, Rune *arg, int narg)
 {
 	Rune *a, *r, *flag, *file;
 	int na, nf;
@@ -1220,7 +1147,6 @@ fontx(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
 	int i, fix;
 
 	USED(_0);
-	USED(_1);
 
 	if(et==nil || et->w==nil)
 		return;
@@ -1329,7 +1255,7 @@ fixindent(Window *w, void *arg)
 }
 
 void
-indent(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
+indent(Text *et, Text *_0, Text *argt, int _1, Rune *arg, int narg)
 {
 	Rune *a, *r;
 	Window *w;
@@ -1337,7 +1263,6 @@ indent(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 
 	USED(_0);
 	USED(_1);
-	USED(_2);
 
 	w = nil;
 	if(et!=nil && et->w!=nil)
@@ -1358,7 +1283,7 @@ indent(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 }
 
 void
-tab(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
+tab(Text *et, Text *_0, Text *argt, int _1, Rune *arg, int narg)
 {
 	Rune *a, *r;
 	Window *w;
@@ -1367,7 +1292,6 @@ tab(Text *et, Text *_0, Text *argt, int _1, int _2, Rune *arg, int narg)
 
 	USED(_0);
 	USED(_1);
-	USED(_2);
 
 	if(et==nil || et->w==nil)
 		return;

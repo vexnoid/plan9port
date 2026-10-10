@@ -804,9 +804,9 @@ rowload(Row *row, char *file, int initing)
 				w->body.file->text[n]->w->dirty = TRUE;
 			winsettag(w);
 		}else if(dumpid==0)
-			get(&w->body, nil, nil, FALSE, XXX, nil, 0);
+			get(&w->body, nil, nil, FALSE, nil, 0);
 		if(fontr){
-			fontx(&w->body, nil, nil, 0, 0, fontr, nfontr);
+			fontx(&w->body, nil, nil, 0, fontr, nfontr);
 			free(fontr);
 		}
 		free(r);

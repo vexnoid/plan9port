@@ -18,7 +18,7 @@ void	scrlresize(void);
 Font*	getfont(int, int, char*);
 char*	getarg(Text*, int, int, Rune**, int*);
 char*	getbytearg(Text*, int, int, char**);
-void	new(Text*, Text*, Text*, int, int, Rune*, int);
+void	new(Text*, Text*, Text*, int, Rune*, int);
 void	undo(Window*, int);
 void	scrsleep(uint);
 void	savemouse(Window*);
@@ -53,12 +53,12 @@ Timer*	timerstart(int);
 void	timerstop(Timer*);
 void	timercancel(Timer*);
 void	timerinit(void);
-void	cut(Text*, Text*, Text*, int, int, Rune*, int);
-void	paste(Text*, Text*, Text*, int, int, Rune*, int);
-void	get(Text*, Text*, Text*, int, int, Rune*, int);
-void	put(Text*, Text*, Text*, int, int, Rune*, int);
+void	cut(Text*, int, int);
+void	paste(Text*, int);
+void	get(Text*, Text*, Text*, int, Rune*, int);
+void	put(Text*, Text*, Text*, int, Rune*, int);
 void	putfile(File*, int, int, Rune*, int);
-void	fontx(Text*, Text*, Text*, int, int, Rune*, int);
+void	fontx(Text*, Text*, Text*, int, Rune*, int);
 #undef isalnum
 #define isalnum acmeisalnum
 int	isalnum(Rune);

@@ -711,7 +711,7 @@ openfile(Text *t, Expand *e)
 }
 
 void
-new(Text *et, Text *t, Text *argt, int flag1, int flag2, Rune *arg, int narg)
+new(Text *et, Text *t, Text *argt, int flag, Rune *arg, int narg)
 {
 	int ndone;
 	Rune *a, *f;
@@ -722,7 +722,7 @@ new(Text *et, Text *t, Text *argt, int flag1, int flag2, Rune *arg, int narg)
 
 	getarg(argt, FALSE, TRUE, &a, &na);
 	if(a){
-		new(et, t, nil, flag1, flag2, a, na);
+		new(et, t, nil, flag, a, na);
 		if(narg == 0)
 			return;
 	}
