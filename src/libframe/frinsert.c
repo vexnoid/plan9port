@@ -129,6 +129,7 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 	 * insertion is complete. pt0 is current location of insertion position
 	 * (p0); pt1 is terminal point (without line wrap) of insertion.
 	 */
+	_franchorhide(f);
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 0);
 
@@ -278,6 +279,8 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 	n0 += frame.nbox;
 	_frclean(f, ppt0, nn0, n0<f->nbox-1? n0+1 : n0);
 	f->nchars += frame.nchars;
+	if(f->aset && f->apos >= p0)
+		f->apos += frame.nchars;
 	if(f->p0 >= p0)
 		f->p0 += frame.nchars;
 	if(f->p0 > f->nchars)
@@ -288,4 +291,5 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 		f->p1 = f->nchars;
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
+	_franchorshow(f);
 }

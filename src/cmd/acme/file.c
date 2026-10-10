@@ -37,6 +37,25 @@ enum
 	Undosize = sizeof(Undo)/sizeof(Rune)
 };
 
+/* keep the selection anchor pointing at the same text across edits */
+static void
+anchorins(File *f, uint p0, uint n)
+{
+	if(f->anchorset && f->anchorq >= p0)
+		f->anchorq += n;
+}
+
+static void
+anchordel(File *f, uint p0, uint p1)
+{
+	if(!f->anchorset)
+		return;
+	if(f->anchorq >= p1)
+		f->anchorq -= p1-p0;
+	else if(f->anchorq > p0)
+		f->anchorq = p0;
+}
+
 File*
 fileaddtext(File *f, Text *t)
 {
@@ -79,6 +98,7 @@ fileinsert(File *f, uint p0, Rune *s, uint ns)
 	if(f->seq > 0)
 		fileuninsert(f, &f->delta, p0, ns);
 	bufinsert(&f->b, p0, s, ns);
+	anchorins(f, p0, ns);
 	if(ns)
 		f->mod = TRUE;
 }
@@ -105,6 +125,7 @@ filedelete(File *f, uint p0, uint p1)
 	if(f->seq > 0)
 		fileundelete(f, &f->delta, p0, p1);
 	bufdelete(&f->b, p0, p1);
+	anchordel(f, p0, p1);
 	if(p1 > p0)
 		f->mod = TRUE;
 }
@@ -148,9 +169,13 @@ filesetname(File *f, Rune *name, int n)
 uint
 fileload(File *f, uint p0, int fd, int *nulls, DigestState *h)
 {
+	uint n;
+
 	if(f->seq > 0)
 		error("undo in file.load unimplemented");
-	return bufload(&f->b, p0, fd, nulls, h);
+	n = bufload(&f->b, p0, fd, nulls, h);
+	anchorins(f, p0, n);
+	return n;
 }
 
 /* return sequence number of pending redo */
@@ -214,6 +239,7 @@ fileundo(File *f, int isundo, uint *q0p, uint *q1p)
 			fileundelete(f, epsilon, u.p0, u.p0+u.n);
 			f->mod = u.mod;
 			bufdelete(&f->b, u.p0, u.p0+u.n);
+			anchordel(f, u.p0, u.p0+u.n);
 			for(j=0; j<f->ntext; j++)
 				textdelete(f->text[j], u.p0, u.p0+u.n, FALSE);
 			*q0p = u.p0;
@@ -231,6 +257,7 @@ fileundo(File *f, int isundo, uint *q0p, uint *q1p)
 					n = RBUFSIZE;
 				bufread(delta, up+i, buf, n);
 				bufinsert(&f->b, u.p0+i, buf, n);
+				anchorins(f, u.p0+i, n);
 				for(j=0; j<f->ntext; j++)
 					textinsert(f->text[j], u.p0+i, buf, n, FALSE);
 			}

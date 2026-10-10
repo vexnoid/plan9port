@@ -883,56 +883,62 @@ textundo(Text *t, int isundo)
 
 static	Text	*clicktext;
 static	uint	clickmsec;
-static	Text	*selecttext;
-static	uint	selectq;
 
-/*
- * called from frame library
- */
-void
-framescroll(Frame *f, int dl)
+static void
+textanchorsync(Text *t)
 {
-	if(f != &selecttext->fr)
-		error("frameselect not right frame");
-	textframescroll(selecttext, dl);
+	File *f;
+	uint q;
+	int in;
+
+	f = t->file;
+	q = 0;
+	in = f!=nil && f->anchorset;
+	if(in){
+		q = f->anchorq;
+		in = q>=t->org && q<=t->org+t->fr.nchars
+			&& (q<t->org+t->fr.nchars || q==f->b.nc);
+	}
+	frsetanchor(&t->fr, in, in? q-t->org : 0);
 }
 
-void
-textframescroll(Text *t, int dl)
+static void
+textanchorall(File *f)
 {
-	uint q0;
+	int i;
 
-	if(dl == 0){
-		scrsleep(100);
-		return;
+	for(i=0; i<f->ntext; i++)
+		textanchorsync(f->text[i]);
+}
+
+/* chord: 256 sets the anchor at the pointer, 128 selects from it */
+static void
+textanchor(Text *t, int set)
+{
+	uint q, q0;
+
+	q = t->org+frcharofpt(&t->fr, mouse->xy);
+	if(set){
+		t->file->anchorq = q;
+		t->file->anchorset = TRUE;
+		textanchorall(t->file);
+		textsetselect(t, q, q);
+	}else if(t->file->anchorset){
+		q0 = t->file->anchorq;
+		t->file->anchorset = FALSE;
+		textanchorall(t->file);
+		textsetselect(t, min(q0, q), max(q0, q));
 	}
-	if(dl < 0){
-		q0 = textbacknl(t, t->org, -dl);
-		if(selectq > t->org+t->fr.p0)
-			textsetselect(t, t->org+t->fr.p0, selectq);
-		else
-			textsetselect(t, selectq, t->org+t->fr.p0);
-	}else{
-		if(t->org+t->fr.nchars == t->file->b.nc)
-			return;
-		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+dl*t->fr.font->height));
-		if(selectq > t->org+t->fr.p1)
-			textsetselect(t, t->org+t->fr.p1, selectq);
-		else
-			textsetselect(t, selectq, t->org+t->fr.p1);
-	}
-	textsetorigin(t, q0, TRUE);
 }
 
 void
 textselect(Text *t)
 {
-	uint q0, q1;
+	uint q0, q1, q;
 	int b, x, y;
 	int state;
 	enum { None, Cut, Paste };
 
-	selecttext = t;
 	/*
 	 * To have double-clicking and chording, we double-click
 	 * immediately if it might make sense.
@@ -940,9 +946,9 @@ textselect(Text *t)
 	b = mouse->buttons;
 	q0 = t->q0;
 	q1 = t->q1;
-	selectq = t->org+frcharofpt(&t->fr, mouse->xy);
+	q = t->org+frcharofpt(&t->fr, mouse->xy);
 	if(clicktext==t && mouse->msec-clickmsec<200)
-	if(q0==q1 && selectq==q0){
+	if(q0==q1 && q==q0){
 		textdoubleclick(t, &q0, &q1);
 		textsetselect(t, q0, q1);
 		flushimage(display, 1);
@@ -956,23 +962,11 @@ textselect(Text *t)
 		mouse->xy.y = y;
 		q0 = t->q0;	/* may have changed */
 		q1 = t->q1;
-		selectq = q0;
 	}
 	if(mouse->buttons == b){
-		t->fr.scroll = framescroll;
 		frselect(&t->fr, mousectl);
-		/* horrible botch: while asleep, may have lost selection altogether */
-		if(selectq > t->file->b.nc)
-			selectq = t->org + t->fr.p0;
-		t->fr.scroll = nil;
-		if(selectq < t->org)
-			q0 = selectq;
-		else
-			q0 = t->org + t->fr.p0;
-		if(selectq > t->org+t->fr.nchars)
-			q1 = selectq;
-		else
-			q1 = t->org+t->fr.p1;
+		q0 = t->org + t->fr.p0;
+		q1 = t->org + t->fr.p1;
 	}
 	if(q0 == q1){
 		if(q0==t->q0 && clicktext==t && mouse->msec-clickmsec<200){
@@ -990,7 +984,10 @@ textselect(Text *t)
 	while(mouse->buttons){
 		mouse->msec = 0;
 		b = mouse->buttons;
-		if((b&1) && (b&6)){
+		if((b&1) && (b&(128|256))){
+			textanchor(t, b&256);
+			textscrdraw(t);
+		}else if((b&1) && (b&6)){
 			if(b & 2){
 				if(state==Paste){
 					if(t->w != nil)
@@ -1143,7 +1140,7 @@ textsetselect(Text *t, uint q0, uint q1)
 	if(p0==t->fr.p0 && p1==t->fr.p1){
 		if(p0 == p1 && ticked != t->fr.ticked)
 			frtick(&t->fr, frptofchar(&t->fr, p0), ticked);
-		return;
+		goto Return;
 	}
 	if(p0 > p1)
 		sysfatal("acme: textsetselect p0=%d p1=%d q0=%ud q1=%ud t->org=%d nchars=%d", p0, p1, q0, q1, (int)t->org, (int)t->fr.nchars);
@@ -1174,6 +1171,7 @@ textsetselect(Text *t, uint q0, uint q1)
     Return:
 	t->fr.p0 = p0;
 	t->fr.p1 = p1;
+	textanchorsync(t);
 }
 
 /*
@@ -1469,6 +1467,7 @@ textsetorigin(Text *t, uint org, int exact)
 	}
 	a = org-t->org;
 	fixup = 0;
+	frsetanchor(&t->fr, 0, 0);	/* textsetselect restores it */
 	if(a>=0 && a<t->fr.nchars){
 		frdelete(&t->fr, 0, a);
 		fixup = 1;	/* frdelete can leave end of last line in wrong selection mode; it doesn't know what follows */
@@ -1494,6 +1493,7 @@ textreset(Text *t)
 {
 	t->file->seq = 0;
 	t->eq0 = ~0;
+	t->file->anchorset = FALSE;
 	/* do t->delete(0, t->nc, TRUE) without building backup stuff */
 	textsetselect(t, t->org, t->org);
 	frdelete(&t->fr, 0, t->fr.nchars);

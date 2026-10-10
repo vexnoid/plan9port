@@ -66,6 +66,7 @@ frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 	if(p0 > p1)
 		sysfatal("libframe: frdrawsel0 p0=%lud > p1=%lud", p0, p1);
 
+	_franchorhide(f);
 	p = 0;
 	b = f->box;
 	trim = 0;
@@ -115,6 +116,7 @@ frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 		if(pt.y > qt.y)
 			draw(f->b, Rect(qt.x, qt.y, f->r.max.x, pt.y), back, nil, qt);
 	}
+	_franchorshow(f);
 	return pt;
 }
 
@@ -140,13 +142,64 @@ frredraw(Frame *f)
 	pt = frdrawsel0(f, pt, f->p1, f->nchars, f->cols[BACK], f->cols[TEXT]);
 }
 
+/* the anchor tick stays on top: lift it while painting under it */
+static void
+_fratick(Frame *f, int ticked)
+{
+	Point pt;
+	Rectangle r;
+
+	if(f->aticked==ticked || f->atick==0 || f->noredraw)
+		return;
+	pt = frptofchar(f, f->apos);
+	if(!ptinrect(pt, f->r))
+		return;
+	pt.x -= f->tickscale;
+	r = Rect(pt.x, pt.y, pt.x+FRTICKW*f->tickscale, pt.y+f->font->height);
+	if(r.max.x > f->r.max.x)
+		r.max.x = f->r.max.x;
+	if(ticked){
+		draw(f->atickback, f->atickback->r, f->b, nil, pt);
+		draw(f->b, r, f->cols[BORD], f->atick, ZP);
+	}else
+		draw(f->b, r, f->atickback, nil, ZP);
+	f->aticked = ticked;
+}
+
+void
+_franchorhide(Frame *f)
+{
+	_fratick(f, 0);
+}
+
+void
+_franchorshow(Frame *f)
+{
+	if(f->aset && f->apos <= f->nchars)
+		_fratick(f, 1);
+}
+
+void
+frsetanchor(Frame *f, int set, ulong p)
+{
+	if(f->aset==set && (!set || f->apos==p))
+		return;
+	_franchorhide(f);
+	f->aset = set;
+	f->apos = p;
+	_franchorshow(f);
+}
+
 static void
 _frtick(Frame *f, Point pt, int ticked)
 {
 	Rectangle r;
+	int anchored;
 
 	if(f->ticked==ticked || f->tick==0 || !ptinrect(pt, f->r))
 		return;
+	anchored = f->aticked;
+	_franchorhide(f);
 	pt.x -= f->tickscale;	/* looks best just left of where requested */
 	r = Rect(pt.x, pt.y, pt.x+FRTICKW*f->tickscale, pt.y+f->font->height);
 	/* can go into left border but not right */
@@ -158,15 +211,23 @@ _frtick(Frame *f, Point pt, int ticked)
 	}else
 		draw(f->b, r, f->tickback, nil, ZP);
 	f->ticked = ticked;
+	if(anchored)
+		_franchorshow(f);
 }
 
 void
 frtick(Frame *f, Point pt, int ticked)
 {
+	int anchored;
+
 	if(f->tickscale != scalesize(f->display, 1)) {
+		anchored = f->aticked;
+		_franchorhide(f);
 		if(f->ticked)
 			_frtick(f, pt, 0);
 		frinittick(f);
+		if(anchored)
+			_franchorshow(f);
 	}
 	_frtick(f, pt, ticked);
 }

@@ -147,6 +147,8 @@ struct File
 	Text		**text;	/* list of associated texts */
 	int		ntext;
 	int		dumpid;	/* used in dumping zeroxed windows */
+	uint	anchorq;	/* MB1-MB4 selection anchor */
+	int		anchorset;	/* anchorq is valid */
 };
 File*		fileaddtext(File*, Text*);
 void		fileclose(File*);
@@ -212,7 +214,6 @@ void		textconstrain(Text*, uint, uint, uint*, uint*);
 void		textdelete(Text*, uint, uint, int);
 void		textdoubleclick(Text*, uint*, uint*);
 void		textfill(Text*);
-void		textframescroll(Text*, int);
 void		textinit(Text*, File*, Rectangle, Reffont*, Image**);
 void		textinsert(Text*, uint, Rune*, uint, int);
 int		textload(Text*, uint, char*, int);

@@ -51,6 +51,11 @@ struct Frame
 	int			ticked;	/* flag: is tick onscreen? */
 	int			noredraw;	/* don't draw on the screen */
 	int			tickscale;	/* tick scaling factor */
+	Image		*atick;	/* anchor tick: mask in the shape of the tick */
+	Image		*atickback;	/* saved image under anchor tick */
+	int			aticked;	/* flag: is anchor tick onscreen? */
+	int			aset;	/* flag: an anchor is set */
+	ulong		apos;	/* anchor position, in chars from start of frame */
 };
 
 ulong	frcharofpt(Frame*, Point);
@@ -90,6 +95,9 @@ Point	_frptofcharnb(Frame*, ulong, int);
 int	_frstrlen(Frame*, int);
 void	frtick(Frame*, Point, int);
 void	frinittick(Frame*);
+void	frsetanchor(Frame*, int, ulong);
+void	_franchorhide(Frame*);
+void	_franchorshow(Frame*);
 
 #define	NRUNE(b)	((b)->nrune<0? 1 : (b)->nrune)
 #define	NBYTE(b)	strlen((char*)(b)->ptr)

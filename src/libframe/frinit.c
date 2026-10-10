@@ -18,11 +18,42 @@ frinit(Frame *f, Rectangle r, Font *ft, Image *b, Image *cols[NCOL])
 	f->p1 = 0;
 	f->box = 0;
 	f->lastlinefull = 0;
+	f->aset = 0;
+	f->aticked = 0;
 	if(cols != 0)
 		memmove(f->cols, cols, sizeof f->cols);
 	frsetrects(f, r, b);
 	if(f->tick==nil && f->cols[BACK]!=0)
 		frinittick(f);
+}
+
+/* anchor tick: a mask in the shape of the tick */
+static void
+frinitatick(Frame *f)
+{
+	Image *b;
+	Font *ft;
+
+	b = f->display->screenimage;
+	ft = f->font;
+	if(f->atick)
+		freeimage(f->atick);
+	if(f->atickback)
+		freeimage(f->atickback);
+	f->atickback = nil;
+	f->aticked = 0;
+	f->atick = allocimage(f->display, Rect(0, 0, f->tickscale*FRTICKW, ft->height), GREY1, 0, DBlack);
+	if(f->atick == nil)
+		return;
+	f->atickback = allocimage(f->display, f->atick->r, b->chan, 0, DWhite);
+	if(f->atickback == nil){
+		freeimage(f->atick);
+		f->atick = nil;
+		return;
+	}
+	draw(f->atick, Rect(f->tickscale*(FRTICKW/2), 0, f->tickscale*(FRTICKW/2+1), ft->height), f->display->opaque, nil, ZP);
+	draw(f->atick, Rect(0, 0, f->tickscale*FRTICKW, f->tickscale*FRTICKW), f->display->opaque, nil, ZP);
+	draw(f->atick, Rect(0, ft->height-f->tickscale*FRTICKW, f->tickscale*FRTICKW, ft->height), f->display->opaque, nil, ZP);
 }
 
 void
@@ -36,6 +67,7 @@ frinittick(Frame *f)
 	f->tickscale = scalesize(f->display, 1);
 	b = f->display->screenimage;
 	ft = f->font;
+	frinitatick(f);
 	if(f->tick)
 		freeimage(f->tick);
 	f->tick = allocimage(f->display, Rect(0, 0, f->tickscale*FRTICKW, ft->height), b->chan, 0, DWhite);
@@ -80,7 +112,12 @@ frclear(Frame *f, int freeall)
 		freeimage(f->tickback);
 		f->tick = 0;
 		f->tickback = 0;
+		freeimage(f->atick);
+		freeimage(f->atickback);
+		f->atick = 0;
+		f->atickback = 0;
 	}
 	f->box = 0;
 	f->ticked = 0;
+	f->aticked = 0;
 }

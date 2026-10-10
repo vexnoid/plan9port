@@ -232,11 +232,14 @@ where
 is identified by the context of the command.
 These error windows are created when needed.
 .SS "Mouse button 1
-Mouse button 1 selects text just as in
+Mouse button 1 selects text as in
 .MR sam 1
 or
 .IR rio (1) ,
 including the usual double-clicking conventions.
+To select text beyond the window, see
+.I Chords of mouse buttons
+below.
 .SS "Mouse button 2
 By an
 action similar to selecting text with button 1,
@@ -603,6 +606,16 @@ with button 2, clicking button 3 while 2 is held down.
 The snarf buffer has no address, so
 .B $acmeaddr
 is not set.
+.PP
+Chorded with button 1, the side buttons select text that does not fit in the window.
+With button 1 down, pressing one side button sets an anchor at the pointer,
+which
+.I acme
+marks with a second tick.
+Scroll the window as usual, then, with button 1 down at the other end of the text,
+press the other side button to select from the anchor to the pointer
+and remove the anchor.
+The anchor follows the text as the file is edited and shows in every window on the file.
 .SS "Support programs
 .I Win
 creates a new

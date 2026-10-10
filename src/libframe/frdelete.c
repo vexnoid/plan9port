@@ -25,6 +25,7 @@ frdelete(Frame *f, ulong p0, ulong p1)
 	n1 = _frfindbox(f, n0, p0, p1);
 	pt0 = _frptofcharnb(f, p0, n0);
 	pt1 = frptofchar(f, p1);
+	_franchorhide(f);
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 0);
 	nn0 = n0;
@@ -112,6 +113,12 @@ frdelete(Frame *f, ulong p0, ulong p1)
 		ppt0.x -= f->box[nn0].wid;
 	}
 	_frclean(f, ppt0, nn0, n0<f->nbox-1? n0+1 : n0);
+	if(f->aset){
+		if(f->apos >= p1)
+			f->apos -= p1-p0;
+		else if(f->apos > p0)
+			f->apos = p0;
+	}
 	if(f->p1 > p1)
 		f->p1 -= p1-p0;
 	else if(f->p1 > p0)
@@ -123,6 +130,7 @@ frdelete(Frame *f, ulong p0, ulong p1)
 	f->nchars -= p1-p0;
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
+	_franchorshow(f);
 	pt0 = frptofchar(f, f->nchars);
 	n = f->nlines;
 	f->nlines = (pt0.y-f->r.min.y)/f->font->height+(pt0.x>f->r.min.x);
