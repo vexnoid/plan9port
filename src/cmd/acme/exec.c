@@ -35,7 +35,7 @@ static QLock runprocenvlk;
  * Where the arguments are:
  *
  *	et: the Text* in which the executing event (click) occurred
- *	t: the Text* containing the current selection (Edit, Cut, Copy, Paste)
+ *	t: the Text* containing the current selection (Edit, Copy)
  *	argt: the Text* containing the argument for a 2-1 or 2-3 click.
  *	e->flag1: from Exectab entry
  * 	e->flag2: from Exectab entry
@@ -56,9 +56,9 @@ void	xkill(Text*, Text*, Text*, int, int, Rune*, int);
 void	look(Text*, Text*, Text*, int, int, Rune*, int);
 void	newcol(Text*, Text*, Text*, int, int, Rune*, int);
 void	pack(Text*, Text*, Text*, int, int, Rune*, int);
-void	paste(Text*, Text*, Text*, int, int, Rune*, int);
 void	put(Text*, Text*, Text*, int, int, Rune*, int);
 void	putall(Text*, Text*, Text*, int, int, Rune*, int);
+void	snarf(Text*, Text*, Text*, int, int, Rune*, int);
 void	sort(Text*, Text*, Text*, int, int, Rune*, int);
 void	tab(Text*, Text*, Text*, int, int, Rune*, int);
 void	zeroxx(Text*, Text*, Text*, int, int, Rune*, int);
@@ -73,7 +73,6 @@ struct Exectab
 };
 
 static Rune LCopy[] = { 'C', 'o', 'p', 'y', 0 };
-static Rune LCut[] = { 'C', 'u', 't', 0 };
 static Rune LDel[] = { 'D', 'e', 'l', 0 };
 static Rune LDelcol[] = { 'D', 'e', 'l', 'c', 'o', 'l', 0 };
 static Rune LDelete[] = { 'D', 'e', 'l', 'e', 't', 'e', 0 };
@@ -90,7 +89,6 @@ static Rune LLook[] = { 'L', 'o', 'o', 'k', 0 };
 static Rune LNew[] = { 'N', 'e', 'w', 0 };
 static Rune LNewcol[] = { 'N', 'e', 'w', 'c', 'o', 'l', 0 };
 static Rune LPack[] = { 'P', 'a', 'c', 'k', 0 };
-static Rune LPaste[] = { 'P', 'a', 's', 't', 'e', 0 };
 static Rune LPut[] = { 'P', 'u', 't', 0 };
 static Rune LPutall[] = { 'P', 'u', 't', 'a', 'l', 'l', 0 };
 static Rune LSort[] = { 'S', 'o', 'r', 't', 0 };
@@ -98,8 +96,7 @@ static Rune LTab[] = { 'T', 'a', 'b', 0 };
 static Rune LZerox[] = { 'Z', 'e', 'r', 'o', 'x', 0 };
 
 Exectab exectab[] = {
-	{ LCopy,		cut,		TRUE,	FALSE	},
-	{ LCut,		cut,		TRUE,	TRUE	},
+	{ LCopy,		snarf,	XXX,		XXX		},
 	{ LDel,		del,		FALSE,	XXX		},
 	{ LDelcol,		delcol,	XXX,		XXX		},
 	{ LDelete,		del,		TRUE,	XXX		},
@@ -116,7 +113,6 @@ Exectab exectab[] = {
 	{ LNew,		new,		XXX,		XXX		},
 	{ LNewcol,	newcol,	XXX,		XXX		},
 	{ LPack,		pack,	XXX,		XXX		},
-	{ LPaste,		paste,	TRUE,	XXX		},
 	{ LPut,		put,		XXX,		XXX		},
 	{ LPutall,		putall,	XXX,		XXX		},
 	{ LSort,		sort,		XXX,		XXX		},
@@ -973,22 +969,22 @@ dump(Text *_0, Text *_1, Text *argt, int isdump, int _2, Rune *arg, int narg)
 }
 
 void
-cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
+snarf(Text *et, Text *t, Text *_0, int _1, int _2, Rune *_3, int _4)
 {
-	uint q0, q1, n, locked, c;
-	Rune *r;
+	uint locked, c;
 
 	USED(_0);
+	USED(_1);
 	USED(_2);
 	USED(_3);
+	USED(_4);
 
 	/*
-	 * if not executing a mouse chord (et != t) and snarfing (dosnarf)
-	 * and executed Cut or Copy in window tag (et->w != nil),
-	 * then use the window body selection or the tag selection
-	 * or do nothing at all.
+	 * if executing Copy in a window (et->w != nil), away from
+	 * the selected text itself (et != t), then use the window
+	 * body selection or the tag selection or do nothing at all.
 	 */
-	if(et!=t && dosnarf && et->w!=nil){
+	if(et!=t && et->w!=nil){
 		if(et->w->body.q1>et->w->body.q0)
 			t = &et->w->body;
 		else if(et->w->tag.q1>et->w->tag.q0)
@@ -1007,11 +1003,21 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 			c = et->w->owner;
 		winlock(t->w, c);
 	}
-	if(t->q0 == t->q1){
-		if(locked)
-			winunlock(t->w);
+	cut(t, TRUE, FALSE);
+	if(locked)
+		winunlock(t->w);
+}
+
+void
+cut(Text *t, int dosnarf, int docut)
+{
+	uint q0, q1, n;
+	Rune *r;
+
+	if(t == nil)	/* no selection */
 		return;
-	}
+	if(t->q0 == t->q1)
+		return;
 	if(docut){
 		seq++;
 		filemark(t->file);
@@ -1041,24 +1047,14 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 		}
 	}else if(dosnarf)	/* Copy command */
 		argtext = t;
-	if(locked)
-		winunlock(t->w);
 }
 
 void
-paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
+paste(Text *t, int selectall)
 {
-	int c;
 	uint q, q0, q1, n;
 	Rune *r;
 
-	USED(_0);
-	USED(_1);
-	USED(_2);
-
-	/* if(tobody), use body of executing window  (Paste command) */
-	if(tobody && et!=nil && et->w!=nil)
-		t = &et->w->body;
 	if(t == nil)
 		return;
 
@@ -1069,13 +1065,7 @@ paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
 		seq++;
 		filemark(t->file);
 	}
-	if(t->w!=nil && et->w!=t->w){
-		c = 'M';
-		if(et->w)
-			c = et->w->owner;
-		winlock(t->w, c);
-	}
-	cut(t, t, nil, FALSE, TRUE, nil, 0);
+	cut(t, FALSE, TRUE);
 	q = 0;
 	q0 = t->q0;
 	q1 = t->q0+snarffile.b.nc;
@@ -1100,8 +1090,6 @@ paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
 		textscrdraw(t);
 		winsettag(t->w);
 	}
-	if(t->w!=nil && et->w!=t->w)
-		winunlock(t->w);
 }
 
 void

@@ -169,7 +169,7 @@ xfidopen(Xfid *x)
 				seq++;
 				filemark(t->file);
 			}
-			cut(t, t, nil, FALSE, TRUE, nil, 0);
+			cut(t, FALSE, TRUE);
 			w->wrselrange = range(t->q1, t->q1);
 			w->nomark = TRUE;
 			break;

@@ -167,11 +167,6 @@ but not
 .IR rio ,
 the ESC key selects the text typed since the last mouse action,
 a feature particularly useful when executing commands.
-A side effect is that typing ESC with text already selected is identical
-to a
-.B Cut
-command
-.RI ( q.v. ).
 .PP
 When a window is in autoindent mode
 (see the
@@ -271,9 +266,6 @@ that are executed directly by
 .TP
 .B Copy
 Place selected text in snarf buffer.
-.TP
-.B Cut
-Delete most recently selected text and place in snarf buffer.
 .TP
 .B Del
 Delete window.  If window is dirty, instead print a warning; a second
@@ -391,9 +383,6 @@ Make new column.
 .TP
 .B Pack
 Shrink each window in the column to the height its content needs.
-.TP
-.B Paste
-Replace most recently selected text with contents of snarf buffer.
 .TP
 .B Put
 Write window to the named file.
@@ -562,10 +551,8 @@ Wheel scrolling is not remembered.
 .SS "Chords of mouse buttons
 Several operations are bound to multiple-button actions.
 After selecting text, with button 1 still down, pressing button 2
-executes
-.B Cut
-and button 3 executes
-.BR Paste .
+cuts the selection to the snarf buffer
+and button 3 replaces it with the snarf buffer (paste).
 After clicking one button, the other undoes
 the first; thus (while holding down button 1) 2 followed by 3 is a
 .B Copy
@@ -574,6 +561,16 @@ that leaves the file undirtied;
 These actions also apply to text selected by double-clicking because
 the double-click expansion is made when the second
 click starts, not when it ends.
+.PP
+Button 3 chords act on text that is already selected.
+Holding down button 3, pressing button 2 cuts the selection
+and button 1 replaces it with the snarf buffer,
+with the same undoing as above.
+If button 3 is clicked without sweeping, a click within the selection
+leaves it in place and the chord applies to all of it;
+a click elsewhere makes a null selection there.
+If button 3 sweeps out text, the chord applies to that text instead,
+and the previous selection is discarded.
 .PP
 Commands may be given extra arguments by a mouse chord with buttons 2 and 1.
 While holding down button 2 on text to be executed as a command, clicking button 1

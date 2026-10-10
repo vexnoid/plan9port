@@ -735,9 +735,11 @@ texttype(Text *t, Rune r)
 		filemark(t->file);
 	}
 	if(t->q1 > t->q0){
+		if(r == 0x1B)
+			return;
 		if(t->ncache != 0)
 			error("text.type");
-		cut(t, t, nil, r==0x1B, TRUE, nil, 0);
+		cut(t, FALSE, TRUE);
 		t->eq0 = ~0;
 	}
 	textshow(t, t->q0, t->q0, 1);
@@ -931,13 +933,61 @@ textanchor(Text *t, int set)
 	}
 }
 
+static void
+textchord(Text *t, int hold)
+{
+	int b;
+	int state;
+	enum { None, Cut, Paste };
+
+	state = None;	/* what we've done; undo when possible */
+	while(mouse->buttons){
+		mouse->msec = 0;
+		b = mouse->buttons;
+		if((b&1) && (b&(128|256))){
+			textanchor(t, b&256);
+			textscrdraw(t);
+		}else if((b&hold) && (b&(7&~hold))){	/* hold plus another of buttons 1-3 */
+			if(b & 2){
+				if(state==Paste){
+					if(t->w != nil)
+						winundo(t->w, t, TRUE);
+					else
+						textundo(t, TRUE);
+					textsetselect(t, t->q0, t->q1);
+					state = None;
+				}else if(state != Cut){
+					cut(t, TRUE, TRUE);
+					state = Cut;
+				}
+			}else{
+				if(state==Cut){
+					if(t->w != nil)
+						winundo(t->w, t, TRUE);
+					else
+						textundo(t, TRUE);
+					textsetselect(t, t->q0, t->q1);
+					state = None;
+				}else if(state != Paste){
+					paste(t, TRUE);
+					state = Paste;
+				}
+			}
+			textscrdraw(t);
+			clearmouse();
+		}
+		flushimage(display, 1);
+		while(mouse->buttons == b)
+			readmouse(mousectl);
+		clicktext = nil;
+	}
+}
+
 void
 textselect(Text *t)
 {
 	uint q0, q1, q;
 	int b, x, y;
-	int state;
-	enum { None, Cut, Paste };
 
 	/*
 	 * To have double-clicking and chording, we double-click
@@ -980,47 +1030,7 @@ textselect(Text *t)
 		clicktext = nil;
 	textsetselect(t, q0, q1);
 	flushimage(display, 1);
-	state = None;	/* what we've done; undo when possible */
-	while(mouse->buttons){
-		mouse->msec = 0;
-		b = mouse->buttons;
-		if((b&1) && (b&(128|256))){
-			textanchor(t, b&256);
-			textscrdraw(t);
-		}else if((b&1) && (b&6)){
-			if(b & 2){
-				if(state==Paste){
-					if(t->w != nil)
-						winundo(t->w, t, TRUE);
-					else
-						textundo(t, TRUE);
-					textsetselect(t, t->q0, t->q1);
-					state = None;
-				}else if(state != Cut){
-					cut(t, t, nil, TRUE, TRUE, nil, 0);
-					state = Cut;
-				}
-			}else{
-				if(state==Cut){
-					if(t->w != nil)
-						winundo(t->w, t, TRUE);
-					else
-						textundo(t, TRUE);
-					textsetselect(t, t->q0, t->q1);
-					state = None;
-				}else if(state != Paste){
-					paste(t, t, nil, TRUE, FALSE, nil, 0);
-					state = Paste;
-				}
-			}
-			textscrdraw(t);
-			clearmouse();
-		}
-		flushimage(display, 1);
-		while(mouse->buttons == b)
-			readmouse(mousectl);
-		clicktext = nil;
-	}
+	textchord(t, 1);
 }
 
 void
@@ -1279,9 +1289,6 @@ textselect23(Text *t, uint *q0, uint *q1, Image *high, int mask)
 		*q0 = p0+t->org;
 		*q1 = p1+t->org;
 	}
-
-	while(mousectl->m.buttons)
-		readmouse(mousectl);
 	return buts;
 }
 
@@ -1292,6 +1299,8 @@ textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 
 	*tp = nil;
 	buts = textselect23(t, q0, q1, but2col, 8|16|128|256);
+	while(mousectl->m.buttons)
+		readmouse(mousectl);
 	if(buts & (8|16|128|256))
 		return 0;
 	if(buts & 1){	/* pick up argument */
@@ -1311,10 +1320,19 @@ textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 int
 textselect3(Text *t, uint *q0, uint *q1)
 {
-	int h;
+	int buts;
 
-	h = (textselect23(t, q0, q1, but3col, 1|2|8|16|128|256) == 0);
-	return h;
+	buts = textselect23(t, q0, q1, but3col, 8|16|128|256);
+	if((buts&4) && (buts&3) && (buts&~7)==0){
+		if(*q0!=*q1 || *q0<t->q0 || *q0>t->q1)	/* click in selection keeps it */
+			textsetselect(t, *q0, *q1);
+		seltext = t;
+		textchord(t, 4);
+		return 0;
+	}
+	while(mousectl->m.buttons)
+		readmouse(mousectl);
+	return buts == 0;
 }
 
 static Rune left1[] =  { '{', '[', '(', '<', 0xab, 0x2018, 0x201c, 0 };
