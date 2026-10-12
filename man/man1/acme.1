@@ -250,6 +250,14 @@ or
 including the usual double-clicking conventions.
 Double-clicking on blanks, where there is no word to select,
 selects the run of spaces and tabs around the click.
+.PP
+Sweeping does not scroll the window when the pointer reaches its edge,
+so a swept selection is limited to the text visible in the window.
+To select more, scroll the window and extend the selection
+with a chord of buttons 3 and 1
+(see
+.I Chords of mouse buttons
+below).
 .SS "Mouse button 2
 By an
 action similar to selecting text with button 1,
@@ -576,6 +584,12 @@ applies the chord to all of it;
 a click elsewhere selects the file name or word containing the click,
 expanded as for a button 3 action, and applies the chord to that.
 If button 3 sweeps out text, the chord applies to that text instead.
+.PP
+Button 3 and button 1 together extend a selection.
+Pressing button 1 while holding down button 3 over a body or tag moves the end
+of its selection nearest the pointer to the pointer.
+Button 3 leaves the selection alone, so this works on a selection that already
+exists, and further chords still apply to the result.
 .PP
 Commands may be given extra arguments by a mouse chord with buttons 2 and 1.
 While holding down button 2 on text to be executed as a command, clicking button 1
