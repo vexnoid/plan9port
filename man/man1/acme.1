@@ -247,9 +247,14 @@ Mouse button 1 selects text just as in
 .MR sam 1
 or
 .IR rio (1) ,
-including the usual double-clicking conventions.
-Double-clicking on blanks, where there is no word to select,
-selects the run of spaces and tabs around the click.
+except that there is no double-clicking.
+Instead, pressing button 3 while button 1 is held down expands the selection:
+a null selection becomes the word, bracket pair or quote pair around it
+or, on blanks where there is no word, the run of spaces and tabs around it,
+and a swept selection has its ends moved out to the edge of the words
+they lie in.
+The selection is final once button 3 is down;
+moving the mouse does not change it.
 .PP
 Sweeping does not scroll the window when the pointer reaches its edge,
 so a swept selection is limited to the text visible in the window.
@@ -279,7 +284,7 @@ Valid file name characters are alphanumerics and
 .B -
 .B +
 .BR / .
-This behavior is similar to double-clicking with button 1 but,
+This behavior is similar to expanding a selection with buttons 1 and 3 but,
 because a null command is meaningless, only a single click is required.
 .PP
 Some commands, all by convention starting with a capital letter, are
@@ -572,9 +577,8 @@ and wheel turns are ignored until all buttons are released,
 so one turn of the wheel never acts twice.
 A cut or paste done by mistake is undone with the undo side button
 once the mouse buttons are released, which leaves the restored text selected.
-These actions also apply to text selected by double-clicking because
-the double-click expansion is made when the second
-click starts, not when it ends.
+These actions also apply to a selection expanded with button 3 because
+the expansion is made when button 3 goes down, not when it comes up.
 .PP
 Button 3 chords act on the text button 3 points at.
 Holding down button 3, button 2 copies it, and turning the scroll wheel
