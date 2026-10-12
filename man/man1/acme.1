@@ -565,15 +565,15 @@ Wheel scrolling is not remembered.
 .SS "Chords of mouse buttons
 Several operations are bound to multiple-button actions.
 After selecting text, with button 1 still down, pressing button 2
-executes
-.B Cut
-and button 3 executes
-.BR Paste .
-After clicking one button, the other undoes
-the first; thus (while holding down button 1) 2 followed by 3 is a
-.B Snarf
-that leaves the file undirtied;
-3 followed by 2 is a no-op.
+copies the selection to the snarf buffer,
+pressing the forward side button cuts it to the snarf buffer,
+and pressing the back side button replaces it with the snarf buffer (paste).
+Each chord does one thing and ends; release button 1 to select again.
+Copying leaves the file unchanged, so it neither dirties the window
+nor discards the redo history.
+A cut or paste done by mistake is undone with the undo side button
+once button 1 is released, which leaves the restored text selected.
+The scroll wheel plays no part in these chords.
 These actions also apply to text selected by double-clicking because
 the double-click expansion is made when the second
 click starts, not when it ends.
