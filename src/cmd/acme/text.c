@@ -863,18 +863,12 @@ textcommit(Text *t, int tofile)
 	t->ncache = 0;
 }
 
-static	Text	*clicktext;
-static	uint	clickmsec;
-static	Text	*selecttext;
-static	uint	selectq;
-
 static void
 textchord(Text *t, int hold)
 {
 	int b;
 
 	while(mouse->buttons){
-		mouse->msec = 0;
 		b = mouse->buttons;
 		if((b&hold) && (b&(2|128|256))){
 			if(b & 2)
@@ -888,13 +882,11 @@ textchord(Text *t, int hold)
 			flushimage(display, 1);
 			while(mouse->buttons)
 				readmouse(mousectl);
-			clicktext = nil;
 			return;
 		}
 		flushimage(display, 1);
 		while(mouse->buttons == b)
 			readmouse(mousectl);
-		clicktext = nil;
 	}
 }
 
@@ -902,55 +894,12 @@ void
 textselect(Text *t)
 {
 	uint q0, q1;
-	int b, x, y;
 
-	selecttext = t;
-	/*
-	 * To have double-clicking and chording, we double-click
-	 * immediately if it might make sense.
-	 */
-	b = mouse->buttons;
-	q0 = t->q0;
-	q1 = t->q1;
-	selectq = t->org+frcharofpt(&t->fr, mouse->xy);
-	if(clicktext==t && mouse->msec-clickmsec<500)
-	if(q0==q1 && selectq==q0){
+	frselect(&t->fr, mousectl);
+	q0 = t->org+t->fr.p0;
+	q1 = t->org+t->fr.p1;
+	if(mouse->buttons & 4)
 		textdoubleclick(t, &q0, &q1);
-		textsetselect(t, q0, q1);
-		flushimage(display, 1);
-		x = mouse->xy.x;
-		y = mouse->xy.y;
-		/* stay here until something interesting happens */
-		do
-			readmouse(mousectl);
-		while(mouse->buttons==b && abs(mouse->xy.x-x)<3 && abs(mouse->xy.y-y)<3);
-		mouse->xy.x = x;	/* in case we're calling frselect */
-		mouse->xy.y = y;
-		q0 = t->q0;	/* may have changed */
-		q1 = t->q1;
-		selectq = q0;
-	}
-	if(mouse->buttons == b){
-		frselect(&t->fr, mousectl);
-		if(selectq < t->org)
-			q0 = selectq;
-		else
-			q0 = t->org + t->fr.p0;
-		if(selectq > t->org+t->fr.nchars)
-			q1 = selectq;
-		else
-			q1 = t->org+t->fr.p1;
-	}
-	if(q0 == q1){
-		if(q0==t->q0 && clicktext==t && mouse->msec-clickmsec<500){
-			textdoubleclick(t, &q0, &q1);
-			clicktext = nil;
-		}else{
-			clicktext = t;
-			clickmsec = mouse->msec;
-		}
-	}else
-		clicktext = nil;
 	textsetselect(t, q0, q1);
 	flushimage(display, 1);
 	textchord(t, 1);
