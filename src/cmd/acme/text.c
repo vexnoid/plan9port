@@ -868,44 +868,6 @@ static	uint	clickmsec;
 static	Text	*selecttext;
 static	uint	selectq;
 
-/*
- * called from frame library
- */
-void
-framescroll(Frame *f, int dl)
-{
-	if(f != &selecttext->fr)
-		error("frameselect not right frame");
-	textframescroll(selecttext, dl);
-}
-
-void
-textframescroll(Text *t, int dl)
-{
-	uint q0;
-
-	if(dl == 0){
-		scrsleep(100);
-		return;
-	}
-	if(dl < 0){
-		q0 = textbacknl(t, t->org, -dl);
-		if(selectq > t->org+t->fr.p0)
-			textsetselect(t, t->org+t->fr.p0, selectq);
-		else
-			textsetselect(t, selectq, t->org+t->fr.p0);
-	}else{
-		if(t->org+t->fr.nchars == t->file->b.nc)
-			return;
-		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+dl*t->fr.font->height));
-		if(selectq > t->org+t->fr.p1)
-			textsetselect(t, t->org+t->fr.p1, selectq);
-		else
-			textsetselect(t, selectq, t->org+t->fr.p1);
-	}
-	textsetorigin(t, q0, TRUE);
-}
-
 static void
 textchord(Text *t, int hold)
 {
@@ -969,12 +931,7 @@ textselect(Text *t)
 		selectq = q0;
 	}
 	if(mouse->buttons == b){
-		t->fr.scroll = framescroll;
 		frselect(&t->fr, mousectl);
-		/* horrible botch: while asleep, may have lost selection altogether */
-		if(selectq > t->file->b.nc)
-			selectq = t->org + t->fr.p0;
-		t->fr.scroll = nil;
 		if(selectq < t->org)
 			q0 = selectq;
 		else
@@ -1280,6 +1237,7 @@ textselect3(Text *t, uint *q0, uint *q1)
 {
 	Expand e;
 	int buts;
+	uint q;
 
 	buts = textselect23(t, q0, q1, but3col, 0);
 	if((buts&4) && (buts&(2|128|256))){	/* chord on selection or word under pointer */
@@ -1287,6 +1245,16 @@ textselect3(Text *t, uint *q0, uint *q1)
 		textsetselect(t, e.q0, e.q1);
 		free(e.name);
 		free(e.bname);
+		seltext = t;
+		textchord(t, 4);
+		return 0;
+	}
+	if(buts == (1|4)){	/* move nearer end of selection to pointer */
+		q = t->org+frcharofpt(&t->fr, mouse->xy);
+		if(q < (t->q0+t->q1)/2)
+			textsetselect(t, q, t->q1);
+		else
+			textsetselect(t, t->q0, q);
 		seltext = t;
 		textchord(t, 4);
 		return 0;

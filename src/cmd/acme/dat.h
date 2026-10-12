@@ -212,7 +212,6 @@ void		textconstrain(Text*, uint, uint, uint*, uint*);
 void		textdelete(Text*, uint, uint, int);
 void		textdoubleclick(Text*, uint*, uint*);
 void		textfill(Text*);
-void		textframescroll(Text*, int);
 void		textinit(Text*, File*, Rectangle, Reffont*, Image**);
 void		textinsert(Text*, uint, Rune*, uint, int);
 int		textload(Text*, uint, char*, int);
