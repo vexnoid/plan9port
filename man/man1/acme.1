@@ -124,6 +124,10 @@ Turning the scroll wheel over the scroll bar scrolls the window.
 For example, to scroll slowly through a file,
 turn the wheel near the top of the scroll bar.  Turning it
 further down scrolls in larger increments.
+(With button 1 held down after selecting text, the wheel instead cuts or pastes;
+see
+.I Chords of mouse buttons
+below.)
 .SS Layout
 .I Acme
 windows are arranged in columns.  By default, it creates two columns when starting;
@@ -565,15 +569,14 @@ Wheel scrolling is not remembered.
 .SS "Chords of mouse buttons
 Several operations are bound to multiple-button actions.
 After selecting text, with button 1 still down, pressing button 2
-executes
-.B Cut
-and button 3 executes
-.BR Paste .
-After clicking one button, the other undoes
-the first; thus (while holding down button 1) 2 followed by 3 is a
-.B Snarf
-that leaves the file undirtied;
-3 followed by 2 is a no-op.
+copies the selection to the snarf buffer,
+turning the scroll wheel up cuts it to the snarf buffer,
+and turning the wheel down replaces it with the snarf buffer (paste).
+Once a copy, cut or paste has been done, further button presses
+and wheel turns are ignored until all buttons are released,
+so one turn of the wheel never acts twice.
+A cut or paste done by mistake is undone with the undo side button
+once the mouse buttons are released, which leaves the restored text selected.
 These actions also apply to text selected by double-clicking because
 the double-click expansion is made when the second
 click starts, not when it ends.
