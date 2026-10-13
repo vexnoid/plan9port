@@ -57,6 +57,7 @@ struct Frame
 
 ulong	frcharofpt(Frame*, Point);
 Point	frptofchar(Frame*, ulong);
+int	frrunestep(Frame*, Point*, Rune);
 int	frdelete(Frame*, ulong, ulong);
 void	frinsert(Frame*, Rune*, Rune*, ulong);
 void	frselect(Frame*, Mousectl*);
