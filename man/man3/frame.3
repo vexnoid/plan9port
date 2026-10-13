@@ -1,6 +1,6 @@
 .TH FRAME 3
 .SH NAME
-frinit, frsetrects, frinittick, frsetmargins, frclear, frcharofpt, frptofchar, frinsert, frdelete, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
+frinit, frsetrects, frinittick, frsetmargins, frclear, frcharofpt, frptofchar, frrunestep, frinsert, frdelete, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
 .SH SYNOPSIS
 .nf
 .B
@@ -36,6 +36,9 @@ ulong frcharofpt(Frame *f, Point pt)
 .PP
 .B
 Point frptofchar(Frame *f, ulong p)
+.PP
+.B
+int   frrunestep(Frame *f, Point *p, Rune r)
 .PP
 .B
 void  frinsert(Frame *f, Rune *r0, Rune *r1, ulong p)
@@ -316,6 +319,26 @@ is the inverse: it
 returns the index of the closest rune whose image's upper left corner
 is up and to the left of
 .IR pt .
+.PP
+.I Frrunestep
+advances the point
+.BI * p
+past the rune
+.I r
+as
+.I frinsert
+would lay it out in the font of the
+.B Frame
+.IR f ,
+folding lines at the right edge and handling tabs and newlines,
+and returns non-zero if
+.I r
+did not fit on the current row and so was folded to the start of the next.
+It does not draw anything or change
+.IR f ,
+so a program can use it to lay out text
+that is not in the frame, for example to count the rows a line of text occupies.
+The point should begin at the left edge of the frame, as at the start of a row.
 .PP
 .I Frinsert
 inserts into
