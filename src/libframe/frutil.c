@@ -83,6 +83,31 @@ _frnewwid0(Frame *f, Point pt, Frbox *b)
 	return x-pt.x;
 }
 
+/* advance p past r; return 1 if r wrapped */
+int
+frrunestep(Frame *f, Point *p, Rune r)
+{
+	Frbox b;
+	int y, wrapped;
+
+	if(r=='\t' || r=='\n'){
+		b.bc = r;
+		b.nrune = -1;
+		b.wid = 5000;
+		b.minwid = r=='\n'? 0 : stringwidth(f->font, " ");
+	}else{
+		b.nrune = 1;
+		b.wid = runestringnwidth(f->font, &r, 1);
+	}
+	y = p->y;
+	_frcklinewrap(f, p, &b);
+	wrapped = p->y > y;
+	if(r == '\t')
+		_frnewwid(f, *p, &b);
+	_fradvance(f, p, &b);
+	return wrapped;
+}
+
 void
 _frclean(Frame *f, Point pt, int n0, int n1)	/* look for mergeable boxes */
 {

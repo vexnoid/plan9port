@@ -1479,25 +1479,41 @@ textclickmatch(Text *t, int cl, int cr, int dir, uint *q)
 	return cl=='\n' && nest==1;
 }
 
+enum
+{
+	Maxback = 4*1024	/* longest line textbacknl lays out */
+};
+
+/* start of the display row n above p's; wraps from the line start */
 uint
 textbacknl(Text *t, uint p, uint n)
 {
-	int i, j;
+	uint q, q0, lim, nc, i, k;
+	Point pt;
 
-	/* look for start of this line if n==0 */
-	if(n==0 && p>0 && textreadc(t, p-1)!='\n')
-		n = 1;
-	i = n;
-	while(i-->0 && p>0){
-		--p;	/* it's at a newline now; back over it */
-		if(p == 0)
+	nc = t->file->b.nc+t->ncache;
+	for(;;){
+		lim = p>Maxback? p-Maxback : 0;
+		q0 = p;
+		while(q0>lim && textreadc(t, q0-1)!='\n')
+			q0--;
+		k = 0;	/* rows from q0 to p */
+		pt = Pt(t->fr.r.min.x, 0);
+		for(q=q0; q<=p && q<nc; q++)
+			k += frrunestep(&t->fr, &pt, textreadc(t, q));
+		if(n <= k)
 			break;
-		/* at 128 chars, call it a line anyway */
-		for(j=128; --j>0 && p>0; p--)
-			if(textreadc(t, p-1)=='\n')
-				break;
+		if(q0 <= lim)	/* start of file, or too far back */
+			return q0;
+		n -= k+1;	/* the newline is a row */
+		p = q0-1;
 	}
-	return p;
+	i = k-n;
+	pt = Pt(t->fr.r.min.x, 0);
+	for(q=q0; i>0; q++)
+		if(frrunestep(&t->fr, &pt, textreadc(t, q)) && --i==0)
+			return q;
+	return q0;
 }
 
 void
