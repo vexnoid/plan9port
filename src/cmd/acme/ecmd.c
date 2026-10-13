@@ -853,10 +853,14 @@ loopcmd(File *f, Cmd *cp, Range *rp, long nrp)
 void
 looper(File *f, Cmd *cp, int xy)
 {
+	int j;
 	long p, op, nrp;
 	Range r, tr;
 	Range *rp;
+	Rangeset emptysel;
 
+	for(j=0; j<NRange; j++)
+		emptysel.r[j].q0 = emptysel.r[j].q1 = -1;
 	r = addr.r;
 	op= xy? -1 : r.q0;
 	nest++;
@@ -868,6 +872,7 @@ looper(File *f, Cmd *cp, int xy)
 		if(!rxexecute(f->curtext, nil, p, r.q1, &sel)){ /* no match, but y should still run */
 			if(xy || op>r.q1)
 				break;
+			sel = emptysel;
 			tr.q0 = op, tr.q1 = r.q1;
 			p = r.q1+1;	/* exit next loop */
 		}else{
