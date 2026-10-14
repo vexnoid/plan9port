@@ -41,12 +41,16 @@ textinit(Text *t, File *f, Rectangle r, Reffont *rf, Image *cols[NCOL])
 void
 textredraw(Text *t, Rectangle r, Font *f, Image *b, int odx)
 {
-	int maxt;
+	int maxt, rm;
 	Rectangle rr;
 
+	rm = Scrollgap/2;	/* room for glyph overhang; column border follows text */
+	r.max.x -= rm;
 	frinit(&t->fr, r, f, b, t->fr.cols);
+	frsetmargins(&t->fr, Scrollgap, rm);
 	rr = t->fr.r;
 	rr.min.x -= Scrollwid+Scrollgap;	/* back fill to scroll bar */
+	rr.max.x += rm;
 	if(!t->fr.noredraw)
 		draw(t->fr.b, rr, t->fr.cols[BACK], nil, ZP);
 	/* use no wider than 3-space tabs in a directory */

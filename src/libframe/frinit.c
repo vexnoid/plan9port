@@ -18,11 +18,21 @@ frinit(Frame *f, Rectangle r, Font *ft, Image *b, Image *cols[NCOL])
 	f->p1 = 0;
 	f->box = 0;
 	f->lastlinefull = 0;
+	f->lmargin = 0;
+	f->rmargin = 0;
 	if(cols != 0)
 		memmove(f->cols, cols, sizeof f->cols);
 	frsetrects(f, r, b);
 	if(f->tick==nil && f->cols[BACK]!=0)
 		frinittick(f);
+}
+
+void
+frsetmargins(Frame *f, int l, int r)
+{
+	/* frinit resets both to 0, so call this after it */
+	f->lmargin = l;
+	f->rmargin = r;
 }
 
 void
