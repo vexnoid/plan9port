@@ -51,6 +51,8 @@ struct Frame
 	int			ticked;	/* flag: is tick onscreen? */
 	int			noredraw;	/* don't draw on the screen */
 	int			tickscale;	/* tick scaling factor */
+	int			lmargin;	/* free pixels left of r for glyph overhang */
+	int			rmargin;	/* free pixels right of r for glyph overhang */
 };
 
 ulong	frcharofpt(Frame*, Point);
@@ -65,6 +67,7 @@ void	frinit(Frame*, Rectangle, Font*, Image*, Image**);
 void	frsetrects(Frame*, Rectangle, Image*);
 void	frclear(Frame*, int);
 void	frredraw(Frame*);
+void	frsetmargins(Frame*, int, int);
 
 uchar	*_frallocstr(Frame*, unsigned);
 void	_frinsure(Frame*, int, unsigned);
@@ -85,6 +88,7 @@ int	_frnewwid0(Frame*, Point, Frbox*);
 void	_frclean(Frame*, Point, int, int);
 void	_frdrawtext(Frame*, Point, Image*, Image*);
 void	_frrepaint(Frame*, ulong, ulong);
+void	_frfixmargin(Frame*);
 void	_fraddbox(Frame*, int, int);
 Point	_frptofcharptb(Frame*, ulong, Point, int);
 Point	_frptofcharnb(Frame*, ulong, int);

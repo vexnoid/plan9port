@@ -124,6 +124,7 @@ frdelete(Frame *f, ulong p0, ulong p1)
 	f->nchars -= p1-p0;
 	/* from the char before, whose cell holds overhang */
 	_frrepaint(f, p0>0? p0-1 : 0, qend);
+	_frfixmargin(f);
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
 	pt0 = frptofchar(f, f->nchars);

@@ -1,6 +1,6 @@
 .TH FRAME 3
 .SH NAME
-frinit, frsetrects, frinittick, frclear, frcharofpt, frptofchar, frinsert, frdelete, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
+frinit, frsetrects, frinittick, frsetmargins, frclear, frcharofpt, frptofchar, frinsert, frdelete, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
 .SH SYNOPSIS
 .nf
 .B
@@ -24,6 +24,9 @@ void  frsetrects(Frame *f, Rectangle r, Image *b)
 .PP
 .B
 void  frinittick(Frame *f)
+.PP
+.B
+void  frsetmargins(Frame *f, int lmargin, int rmargin)
 .PP
 .B
 void  frclear(Frame *f, int resize)
@@ -247,6 +250,49 @@ to establish the new geometry.
 .I frinittick
 unless the font size has changed.)
 No redrawing is necessary.
+.PP
+Glyphs are drawn clipped to the rectangle
+.IR r ,
+so ink that a character puts outside the cell it is laid out in
+(the tail of a
+.B j
+at the left edge of a row, or the end of a bold
+.B T
+at the right)
+is cut off where it starts or ends a row.
+An application that keeps room free beside the frame can have this overhang shown there instead.
+.I Frsetmargins
+tells the
+.B Frame
+.I f
+that the
+.I lmargin
+pixels to the left of
+.I r
+and the
+.I rmargin
+pixels to the right of it are available for the purpose,
+and that it may erase them.
+The frame still draws text only inside
+.IR r ,
+but after it redraws, inserts or deletes it paints the margins in
+.B cols[BACK]
+and draws into them the overhang of the characters that begin or end a row,
+always in
+.BR cols[TEXT] ,
+even next to a selection.
+.I Frinit
+sets both margins to 0, which leaves the overhang clipped,
+so
+.I frsetmargins
+must be called after
+.I frinit
+and again after each
+.I frclear
+and
+.I frinit
+that resizes the
+.BR Frame .
 .PP
 .B Frames
 hold text as runes,
