@@ -100,7 +100,7 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 	Point pt0, pt1, opt0, ppt0, ppt1, pt;
 	Frbox *b;
 	int n, n0, nn0, y;
-	ulong cn0;
+	ulong cn0, qend;
 	Image *col, *tcol;
 	Rectangle r;
 	static struct{
@@ -166,6 +166,7 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 		pt1.x += _frnewwid(f, pt1, b);
 		cn0 += NRUNE(b);
 	}
+	qend = cn0 + frame.nchars;	/* first box not moved by the loop above */
 	if(pt1.y > f->r.max.y)
 		drawerror(f->display, "frinsert pt1 too far");
 	if(pt1.y==f->r.max.y && n0<f->nbox){
@@ -286,6 +287,7 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 		f->p1 += frame.nchars;
 	if(f->p1 > f->nchars)
 		f->p1 = f->nchars;
+	_frrepaint(f, p0>0? p0-1 : 0, qend);
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
 }
