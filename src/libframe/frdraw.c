@@ -54,6 +54,11 @@ frdrawsel(Frame *f, Point pt, ulong p0, ulong p1, int issel)
 	frdrawsel0(f, pt, p0, p1, back, text);
 }
 
+/*
+ * Redrawing a glyph over its own ink darkens its antialiased edges, so
+ * clip at r.min.x, the start of the fill, and redraw the overhang of the
+ * char after p1, which the fill erased.
+ */
 Point
 frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 {
@@ -62,6 +67,7 @@ frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 	Point qt;
 	uint p;
 	char *ptr;
+	Rectangle r;
 
 	if(p0 > p1)
 		sysfatal("libframe: frdrawsel0 p0=%lud > p1=%lud", p0, p1);
@@ -69,6 +75,8 @@ frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 	p = 0;
 	b = f->box;
 	trim = 0;
+	r = f->r;
+	r.min.x = pt.x;
 	for(nb=0; nb<f->nbox && p<p1; nb++){
 		nr = b->nrune;
 		if(nr < 0)
@@ -79,8 +87,10 @@ frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 			qt = pt;
 			_frcklinewrap(f, &pt, b);
 			/* fill in the end of a wrapped line */
-			if(pt.y > qt.y)
+			if(pt.y > qt.y){
 				draw(f->b, Rect(qt.x, qt.y, f->r.max.x, pt.y), back, nil, qt);
+				r.min.x = f->r.min.x;
+			}
 		}
 		ptr = (char*)b->ptr;
 		if(p < p0){	/* beginning of region: advance into box */
@@ -102,11 +112,29 @@ frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 			x = f->r.max.x;
 		draw(f->b, Rect(pt.x, pt.y, x, pt.y+f->font->height), back, nil, pt);
 		if(b->nrune >= 0)
-			_string(f->b, pt, text, ZP, f->font, ptr, nil, nr, f->r, back, ZP, SoverD);
+			_string(f->b, pt, text, ZP, f->font, ptr, nil, nr, r, back, ZP, SoverD);
 		pt.x += w;
 	    Continue:
 		b++;
 		p += nr;
+	}
+	if(p1>p0 && (trim || b<f->box+f->nbox && b->nrune>0)){
+		qt = pt;
+		if(trim)
+			ptr += nbytes(ptr, nr);
+		else{
+			_frcklinewrap(f, &qt, b);
+			ptr = (char*)b->ptr;
+		}
+		if(qt.y == pt.y){
+			r.max.x = pt.x;
+			r.min.y = pt.y;
+			r.max.y = pt.y+f->font->height;
+			if(p1>=f->p0 && p1<f->p1)
+				_string(f->b, pt, f->cols[HTEXT], ZP, f->font, ptr, nil, 1, r, nil, ZP, SoverD);
+			else
+				_string(f->b, pt, f->cols[TEXT], ZP, f->font, ptr, nil, 1, r, nil, ZP, SoverD);
+		}
 	}
 	/* if this is end of last plain text box on wrapped line, fill to end of line */
 	if(p1>p0 &&  b>f->box && b<f->box+f->nbox && b[-1].nrune>0 && !trim){
@@ -138,6 +166,38 @@ frredraw(Frame *f)
 	pt = frdrawsel0(f, pt, 0, f->p0, f->cols[BACK], f->cols[TEXT]);
 	pt = frdrawsel0(f, pt, f->p0, f->p1, f->cols[HIGH], f->cols[HTEXT]);
 	pt = frdrawsel0(f, pt, f->p1, f->nchars, f->cols[BACK], f->cols[TEXT]);
+}
+
+/*
+ * Redraw q0 to q1 as frredraw would.  frinsert and frdelete move boxes by
+ * copying pixels, which also copies any overhang from the old neighbours.
+ * They start at the char before the change, since the overhang of a glyph
+ * that was removed or moved lies in the cell to its left.
+ */
+void
+_frrepaint(Frame *f, ulong q0, ulong q1)
+{
+	Point pt;
+	ulong p0, p1;
+
+	if(q1 > f->nchars)
+		q1 = f->nchars;
+	if(q0 >= q1)
+		return;
+	p0 = f->p0;
+	if(p0 < q0)
+		p0 = q0;
+	if(p0 > q1)
+		p0 = q1;
+	p1 = f->p1;
+	if(p1 < p0)
+		p1 = p0;
+	if(p1 > q1)
+		p1 = q1;
+	pt = frptofchar(f, q0);
+	pt = frdrawsel0(f, pt, q0, p0, f->cols[BACK], f->cols[TEXT]);
+	pt = frdrawsel0(f, pt, p0, p1, f->cols[HIGH], f->cols[HTEXT]);
+	frdrawsel0(f, pt, p1, q1, f->cols[BACK], f->cols[TEXT]);
 }
 
 static void

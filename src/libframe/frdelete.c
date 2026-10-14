@@ -10,7 +10,7 @@ frdelete(Frame *f, ulong p0, ulong p1)
 	Point pt0, pt1, ppt0;
 	Frbox *b;
 	int n0, n1, n, w0;
-	ulong cn1;
+	ulong cn1, qend;
 	Rectangle r;
 	int nn0;
 	Image *col;
@@ -82,6 +82,7 @@ frdelete(Frame *f, ulong p0, ulong p1)
 		f->box[n0++] = f->box[n1++];
 		b++;
 	}
+	qend = cn1-(p1-p0);	/* first box not moved by the loop above */
 	if(n1==f->nbox && pt0.x!=pt1.x)	/* deleting last thing in window; must clean up */
 		frselectpaint(f, pt0, pt1, f->cols[BACK]);
 	if(pt1.y != pt0.y){
@@ -121,6 +122,7 @@ frdelete(Frame *f, ulong p0, ulong p1)
 	else if(f->p0 > p0)
 		f->p0 = p0;
 	f->nchars -= p1-p0;
+	_frrepaint(f, p0>0? p0-1 : 0, qend);
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
 	pt0 = frptofchar(f, f->nchars);
