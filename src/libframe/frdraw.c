@@ -13,7 +13,7 @@ _frdrawtext(Frame *f, Point pt, Image *text, Image *back)
 	for(nb=0,b=f->box; nb<f->nbox; nb++, b++){
 		_frcklinewrap(f, &pt, b);
 		if(!f->noredraw && b->nrune >= 0)
-			stringbg(f->b, pt, text, ZP, f->font, (char*)b->ptr, back, ZP);
+			_string(f->b, pt, text, ZP, f->font, (char*)b->ptr, nil, 1<<24, f->r, back, ZP, SoverD);
 		pt.x += b->wid;
 	}
 }
@@ -102,7 +102,7 @@ frdrawsel0(Frame *f, Point pt, ulong p0, ulong p1, Image *back, Image *text)
 			x = f->r.max.x;
 		draw(f->b, Rect(pt.x, pt.y, x, pt.y+f->font->height), back, nil, pt);
 		if(b->nrune >= 0)
-			stringnbg(f->b, pt, text, ZP, f->font, ptr, nr, back, ZP);
+			_string(f->b, pt, text, ZP, f->font, ptr, nil, nr, f->r, back, ZP, SoverD);
 		pt.x += w;
 	    Continue:
 		b++;
