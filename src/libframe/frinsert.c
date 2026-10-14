@@ -288,6 +288,7 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 	if(f->p1 > f->nchars)
 		f->p1 = f->nchars;
 	_frrepaint(f, p0>0? p0-1 : 0, qend);
+	_frfixmargin(f);
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
 }

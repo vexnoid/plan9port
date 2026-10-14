@@ -18,11 +18,25 @@ frinit(Frame *f, Rectangle r, Font *ft, Image *b, Image *cols[NCOL])
 	f->p1 = 0;
 	f->box = 0;
 	f->lastlinefull = 0;
+	f->lmargin = 0;
+	f->rmargin = 0;
 	if(cols != 0)
 		memmove(f->cols, cols, sizeof f->cols);
 	frsetrects(f, r, b);
 	if(f->tick==nil && f->cols[BACK]!=0)
 		frinittick(f);
+}
+
+/*
+ * The application owns l pixels left of f->r and r pixels right of it and
+ * keeps them clear.  Glyph overhang is shown there rather than clipped.
+ * Frinit resets both to 0, so call this after it.
+ */
+void
+frsetmargins(Frame *f, int l, int r)
+{
+	f->lmargin = l;
+	f->rmargin = r;
 }
 
 void

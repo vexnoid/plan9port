@@ -21,6 +21,14 @@ enum{
 	TABDIR = 3	/* width of tabs in directory windows */
 };
 
+/*
+ * Room kept free beside the frame for glyph overhang.  On the left it is the
+ * gap to the scroll bar.  On the right it is taken from the frame, since the
+ * column border follows the text.
+ */
+#define	LMARGIN	Scrollgap
+#define	RMARGIN	(Scrollgap/2)
+
 void
 textinit(Text *t, File *f, Rectangle r, Reffont *rf, Image *cols[NCOL])
 {
@@ -44,9 +52,12 @@ textredraw(Text *t, Rectangle r, Font *f, Image *b, int odx)
 	int maxt;
 	Rectangle rr;
 
+	r.max.x -= RMARGIN;
 	frinit(&t->fr, r, f, b, t->fr.cols);
+	frsetmargins(&t->fr, LMARGIN, RMARGIN);
 	rr = t->fr.r;
 	rr.min.x -= Scrollwid+Scrollgap;	/* back fill to scroll bar */
+	rr.max.x += RMARGIN;
 	if(!t->fr.noredraw)
 		draw(t->fr.b, rr, t->fr.cols[BACK], nil, ZP);
 	/* use no wider than 3-space tabs in a directory */
