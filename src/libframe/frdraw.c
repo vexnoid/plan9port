@@ -157,6 +157,7 @@ frredraw(Frame *f)
 		if(ticked)
 			frtick(f, frptofchar(f, f->p0), 0);
 		frdrawsel0(f, frptofchar(f, 0), 0, f->nchars, f->cols[BACK], f->cols[TEXT]);
+		_frfixmargin(f);
 		if(ticked)
 			frtick(f, frptofchar(f, f->p0), 1);
 		return;
@@ -166,6 +167,7 @@ frredraw(Frame *f)
 	pt = frdrawsel0(f, pt, 0, f->p0, f->cols[BACK], f->cols[TEXT]);
 	pt = frdrawsel0(f, pt, f->p0, f->p1, f->cols[HIGH], f->cols[HTEXT]);
 	pt = frdrawsel0(f, pt, f->p1, f->nchars, f->cols[BACK], f->cols[TEXT]);
+	_frfixmargin(f);
 }
 
 /*
@@ -198,6 +200,55 @@ _frrepaint(Frame *f, ulong q0, ulong q1)
 	pt = frdrawsel0(f, pt, q0, p0, f->cols[BACK], f->cols[TEXT]);
 	pt = frdrawsel0(f, pt, p0, p1, f->cols[HIGH], f->cols[HTEXT]);
 	frdrawsel0(f, pt, p1, q1, f->cols[BACK], f->cols[TEXT]);
+}
+
+/*
+ * Glyphs are drawn clipped to f->r, so the margins are never disturbed by
+ * ordinary drawing.  Erase them, then draw the overhang of the boxes at the
+ * ends of rows into them.  The ink is always in the text colour.
+ */
+void
+_frfixmargin(Frame *f)
+{
+	Frbox *b;
+	Point pt;
+	Rectangle lr, rr;
+	int nb, h, ticked;
+
+	if((f->lmargin<=0 && f->rmargin<=0) || f->b==nil || f->noredraw)
+		return;
+	ticked = f->ticked;	/* the tick can lie in the left margin */
+	if(ticked)
+		frtick(f, frptofchar(f, f->p0), 0);
+	lr = f->r;
+	lr.max.x = lr.min.x;
+	lr.min.x -= f->lmargin;
+	draw(f->b, lr, f->cols[BACK], nil, ZP);
+	rr = f->r;
+	rr.min.x = rr.max.x;
+	rr.max.x += f->rmargin;
+	draw(f->b, rr, f->cols[BACK], nil, ZP);
+	h = f->font->height;
+	pt = f->r.min;
+	for(nb=0,b=f->box; nb<f->nbox; nb++,b++){
+		_frcklinewrap(f, &pt, b);
+		if(pt.y >= f->r.max.y)
+			break;
+		if(b->nrune > 0){
+			if(pt.x < f->r.min.x+f->lmargin)
+				_string(f->b, pt, f->cols[TEXT], ZP, f->font, (char*)b->ptr, nil, 1<<24,
+					Rect(lr.min.x, pt.y, lr.max.x, pt.y+h), nil, ZP, SoverD);
+			if(pt.x+b->wid+f->rmargin > f->r.max.x)
+				_string(f->b, pt, f->cols[TEXT], ZP, f->font, (char*)b->ptr, nil, 1<<24,
+					Rect(rr.min.x, pt.y, rr.max.x, pt.y+h), nil, ZP, SoverD);
+		}
+		_fradvance(f, &pt, b);
+	}
+	/* the server flushes only the area a string names, not its overhang */
+	draw(f->b, lr, f->b, nil, lr.min);
+	draw(f->b, rr, f->b, nil, rr.min);
+	if(ticked)
+		frtick(f, frptofchar(f, f->p0), 1);
 }
 
 static void
