@@ -485,12 +485,13 @@ textfill(Text *t)
 void
 textdelete(Text *t, uint q0, uint q1, int tofile)
 {
-	uint n, p0, p1;
-	int i, c;
+	uint n, p0, p1, q;
+	int i, c, moved;
 	Text *u;
 
 	if(tofile && t->ncache != 0)
 		error("text.delete");
+	moved = FALSE;
 	n = q1-q0;
 	if(n == 0)
 		return;
@@ -527,10 +528,16 @@ textdelete(Text *t, uint q0, uint q1, int tofile)
 		if(q0 < t->org){
 			t->org = q0;
 			p0 = 0;
+			moved = TRUE;
 		}else
 			p0 = q0 - t->org;
 		frdelete(&t->fr, p0, p1);
 		textfill(t);
+		if(moved && t->what==Body && t->org>0 && textreadc(t, t->org-1)!='\n'){
+			q = textbacknl(t, t->org, 0);
+			if(q != t->org)
+				textsetorigin(t, q, TRUE);
+		}
 	}
 	if(t->w){
 		c = 'd';
