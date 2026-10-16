@@ -117,7 +117,7 @@ struct {				/* Sed program input control block */
 	} pctl;
 } prog;
 
-Rune	genbuf[LBSIZE];			/* Miscellaneous buffer */
+Rune	genbuf[LBSIZE+1];		/* Miscellaneous buffer */
 
 FileCache	*fhead = 0;		/* Head of File Cache Chain */
 FileCache	*ftail = 0;		/* Tail of File Cache Chain */
@@ -1062,8 +1062,8 @@ dosub(Rune *rhsbuf)
 			}
 		}
 		*sp++ = c;
-		if (sp >= &genbuf[LBSIZE])
-			fprint(2, "sed: Output line too long.\n");
+		if (sp > &genbuf[LBSIZE])
+			quit("Output line too long.", 0);
 	}
 	lp = loc2;
 	loc2 = sp - genbuf + linebuf;
@@ -1082,8 +1082,8 @@ place(Rune *sp, Rune *l1, Rune *l2)
 {
 	while (l1 < l2) {
 		*sp++ = *l1++;
-		if (sp >= &genbuf[LBSIZE])
-			fprint(2, "sed: Output line too long.\n");
+		if (sp > &genbuf[LBSIZE])
+			quit("Output line too long.", 0);
 	}
 	return(sp);
 }
