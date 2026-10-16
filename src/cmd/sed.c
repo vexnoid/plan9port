@@ -1007,7 +1007,7 @@ int
 substitute(SedCom *ipc)
 {
 	int len;
-	Rune *lp, *sp;
+	Rune *lp, *sp, *pe;
 
 	if(!match(ipc->u.re1, linebuf))
 		return 0;
@@ -1016,18 +1016,26 @@ substitute(SedCom *ipc)
 	 * we have at least one match.  some patterns, e.g. '$' or '^', can
 	 * produce zero-length matches, so during a global substitute we
 	 * must bump to the character after a zero-length match to keep from looping.
+	 * a zero-length match is not allowed where the previous match ended.
 	 * the result is built in genbuf and linebuf is not changed until
 	 * the end, so that '^' only matches at the real start of the line.
 	 */
 	sflag = 1;
 	sp = genbuf;
 	lp = linebuf;			/* start of text not yet copied */
+	pe = 0;				/* end of previous non-empty match */
 	if(ipc->gfl == 0) {		/* single substitution */
 		sp = place(sp, lp, loc1);
 		sp = dosub(sp, ipc->rhs);
 		lp = loc2;
 	} else
 	do{				/* global substitution */
+		if(loc1 == loc2 && loc1 == pe) {
+			if(*loc2 == 0)	/* end of string */
+				break;
+			loc2++;		/* skip match adjacent to previous one */
+			continue;
+		}
 		len = loc2-loc1;	/* length of match */
 		sp = place(sp, lp, loc1);
 		sp = dosub(sp, ipc->rhs);
@@ -1036,8 +1044,8 @@ substitute(SedCom *ipc)
 			break;
 		if(len == 0)		/* zero-length R.E. match */
 			loc2++;		/* bump over zero-length match */
-		if(*loc2 == 0)		/* end of string */
-			break;
+		else
+			pe = loc2;
 	} while(match(ipc->u.re1, loc2));
 	sp = place(sp, lp, spend);
 	*sp = '\0';
