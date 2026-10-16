@@ -360,7 +360,7 @@ void
 colgrow(Column *c, Window *w, int but)
 {
 	Rectangle r, cr;
-	int i, j, k, l, y1, y2, *nl, *ny, tot, nnl, onl, dnl, h;
+	int i, j, k, l, y1, y2, *nl, *ny, tot, nnl, onl, dnl, h, pass;
 	Window *v;
 
 	for(i=0; i<c->nw; i++)
@@ -415,22 +415,24 @@ colgrow(Column *c, Window *w, int but)
 		nnl = 2;
 	dnl = nnl - onl;
 	/* compute new #lines for each window */
-	for(k=1; k<c->nw; k++){
-		/* prune from later window */
-		j = i+k;
-		if(j<c->nw && nl[j]){
-			l = min(dnl, max(1, nl[j]/2));
-			nl[j] -= l;
-			nl[i] += l;
-			dnl -= l;
-		}
-		/* prune from earlier window */
-		j = i-k;
-		if(j>=0 && nl[j]){
-			l = min(dnl, max(1, nl[j]/2));
-			nl[j] -= l;
-			nl[i] += l;
-			dnl -= l;
+	for(pass=0; pass<2 && dnl>0; pass++){
+		for(k=1; k<c->nw; k++){
+			/* prune from later window */
+			j = i+k;
+			if(j<c->nw && nl[j]>1-pass){
+				l = min(dnl, max(1, nl[j]/2));
+				nl[j] -= l;
+				nl[i] += l;
+				dnl -= l;
+			}
+			/* prune from earlier window */
+			j = i-k;
+			if(j>=0 && nl[j]>1-pass){
+				l = min(dnl, max(1, nl[j]/2));
+				nl[j] -= l;
+				nl[i] += l;
+				dnl -= l;
+			}
 		}
 	}
     Pack:
