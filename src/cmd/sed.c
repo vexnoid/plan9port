@@ -178,7 +178,7 @@ void	command(SedCom *);
 Reprog	*compile(void);
 Rune	*compsub(Rune *, Rune *);
 void	dechain(void);
-void	dosub(Rune *);
+Rune	*dosub(Rune *, Rune *);
 int	ecmp(Rune *, Rune *, int);
 void	enroll(char *);
 void	errexit(void);
@@ -1007,6 +1007,7 @@ int
 substitute(SedCom *ipc)
 {
 	int len;
+	Rune *lp, *sp;
 
 	if(!match(ipc->u.re1, linebuf))
 		return 0;
@@ -1015,14 +1016,22 @@ substitute(SedCom *ipc)
 	 * we have at least one match.  some patterns, e.g. '$' or '^', can
 	 * produce zero-length matches, so during a global substitute we
 	 * must bump to the character after a zero-length match to keep from looping.
+	 * the result is built in genbuf and linebuf is not changed until
+	 * the end, so that '^' only matches at the real start of the line.
 	 */
 	sflag = 1;
-	if(ipc->gfl == 0)		/* single substitution */
-		dosub(ipc->rhs);
-	else
+	sp = genbuf;
+	lp = linebuf;			/* start of text not yet copied */
+	if(ipc->gfl == 0) {		/* single substitution */
+		sp = place(sp, lp, loc1);
+		sp = dosub(sp, ipc->rhs);
+		lp = loc2;
+	} else
 	do{				/* global substitution */
 		len = loc2-loc1;	/* length of match */
-		dosub(ipc->rhs);	/* dosub moves loc2 */
+		sp = place(sp, lp, loc1);
+		sp = dosub(sp, ipc->rhs);
+		lp = loc2;
 		if(*loc2 == 0)		/* end of string */
 			break;
 		if(len == 0)		/* zero-length R.E. match */
@@ -1030,21 +1039,24 @@ substitute(SedCom *ipc)
 		if(*loc2 == 0)		/* end of string */
 			break;
 	} while(match(ipc->u.re1, loc2));
+	sp = place(sp, lp, spend);
+	*sp = '\0';
+	lp = linebuf;
+	sp = genbuf;
+	while (*lp++ = *sp++)
+		;
+	spend = lp-1;
 	return 1;
 }
 
-void
-dosub(Rune *rhsbuf)
+	/* append the replacement for the current match to sp */
+Rune *
+dosub(Rune *sp, Rune *rhsbuf)
 {
-	Rune *lp, *sp;
 	Rune *rp;
 	int c, n;
 
-	lp = linebuf;
-	sp = genbuf;
 	rp = rhsbuf;
-	while (lp < loc1)
-		*sp++ = *lp++;
 	while(c = *rp++) {
 		if (c == '&') {
 			sp = place(sp, loc1, loc2);
@@ -1065,16 +1077,7 @@ dosub(Rune *rhsbuf)
 		if (sp > &genbuf[LBSIZE])
 			quit("Output line too long.", 0);
 	}
-	lp = loc2;
-	loc2 = sp - genbuf + linebuf;
-	while (*sp++ = *lp++)
-		if (sp >= &genbuf[LBSIZE])
-			fprint(2, "sed: Output line too long.\n");
-	lp = linebuf;
-	sp = genbuf;
-	while (*lp++ = *sp++)
-		;
-	spend = lp-1;
+	return sp;
 }
 
 Rune *
