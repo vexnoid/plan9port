@@ -8,6 +8,7 @@ AUTOLIB(frame)
 
 typedef struct Frbox Frbox;
 typedef struct Frame Frame;
+typedef struct Frmarkup Frmarkup;
 
 enum{
 	BACK,
@@ -18,6 +19,13 @@ enum{
 	NCOL
 };
 
+/* font height must match the frame's */
+struct Frmarkup
+{
+	Font	*font;	/* nil ==> frame's default */
+	Image	*col;	/* nil ==> frame's default */
+};
+
 #define	FRTICKW	3
 struct Frbox
 {
@@ -26,6 +34,8 @@ struct Frbox
 	uchar	*ptr;
 	short	bc;	/* break char */
 	short	minwid;
+	Frmarkup	*fg;	/* nil ==> frame's default */
+	Image	*bg;	/* nil ==> frame's default */
 };
 
 struct Frame
@@ -60,6 +70,10 @@ Point	frptofchar(Frame*, ulong);
 int	frrunestep(Frame*, Point*, Rune);
 int	frdelete(Frame*, ulong, ulong);
 void	frinsert(Frame*, Rune*, Rune*, ulong);
+void	frinsertmarkup(Frame*, Rune*, Rune*, ulong, Frmarkup*, Image*);
+void	frmarkupfg(Frame*, ulong, ulong, Frmarkup*);
+void	frmarkupbg(Frame*, ulong, ulong, Image*);
+void	frredrawmarkup(Frame*, Frmarkup*);
 void	frselect(Frame*, Mousectl*);
 void	frselectpaint(Frame*, Point, Point, Image*);
 void	frdrawsel(Frame*, Point, ulong, ulong, int);
@@ -99,6 +113,7 @@ void	frinittick(Frame*);
 
 #define	NRUNE(b)	((b)->nrune<0? 1 : (b)->nrune)
 #define	NBYTE(b)	strlen((char*)(b)->ptr)
+#define	BOXFONT(f,b)	(((b)->fg!=nil && (b)->fg->font!=nil)? (b)->fg->font : (f)->font)
 #if defined(__cplusplus)
 }
 #endif
