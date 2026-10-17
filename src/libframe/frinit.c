@@ -36,34 +36,40 @@ frsetmargins(Frame *f, int l, int r)
 }
 
 void
-frinittick(Frame *f)
+_frtickalloc(Frame *f, int ht)
 {
 	Image *b;
-	Font *ft;
 
 	if(f->cols[BACK] == nil || f->display == nil)
 		return;
-	f->tickscale = scalesize(f->display, 1);
 	b = f->display->screenimage;
-	ft = f->font;
-	if(f->tick)
-		freeimage(f->tick);
-	f->tick = allocimage(f->display, Rect(0, 0, f->tickscale*FRTICKW, ft->height), RGBA32, 0, DTransparent);
+	/* the tick must be off the screen */
+	freeimage(f->tick);
+	freeimage(f->tickback);
+	f->tickback = nil;
+	f->tick = allocimage(f->display, Rect(0, 0, f->tickscale*FRTICKW, ht), RGBA32, 0, DTransparent);
 	if(f->tick == nil)
 		return;
-	if(f->tickback)
-		freeimage(f->tickback);
 	f->tickback = allocimage(f->display, f->tick->r, b->chan, 0, DWhite);
-	if(f->tickback == 0){
+	if(f->tickback == nil){
 		freeimage(f->tick);
-		f->tick = 0;
+		f->tick = nil;
 		return;
 	}
 	/* vertical line */
-	draw(f->tick, Rect(f->tickscale*(FRTICKW/2), 0, f->tickscale*(FRTICKW/2+1), ft->height), f->cols[TEXT], nil, ZP);
+	draw(f->tick, Rect(f->tickscale*(FRTICKW/2), 0, f->tickscale*(FRTICKW/2+1), ht), f->cols[TEXT], nil, ZP);
 	/* box on each end */
 	draw(f->tick, Rect(0, 0, f->tickscale*FRTICKW, f->tickscale*FRTICKW), f->cols[TEXT], nil, ZP);
-	draw(f->tick, Rect(0, ft->height-f->tickscale*FRTICKW, f->tickscale*FRTICKW, ft->height), f->cols[TEXT], nil, ZP);
+	draw(f->tick, Rect(0, ht-f->tickscale*FRTICKW, f->tickscale*FRTICKW, ht), f->cols[TEXT], nil, ZP);
+}
+
+void
+frinittick(Frame *f)
+{
+	if(f->cols[BACK] == nil || f->display == nil)
+		return;
+	f->tickscale = scalesize(f->display, 1);
+	_frtickalloc(f, f->font->height);
 }
 
 void

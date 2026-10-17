@@ -1475,7 +1475,7 @@ textbacknl(Text *t, uint p, uint n)
 		k = 0;	/* rows from q0 to p */
 		pt = Pt(t->fr.r.min.x, 0);
 		for(q=q0; q<=p && q<nc; q++)
-			k += frrunestep(&t->fr, &pt, textreadc(t, q));
+			k += frrunestep(&t->fr, &pt, textreadc(t, q), nil);
 		if(n <= k)
 			break;
 		if(q0 <= lim)	/* start of file, or too far back */
@@ -1486,7 +1486,7 @@ textbacknl(Text *t, uint p, uint n)
 	i = k-n;
 	pt = Pt(t->fr.r.min.x, 0);
 	for(q=q0; i>0; q++)
-		if(frrunestep(&t->fr, &pt, textreadc(t, q)) && --i==0)
+		if(frrunestep(&t->fr, &pt, textreadc(t, q), nil) && --i==0)
 			return q;
 	return q0;
 }

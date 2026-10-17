@@ -4,6 +4,41 @@
 #include <mouse.h>
 #include <frame.h>
 
+static
+void
+delfix(Frame *f, ulong p0, ulong p1)
+{
+	if(f->p1 > p1)
+		f->p1 -= p1-p0;
+	else if(f->p1 > p0)
+		f->p1 = p0;
+	if(f->p0 > p1)
+		f->p0 -= p1-p0;
+	else if(f->p0 > p0)
+		f->p0 = p0;
+	f->nchars -= p1-p0;
+}
+
+static
+int
+frdeleteslow(Frame *f, ulong p0, ulong p1)
+{
+	int n0, n1, nl;
+
+	if(f->p0 == f->p1)
+		frtick(f, frptofchar(f, f->p0), 0);
+	nl = f->nlines;
+	n0 = _frfindbox(f, 0, 0, p0);
+	n1 = _frfindbox(f, n0, p0, p1);
+	_frdelbox(f, n0, n1-1);
+	f->modified = 1;
+	delfix(f, p0, p1);
+	_frreflow(f);
+	if(f->p0 == f->p1)
+		frtick(f, frptofchar(f, f->p0), 1);
+	return nl - f->nlines;
+}
+
 int
 frdelete(Frame *f, ulong p0, ulong p1)
 {
@@ -19,6 +54,9 @@ frdelete(Frame *f, ulong p0, ulong p1)
 		return 0;
 	if(p1 > f->nchars)
 		p1 = f->nchars;
+	/* mixed line heights: can't move pixels around, so relayout and redraw */
+	if(_frvarht(f))
+		return frdeleteslow(f, p0, p1);
 	n0 = _frfindbox(f, 0, 0, p0);
 	if(n0 == f->nbox)
 		drawerror(f->display, "off end in frdelete");
@@ -66,12 +104,15 @@ frdelete(Frame *f, ulong p0, ulong p1)
 			r.max.x += w0 - b->wid;
 			if(r.max.x > f->r.max.x)
 				r.max.x = f->r.max.x;
-			draw(f->b, r, f->cols[BACK], nil, r.min);
+			col = b->bg!=nil? b->bg : f->cols[BACK];
+			if(f->p0<=cn1 && cn1<f->p1)
+				col = f->cols[HIGH];
+			draw(f->b, r, col, nil, r.min);
 		}else{
 			r.max.x += _frnewwid0(f, pt0, b);
 			if(r.max.x > f->r.max.x)
 				r.max.x = f->r.max.x;
-			col = f->cols[BACK];
+			col = b->bg!=nil? b->bg : f->cols[BACK];
 			if(f->p0<=cn1 && cn1<f->p1)
 				col = f->cols[HIGH];
 			draw(f->b, r, col, nil, pt0);
@@ -113,15 +154,7 @@ frdelete(Frame *f, ulong p0, ulong p1)
 		ppt0.x -= f->box[nn0].wid;
 	}
 	_frclean(f, ppt0, nn0, n0<f->nbox-1? n0+1 : n0);
-	if(f->p1 > p1)
-		f->p1 -= p1-p0;
-	else if(f->p1 > p0)
-		f->p1 = p0;
-	if(f->p0 > p1)
-		f->p0 -= p1-p0;
-	else if(f->p0 > p0)
-		f->p0 = p0;
-	f->nchars -= p1-p0;
+	delfix(f, p0, p1);
 	/* from the char before, whose cell holds overhang */
 	_frrepaint(f, p0>0? p0-1 : 0, qend);
 	_frfixmargin(f);
