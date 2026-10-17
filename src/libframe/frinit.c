@@ -52,7 +52,7 @@ frinittick(Frame *f)
 	ft = f->font;
 	if(f->tick)
 		freeimage(f->tick);
-	f->tick = allocimage(f->display, Rect(0, 0, f->tickscale*FRTICKW, ft->height), b->chan, 0, DWhite);
+	f->tick = allocimage(f->display, Rect(0, 0, f->tickscale*FRTICKW, ft->height), RGBA32, 0, DTransparent);
 	if(f->tick == nil)
 		return;
 	if(f->tickback)
@@ -63,8 +63,6 @@ frinittick(Frame *f)
 		f->tick = 0;
 		return;
 	}
-	/* background color */
-	draw(f->tick, f->tick->r, f->cols[BACK], nil, ZP);
 	/* vertical line */
 	draw(f->tick, Rect(f->tickscale*(FRTICKW/2), 0, f->tickscale*(FRTICKW/2+1), ft->height), f->cols[TEXT], nil, ZP);
 	/* box on each end */
