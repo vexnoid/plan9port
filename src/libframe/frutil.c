@@ -10,19 +10,21 @@ _frcanfit(Frame *f, Point pt, Frbox *b)
 	int left, w, nr;
 	uchar *p;
 	Rune r;
+	Font *bfont;
 
 	left = f->r.max.x-pt.x;
 	if(b->nrune < 0)
 		return b->minwid <= left;
 	if(left >= b->wid)
 		return b->nrune;
+	bfont = BOXFONT(f, b);
 	for(nr=0,p=b->ptr; *p; p+=w,nr++){
 		r = *p;
 		if(r < Runeself)
 			w = 1;
 		else
 			w = chartorune(&r, (char*)p);
-		left -= stringnwidth(f->font, (char*)p, 1);
+		left -= stringnwidth(bfont, (char*)p, 1);
 		if(left < 0)
 			return nr;
 	}
@@ -118,7 +120,8 @@ _frclean(Frame *f, Point pt, int n0, int n1)	/* look for mergeable boxes */
 	for(nb=n0; nb<n1-1; nb++){
 		b = &f->box[nb];
 		_frcklinewrap(f, &pt, b);
-		while(b[0].nrune>=0 && nb<n1-1 && b[1].nrune>=0 && pt.x+b[0].wid+b[1].wid<c){
+		while(b[0].nrune>=0 && nb<n1-1 && b[1].nrune>=0 && b[0].fg==b[1].fg
+		     && b[0].bg==b[1].bg && pt.x+b[0].wid+b[1].wid<c){
 			_frmergebox(f, nb);
 			n1--;
 			b = &f->box[nb];

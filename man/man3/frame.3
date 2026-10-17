@@ -1,6 +1,6 @@
 .TH FRAME 3
 .SH NAME
-frinit, frsetrects, frinittick, frsetmargins, frclear, frcharofpt, frptofchar, frrunestep, frinsert, frdelete, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
+frinit, frsetrects, frinittick, frsetmargins, frclear, frcharofpt, frptofchar, frrunestep, frinsert, frdelete, frinsertmarkup, frmarkupfg, frmarkupbg, frredrawmarkup, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
 .SH SYNOPSIS
 .nf
 .B
@@ -47,6 +47,20 @@ void  frinsert(Frame *f, Rune *r0, Rune *r1, ulong p)
 int   frdelete(Frame *f, ulong p0, ulong p1)
 .PP
 .B
+void  frinsertmarkup(Frame *f, Rune *r0, Rune *r1, ulong p,
+.B
+		Frmarkup *fg, Image *bg)
+.PP
+.B
+void  frmarkupfg(Frame *f, ulong p0, ulong p1, Frmarkup *fg)
+.PP
+.B
+void  frmarkupbg(Frame *f, ulong p0, ulong p1, Image *bg)
+.PP
+.B
+void  frredrawmarkup(Frame *f, Frmarkup *markup)
+.PP
+.B
 void  frselect(Frame *f, Mousectl *m)
 .PP
 .B
@@ -78,7 +92,8 @@ enum{
 .SH DESCRIPTION
 This library supports
 .I frames
-of editable text in a single font on raster displays, such as in
+of editable text in a single font, optionally varied by range as described below,
+on raster displays, such as in
 .MR sam 1
 and
 .MR 9term 1 .
@@ -172,7 +187,8 @@ prepares the
 so characters drawn in it will appear
 in the single
 .B Font
-.IR ft .
+.I ft
+(unless given a style of their own; see below).
 It then calls
 .I frsetrects
 and
@@ -281,9 +297,7 @@ The frame still draws text only inside
 but after it redraws, inserts or deletes it paints the margins in
 .B cols[BACK]
 and draws into them the overhang of the characters that begin or end a row,
-always in
-.BR cols[TEXT] ,
-even next to a selection.
+in the color of those characters, never in the selection color.
 .I Frinit
 sets both margins to 0, which leaves the overhang clipped,
 so
@@ -336,7 +350,7 @@ and returns non-zero if
 did not fit on the current row and so was folded to the start of the next.
 It does not draw anything or change
 .IR f ,
-so a program can use it to lay out text
+and it ignores text styles, so a program can use it to lay out text
 that is not in the frame, for example to count the rows a line of text occupies.
 The point should begin at the left edge of the frame, as at the start of a row.
 .PP
@@ -368,6 +382,103 @@ and
 .IR p1 ;
 .I p1
 points at the first rune beyond the deletion.
+.PP
+Text may be given a font and colors of its own, so that a program can
+display syntax highlighting, colored diffs, and the like.
+The text style is described by a
+.BR Frmarkup ,
+defined in
+.BR <frame.h> :
+.IP
+.EX
+.ta 6n +\w'Image 'u +\w'*font;   'u
+typedef struct Frmarkup Frmarkup;
+struct Frmarkup
+{
+	Font	*font;	/* nil ==> frame's default */
+	Image	*col;	/* nil ==> frame's default */
+};
+.EE
+.PP
+Text with a
+.B Frmarkup
+is drawn in its
+.B font
+and
+.B col
+in place of the font of the frame and
+.BR cols[TEXT] ;
+a null pointer selects the frame's own.
+A
+.B Font
+used this way must have the same height as the font of the frame,
+so that the geometry of the frame (lines, wrapping, selection and tick)
+does not depend on the styles; only the widths of characters may differ.
+Independently of this, text may have a background color that replaces
+.BR cols[BACK] ;
+null again selects the frame's own.
+.PP
+.I Frinsertmarkup
+is like
+.I frinsert
+but gives the inserted runes the text style
+.I fg
+and the background color
+.IR bg .
+Either may be null;
+.I frinsert
+is
+.I frinsertmarkup
+with both null.
+.I Frmarkupfg
+sets the text style of the runes already in the frame from index
+.I p0
+to
+.IR p1 ,
+clipped to the end of the text, to
+.IR fg ,
+and
+.I frmarkupbg
+sets their background color to
+.IR bg ;
+null restores the default.
+Both repaint the text they change, and do nothing if the
+.B Image
+of the frame is null.
+If a new font changes the widths of the text,
+.I frmarkupfg
+rewraps the frame as
+.I frinsert
+would, and text that no longer fits is dropped from the frame, so the application should check
+.B nchars
+afterwards.
+.PP
+The frame keeps the
+.B Frmarkup
+pointers it is given rather than copies of the structures,
+and adjacent text is merged internally only if its text style pointers are equal and its
+background colors are equal.
+A program should therefore use one
+.B Frmarkup
+for each distinct style, and keep it valid for as long as any text in the frame refers to it.
+If the contents of a
+.B Frmarkup
+are changed, calling
+.I frredrawmarkup
+repaints all the text in the frame whose style is
+.IR markup ,
+rewrapping the frame as above if widths changed.
+Since the frame holds only the visible text, the styles of text scrolled out of it
+are forgotten; the application, which holds the text, must supply them again with
+.I frinsertmarkup
+when the text comes back into view.
+.PP
+Selected text is always painted with
+.B cols[HIGH]
+and
+.BR cols[HTEXT] ,
+whatever colors its style gives it, so that it stays readable;
+it keeps the font of its style.
 .PP
 .I Frselect
 tracks the mouse to select a contiguous string of text in the
