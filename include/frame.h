@@ -8,6 +8,7 @@ AUTOLIB(frame)
 
 typedef struct Frbox Frbox;
 typedef struct Frame Frame;
+typedef struct Frmarkup Frmarkup;
 
 enum{
 	BACK,
@@ -18,6 +19,14 @@ enum{
 	NCOL
 };
 
+struct Frmarkup
+{
+	Font	*font;	/* nil ==> frame's default */
+	Image	*col;	/* nil ==> frame's default */
+	Image	*underline;	/* nil ==> no underline */
+	Image	*strikethrough;	/* nil ==> no strikethrough */
+};
+
 #define	FRTICKW	3
 struct Frbox
 {
@@ -26,6 +35,8 @@ struct Frbox
 	uchar	*ptr;
 	short	bc;	/* break char */
 	short	minwid;
+	Frmarkup	*fg;	/* nil ==> frame's default */
+	Image	*bg;	/* nil ==> frame's default */
 };
 
 struct Frame
@@ -53,13 +64,21 @@ struct Frame
 	int			tickscale;	/* tick scaling factor */
 	int			lmargin;	/* free pixels left of r for glyph overhang */
 	int			rmargin;	/* free pixels right of r for glyph overhang */
+	int			curlineht;	/* height of the line a walk is on */
 };
 
 ulong	frcharofpt(Frame*, Point);
 Point	frptofchar(Frame*, ulong);
-int	frrunestep(Frame*, Point*, Rune);
+int	frliney(Frame*, int);
+int	frlineofy(Frame*, int);
+int	frtextlines(Frame*);
+int	frrunestep(Frame*, Point*, Rune, Frmarkup*);
 int	frdelete(Frame*, ulong, ulong);
 void	frinsert(Frame*, Rune*, Rune*, ulong);
+void	frinsertmarkup(Frame*, Rune*, Rune*, ulong, Frmarkup*, Image*);
+void	frmarkupfg(Frame*, ulong, ulong, Frmarkup*);
+void	frmarkupbg(Frame*, ulong, ulong, Image*);
+void	frredrawmarkup(Frame*, Frmarkup*);
 void	frselect(Frame*, Mousectl*);
 void	frselectpaint(Frame*, Point, Point, Image*);
 void	frdrawsel(Frame*, Point, ulong, ulong, int);
@@ -96,9 +115,16 @@ Point	_frptofcharnb(Frame*, ulong, int);
 int	_frstrlen(Frame*, int);
 void	frtick(Frame*, Point, int);
 void	frinittick(Frame*);
+void	_frtickalloc(Frame*, int);
+void	_frreflow(Frame*);
+int	_frlinescan(Frame*, int, int*);
+Rectangle	_frfindline(Frame*, Point, int*, ulong*);
+int	_frvarht(Frame*);
+int	_frcountlines(Frame*);
 
 #define	NRUNE(b)	((b)->nrune<0? 1 : (b)->nrune)
 #define	NBYTE(b)	strlen((char*)(b)->ptr)
+#define	BOXFONT(f,b)	(((b)->fg!=nil && (b)->fg->font!=nil)? (b)->fg->font : (f)->font)
 #if defined(__cplusplus)
 }
 #endif

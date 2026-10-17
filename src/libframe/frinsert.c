@@ -10,15 +10,18 @@ static Frame		frame;
 
 static
 Point
-bxscan(Frame *f, Rune *sp, Rune *ep, Point *ppt)
+bxscan(Frame *f, Rune *sp, Rune *ep, Point *ppt, Frmarkup *fg, Image *bg)
 {
 	int w, c, nb, delta, nl, nr, rw;
 	Frbox *b;
 	char *s, tmp[TMPSIZE+3];	/* +3 for rune overflow */
 	uchar *p;
+	Font *bfont;
 
+	bfont = (fg!=nil && fg->font!=nil)? fg->font : f->font;
 	frame.r = f->r;
 	frame.b = f->b;
+	frame.display = f->display;	/* for scalesize */
 	frame.font = f->font;
 	frame.maxtab = f->maxtab;
 	frame.nbox = 0;
@@ -37,8 +40,10 @@ bxscan(Frame *f, Rune *sp, Rune *ep, Point *ppt)
 		if(c=='\t' || c=='\n'){
 			b->bc = c;
 			b->wid = 5000;
-			b->minwid = (c=='\n')? 0 : stringwidth(frame.font, " ");
+			b->minwid = (c=='\n')? 0 : stringwidth(bfont, " ");
 			b->nrune = -1;
+			b->fg = fg;
+			b->bg = bg;
 			if(c=='\n')
 				nl++;
 			frame.nchars++;
@@ -54,7 +59,7 @@ bxscan(Frame *f, Rune *sp, Rune *ep, Point *ppt)
 				rw = runetochar(s, sp);
 				if(s+rw >= tmp+TMPSIZE)
 					break;
-				w += runestringnwidth(frame.font, sp, 1);
+				w += runestringnwidth(bfont, sp, 1);
 				sp++;
 				s += rw;
 				nr++;
@@ -66,6 +71,8 @@ bxscan(Frame *f, Rune *sp, Rune *ep, Point *ppt)
 			memmove(p, tmp, s-tmp);
 			b->wid = w;
 			b->nrune = nr;
+			b->fg = fg;
+			b->bg = bg;
 			frame.nchars += nr;
 		}
 	}
@@ -94,14 +101,53 @@ chopframe(Frame *f, Point pt, ulong p, int bn)
 		_frdelbox(f, (int)(b-f->box), f->nbox-1);
 }
 
+static
 void
-frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
+insboxes(Frame *f, ulong p0, int n0)
+{
+	int n;
+
+	_fraddbox(f, n0, frame.nbox);
+	for(n=0; n<frame.nbox; n++)
+		f->box[n0+n] = frame.box[n];
+	f->nchars += frame.nchars;
+	if(f->p0 >= p0)
+		f->p0 += frame.nchars;
+	if(f->p0 > f->nchars)
+		f->p0 = f->nchars;
+	if(f->p1 >= p0)
+		f->p1 += frame.nchars;
+	if(f->p1 > f->nchars)
+		f->p1 = f->nchars;
+}
+
+static
+void
+frinsertslow(Frame *f, ulong p0, int n0, int n)
+{
+	int nc;
+
+	if(f->p0 == f->p1)
+		frtick(f, frptofchar(f, f->p0), 0);
+	nc = f->nchars;
+	insboxes(f, p0, n0);
+	f->modified = 1;
+	_frreflow(f);
+	if(f->nchars-nc < n)	/* some didn't fit; textfill needs to know */
+		f->lastlinefull = 1;
+	if(f->p0 == f->p1)
+		frtick(f, frptofchar(f, f->p0), 1);
+}
+
+static
+void
+frinsert0(Frame *f, Rune *sp, Rune *ep, ulong p0, Frmarkup *fg, Image *bg)
 {
 	Point pt0, pt1, opt0, ppt0, ppt1, pt;
 	Frbox *b;
 	int n, n0, nn0, y;
 	ulong cn0, qend;
-	Image *col, *tcol;
+	Image *bcol, *tcol;
 	Rectangle r;
 	static struct{
 		Point pt0, pt1;
@@ -117,7 +163,12 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 	pt0 = _frptofcharnb(f, p0, n0);
 	ppt0 = pt0;
 	opt0 = pt0;
-	pt1 = bxscan(f, sp, ep, &ppt0);
+	pt1 = bxscan(f, sp, ep, &ppt0, fg, bg);
+	/* mixed line heights: can't move pixels around, so relayout and redraw */
+	if(_frvarht(f) || (fg!=nil && fg->font!=nil && fg->font->height>f->font->height)){
+		frinsertslow(f, p0, nn0, ep-sp);
+		return;
+	}
 	ppt1 = pt1;
 	if(n0 < f->nbox){
 		_frcklinewrap(f, &pt0, b = &f->box[n0]);	/* for frdrawsel() */
@@ -220,10 +271,10 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 				r.max.x = f->r.max.x;
 				r.max.y += f->font->height;
 				if(f->p0<=cn0 && cn0<f->p1)	/* b+1 is inside selection */
-					col = f->cols[HIGH];
+					bcol = f->cols[HIGH];
 				else
-					col = f->cols[BACK];
-				draw(f->b, r, col, nil, r.min);
+					bcol = b->bg!=nil? b->bg : f->cols[BACK];
+				draw(f->b, r, bcol, nil, r.min);
 			}else if(pt.y < y){
 				r.min = pt;
 				r.max = pt;
@@ -231,10 +282,10 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 				r.max.x = f->r.max.x;
 				r.max.y += f->font->height;
 				if(f->p0<=cn0 && cn0<f->p1)	/* b+1 is inside selection */
-					col = f->cols[HIGH];
+					bcol = f->cols[HIGH];
 				else
-					col = f->cols[BACK];
-				draw(f->b, r, col, nil, r.min);
+					bcol = b->bg!=nil? b->bg : f->cols[BACK];
+				draw(f->b, r, bcol, nil, r.min);
 			}
 			y = pt.y;
 			cn0 -= b->nrune;
@@ -247,13 +298,13 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 				r.max.x = f->r.max.x;
 			cn0--;
 			if(f->p0<=cn0 && cn0<f->p1){ /* b is inside selection */
-				col = f->cols[HIGH];
+				bcol = f->cols[HIGH];
 				tcol = f->cols[HTEXT];
 			}else{
-				col = f->cols[BACK];
+				bcol = b->bg!=nil? b->bg : f->cols[BACK];
 				tcol = f->cols[TEXT];
 			}
-			draw(f->b, r, col, nil, r.min);
+			draw(f->b, r, bcol, nil, r.min);
 			y = 0;
 			if(pt.x == f->r.min.x)
 				y = pt.y;
@@ -261,35 +312,36 @@ frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
 	}
 	/* insertion can extend the selection, so the condition here is different */
 	if(f->p0<p0 && p0<=f->p1){
-		col = f->cols[HIGH];
+		bcol = f->cols[HIGH];
 		tcol = f->cols[HTEXT];
 	}else{
-		col = f->cols[BACK];
+		bcol = f->cols[BACK];
 		tcol = f->cols[TEXT];
 	}
-	frselectpaint(f, ppt0, ppt1, col);
-	_frdrawtext(&frame, ppt0, tcol, col);
-	_fraddbox(f, nn0, frame.nbox);
-	for(n=0; n<frame.nbox; n++)
-		f->box[nn0+n] = frame.box[n];
+	frselectpaint(f, ppt0, ppt1, bcol);
+	_frdrawtext(&frame, ppt0, tcol, bcol);
+	insboxes(f, p0, nn0);
 	if(nn0>0 && f->box[nn0-1].nrune>=0 && ppt0.x-f->box[nn0-1].wid>=f->r.min.x){
 		--nn0;
 		ppt0.x -= f->box[nn0].wid;
 	}
 	n0 += frame.nbox;
 	_frclean(f, ppt0, nn0, n0<f->nbox-1? n0+1 : n0);
-	f->nchars += frame.nchars;
-	if(f->p0 >= p0)
-		f->p0 += frame.nchars;
-	if(f->p0 > f->nchars)
-		f->p0 = f->nchars;
-	if(f->p1 >= p0)
-		f->p1 += frame.nchars;
-	if(f->p1 > f->nchars)
-		f->p1 = f->nchars;
 	/* from the char before, whose cell holds overhang */
 	_frrepaint(f, p0>0? p0-1 : 0, qend);
 	_frfixmargin(f);
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
+}
+
+void
+frinsert(Frame *f, Rune *sp, Rune *ep, ulong p0)
+{
+	frinsert0(f, sp, ep, p0, nil, nil);
+}
+
+void
+frinsertmarkup(Frame *f, Rune *sp, Rune *ep, ulong p0, Frmarkup *fg, Image *bg)
+{
+	frinsert0(f, sp, ep, p0, fg, bg);
 }

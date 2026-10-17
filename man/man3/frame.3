@@ -1,6 +1,6 @@
 .TH FRAME 3
 .SH NAME
-frinit, frsetrects, frinittick, frsetmargins, frclear, frcharofpt, frptofchar, frrunestep, frinsert, frdelete, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
+frinit, frsetrects, frinittick, frsetmargins, frclear, frcharofpt, frptofchar, frliney, frlineofy, frtextlines, frrunestep, frinsert, frdelete, frinsertmarkup, frmarkupfg, frmarkupbg, frredrawmarkup, frselect, frtick, frselectpaint, frdrawsel, frdrawsel0, frgetmouse \- frames of text
 .SH SYNOPSIS
 .nf
 .B
@@ -38,13 +38,36 @@ ulong frcharofpt(Frame *f, Point pt)
 Point frptofchar(Frame *f, ulong p)
 .PP
 .B
-int   frrunestep(Frame *f, Point *p, Rune r)
+int   frliney(Frame *f, int n)
+.PP
+.B
+int   frlineofy(Frame *f, int y)
+.PP
+.B
+int   frtextlines(Frame *f)
+.PP
+.B
+int   frrunestep(Frame *f, Point *p, Rune r, Frmarkup *fg)
 .PP
 .B
 void  frinsert(Frame *f, Rune *r0, Rune *r1, ulong p)
 .PP
 .B
 int   frdelete(Frame *f, ulong p0, ulong p1)
+.PP
+.B
+void  frinsertmarkup(Frame *f, Rune *r0, Rune *r1, ulong p,
+.B
+		Frmarkup *fg, Image *bg)
+.PP
+.B
+void  frmarkupfg(Frame *f, ulong p0, ulong p1, Frmarkup *fg)
+.PP
+.B
+void  frmarkupbg(Frame *f, ulong p0, ulong p1, Image *bg)
+.PP
+.B
+void  frredrawmarkup(Frame *f, Frmarkup *markup)
 .PP
 .B
 void  frselect(Frame *f, Mousectl *m)
@@ -78,7 +101,8 @@ enum{
 .SH DESCRIPTION
 This library supports
 .I frames
-of editable text in a single font on raster displays, such as in
+of editable text in a single font, optionally varied by range as described below,
+on raster displays, such as in
 .MR sam 1
 and
 .MR 9term 1 .
@@ -172,7 +196,8 @@ prepares the
 so characters drawn in it will appear
 in the single
 .B Font
-.IR ft .
+.I ft
+(unless given a style of their own; see below).
 It then calls
 .I frsetrects
 and
@@ -281,9 +306,7 @@ The frame still draws text only inside
 but after it redraws, inserts or deletes it paints the margins in
 .B cols[BACK]
 and draws into them the overhang of the characters that begin or end a row,
-always in
-.BR cols[TEXT] ,
-even next to a selection.
+in the color of those characters, never in the selection color.
 .I Frinit
 sets both margins to 0, which leaves the overhang clipped,
 so
@@ -327,9 +350,11 @@ past the rune
 .I r
 as
 .I frinsert
-would lay it out in the font of the
+would lay it out with text style
+.I fg
+(null for the font of the
 .B Frame
-.IR f ,
+.IR f ),
 folding lines at the right edge and handling tabs and newlines,
 and returns non-zero if
 .I r
@@ -368,6 +393,136 @@ and
 .IR p1 ;
 .I p1
 points at the first rune beyond the deletion.
+.PP
+Text may be given a font and colors of its own, so that a program can
+display syntax highlighting, colored diffs, and the like.
+The text style is described by a
+.BR Frmarkup ,
+defined in
+.BR <frame.h> :
+.IP
+.EX
+.ta 6n +\w'Image 'u +\w'*strikethrough;   'u
+typedef struct Frmarkup Frmarkup;
+struct Frmarkup
+{
+	Font	*font;	/* nil ==> frame's default */
+	Image	*col;	/* nil ==> frame's default */
+	Image	*underline;	/* nil ==> no underline */
+	Image	*strikethrough;	/* nil ==> no strikethrough */
+};
+.EE
+.PP
+Text with a
+.B Frmarkup
+is drawn in its
+.B font
+and
+.B col
+in place of the font of the frame and
+.BR cols[TEXT] ;
+a null pointer selects the frame's own.
+A line is as tall as the tallest font on it, and never shorter than the font of the frame;
+the tick is as tall as its line.
+Independently of this, text may have a background color that replaces
+.BR cols[BACK] ;
+null again selects the frame's own.
+.PP
+A
+.B Frmarkup
+may also draw a line across the text, in a color of its own:
+.B underline
+along the bottom of the font's cell and
+.B strikethrough
+through its middle.
+Either may be null, and both may be present.
+A line is one pixel thick (scaled as the tick is),
+follows the font of the text it marks,
+and is drawn across tabs but not newlines.
+It takes no room, so changing only the lines never rewraps the frame.
+.PP
+.I Frinsertmarkup
+is like
+.I frinsert
+but gives the inserted runes the text style
+.I fg
+and the background color
+.IR bg .
+Either may be null;
+.I frinsert
+is
+.I frinsertmarkup
+with both null.
+.I Frmarkupfg
+sets the text style of the runes already in the frame from index
+.I p0
+to
+.IR p1 ,
+clipped to the end of the text, to
+.IR fg ,
+and
+.I frmarkupbg
+sets their background color to
+.IR bg ;
+null restores the default.
+Both repaint the text they change, and do nothing if the
+.B Image
+of the frame is null.
+If a new font changes the widths or heights of the text,
+.I frmarkupfg
+rewraps the frame as
+.I frinsert
+would, and text that no longer fits is dropped from the frame, so the application should check
+.B nchars
+afterwards.
+.PP
+The frame keeps the
+.B Frmarkup
+pointers it is given rather than copies of the structures,
+and adjacent text is merged internally only if its text style pointers are equal and its
+background colors are equal.
+A program should therefore use one
+.B Frmarkup
+for each distinct style, and keep it valid for as long as any text in the frame refers to it.
+If the contents of a
+.B Frmarkup
+are changed, calling
+.I frredrawmarkup
+repaints all the text in the frame whose style is
+.IR markup ,
+rewrapping the frame as above.
+Where lines differ in height,
+.I frinsert
+and
+.I frdelete
+relayout and redraw the frame instead of moving pixels.
+Since the frame holds only the visible text, the styles of text scrolled out of it
+are forgotten; the application, which holds the text, must supply them again with
+.I frinsertmarkup
+when the text comes back into view.
+.PP
+Where lines differ in height, line
+.I n
+does not begin
+.I n
+font heights below the top of the frame.
+.I Frliney
+returns the y of the top of line
+.IR n ,
+counting from 0, and
+.I frlineofy
+is its inverse.
+.I Frtextlines
+returns the number of lines of the font of the frame that the text occupies.
+.PP
+Selected text is always painted with
+.B cols[HIGH]
+and
+.BR cols[HTEXT] ,
+whatever colors its style gives it, so that it stays readable;
+it keeps the font and the lines of its style,
+the lines drawn in
+.BR cols[HTEXT] .
 .PP
 .I Frselect
 tracks the mouse to select a contiguous string of text in the
