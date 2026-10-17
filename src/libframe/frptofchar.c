@@ -11,20 +11,23 @@ _frptofcharptb(Frame *f, ulong p, Point pt, int bn)
 	Frbox *b;
 	int w, l;
 	Rune r;
+	Font *bfont;
 
 	for(b = &f->box[bn]; bn<f->nbox; bn++,b++){
 		_frcklinewrap(f, &pt, b);
 		if(p < (l=NRUNE(b))){
-			if(b->nrune > 0)
+			if(b->nrune > 0){
+				bfont = BOXFONT(f, b);
 				for(s=b->ptr; p>0; s+=w, p--){
 					if((r = *s) < Runeself)
 						w = 1;
 					else
 						w = chartorune(&r, (char*)s);
-					pt.x += stringnwidth(f->font, (char*)s, 1);
+					pt.x += stringnwidth(bfont, (char*)s, 1);
 					if(r==0 || pt.x>f->r.max.x)
 						drawerror(f->display, "frptofchar");
 				}
+			}
 			break;
 		}
 		p -= l;
@@ -73,6 +76,7 @@ frcharofpt(Frame *f, Point pt)
 	Frbox *b;
 	ulong p;
 	Rune r;
+	Font *bfont;
 
 	pt = _frgrid(f, pt);
 	qt = f->r.min;
@@ -91,6 +95,7 @@ frcharofpt(Frame *f, Point pt)
 			if(b->nrune < 0)
 				_fradvance(f, &qt, b);
 			else{
+				bfont = BOXFONT(f, b);
 				s = b->ptr;
 				for(;;){
 					if((r = *s) < Runeself)
@@ -99,7 +104,7 @@ frcharofpt(Frame *f, Point pt)
 						w = chartorune(&r, (char*)s);
 					if(r == 0)
 						drawerror(f->display, "end of string in frcharofpt");
-					qt.x += stringnwidth(f->font, (char*)s, 1);
+					qt.x += stringnwidth(bfont, (char*)s, 1);
 					s += w;
 					if(qt.x > pt.x)
 						break;
