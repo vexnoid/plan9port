@@ -61,17 +61,20 @@ frdelete(Frame *f, ulong p0, ulong p1)
 			draw(f->b, r, f->b, nil, pt1);
 			cn1 += b->nrune;
 
-			/* blank remainder of line */
+			/* blank rest of line; honor bg/selection */
 			r.min.x = r.max.x;
 			r.max.x += w0 - b->wid;
 			if(r.max.x > f->r.max.x)
 				r.max.x = f->r.max.x;
-			draw(f->b, r, f->cols[BACK], nil, r.min);
+			col = b->bg!=nil? b->bg : f->cols[BACK];
+			if(f->p0<=cn1 && cn1<f->p1)
+				col = f->cols[HIGH];
+			draw(f->b, r, col, nil, r.min);
 		}else{
 			r.max.x += _frnewwid0(f, pt0, b);
 			if(r.max.x > f->r.max.x)
 				r.max.x = f->r.max.x;
-			col = f->cols[BACK];
+			col = b->bg!=nil? b->bg : f->cols[BACK];
 			if(f->p0<=cn1 && cn1<f->p1)
 				col = f->cols[HIGH];
 			draw(f->b, r, col, nil, pt0);
