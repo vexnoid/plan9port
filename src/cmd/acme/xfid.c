@@ -208,7 +208,7 @@ xfidclose(Xfid *x)
 {
 	Fcall fc;
 	Window *w;
-	int q;
+	int i, q;
 	Text *t;
 
 	w = x->f->w;
@@ -247,10 +247,16 @@ xfidclose(Xfid *x)
 				if(q == QWdata || q == QWxdata)
 					w->nomark = FALSE;
 				if(q == QWevent){
-					free(w->dumpstr);
-					free(w->dumpdir);
-					w->dumpstr = nil;
-					w->dumpdir = nil;
+					/* siblings may still have event open */
+					for(i=0; i<w->body.file->ntext; i++)
+						if(w->body.file->text[i]->w->nopen[QWevent] > 0)
+							break;
+					if(i == w->body.file->ntext){
+						free(w->body.file->dumpstr);
+						free(w->body.file->dumpdir);
+						w->body.file->dumpstr = nil;
+						w->body.file->dumpdir = nil;
+					}
 				}
 			}
 			break;
@@ -630,7 +636,7 @@ void
 xfidctlwrite(Xfid *x, Window *w)
 {
 	Fcall fc;
-	int i, m, n, nb, nr, nulls;
+	int i, m, n, nb, nr, nulls, wi;
 	Rune *r;
 	char *err, *p, *pp, *q, *e;
 	int isfbuf, scrdraw, settag;
@@ -667,6 +673,9 @@ xfidctlwrite(Xfid *x, Window *w)
 			filereset(t->file);
 			t->file->mod = FALSE;
 			w->dirty = FALSE;
+			/* zeroxes share the File */
+			for(wi=0; wi<t->file->ntext; wi++)
+				t->file->text[wi]->w->dirty = FALSE;
 			settag = TRUE;
 			m = 5;
 		}else
@@ -747,7 +756,8 @@ out:
 				err = "nulls in dump string";
 				break;
 			}
-			w->dumpstr = runetobyte(r, nr);
+			free(w->body.file->dumpstr);
+			w->body.file->dumpstr = runetobyte(r, nr);
 			m += (q+1) - pp;
 		}else
 		if(strncmp(p, "dumpdir ", 8) == 0){	/* set dump directory */
@@ -765,7 +775,8 @@ out:
 				err = "nulls in dump directory string";
 				break;
 			}
-			w->dumpdir = runetobyte(r, nr);
+			free(w->body.file->dumpdir);
+			w->body.file->dumpdir = runetobyte(r, nr);
 			m += (q+1) - pp;
 		}else
 		if(strncmp(p, "delete", 6) == 0){	/* delete for sure */
