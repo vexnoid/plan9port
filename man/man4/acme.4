@@ -434,6 +434,85 @@ have been if the
 file had not been open. If the command had a chorded argument,
 the argument is applied as well.
 .TP
+.B markup
+The
+.B markup
+file holds the font and color markup of the window body, which an external program
+can set to implement syntax highlighting, colored diffs, and the like.
+Text written to
+.B markup
+is a sequence of newline-terminated commands, any number per write.
+Each names a range of the body by the character (not byte) offsets
+.I q0
+and
+.I q1
+of its ends:
+.IP
+.EX
+clear q0 q1
+fg q0 q1 rrggbb
+bg q0 q1 rrggbb
+font q0 q1 fontname
+.EE
+.IP
+.B Clear
+removes all markup from the range.
+.B Fg
+and
+.B bg
+set the text and background colors of the range, given as six hexadecimal digits of red, green and blue.
+.B Font
+sets the font of the range to the font file
+.IR fontname ,
+named as in the
+.B Font
+command of
+.MR acme 1 .
+In each case a
+.B -
+in place of the color or font name restores the default.
+An offset past the end of the body is taken to be the end;
+.I q0
+must not be greater than
+.IR q1 ,
+and an empty range has no effect.
+When
+.B fg
+or
+.B font
+is applied to a range whose existing markup is not uniform, the attribute
+not being set becomes, for the whole range, the one in effect at
+.IR q0 .
+.IP
+Reading
+.B markup
+returns the markup now in effect, one range per line, in the syntax above.
+Each color and font appears on a line of its own, in no particular order,
+and ranges with default markup are omitted.
+.IP
+The markup belongs to the text of the file, not to a window.
+It is shared by every window on the file (see
+.B Zerox
+in
+.MR acme 1 ),
+is unaffected by scrolling, and moves with the text it marks as the text is inserted
+and deleted, including by undo and redo.
+Text inserted into or beside a marked range is not itself marked.
+All markup is discarded when the body is reset, as by
+.BR Get ,
+and when the file is closed.
+.IP
+A font must have the same height as the font of the body;
+a font that does not is refused.
+Because a different font can change how much text fits,
+the window is refilled after a font is set.
+.IP
+Commands are carried out in order.
+A write stops at the first command in error and returns an error;
+commands before it remain in effect.
+Text typed into the body but not yet committed to the file is committed
+before each read or write, so the offsets agree with those of the other files.
+.TP
 .B tag
 holds contents of the window tag.  It may be read at any byte offset.
 Text written to

@@ -18,6 +18,7 @@ OFILES=\
 	fsys.$O\
 	logf.$O\
 	look.$O\
+	mark.$O\
 	regx.$O\
 	rows.$O\
 	scrl.$O\

@@ -19,6 +19,7 @@ enum
 	QWerrors,
 	QWevent,
 	QWrdsel,
+	QWmarkup,
 	QWwrsel,
 	QWtag,
 	QWxdata,
@@ -44,6 +45,8 @@ typedef	struct	Disk Disk;
 typedef	struct	Expand Expand;
 typedef	struct	Fid Fid;
 typedef	struct	File File;
+typedef	struct	Fgspan Fgspan;
+typedef	struct	Bgspan Bgspan;
 typedef	struct	Elog Elog;
 typedef	struct	Mntdir Mntdir;
 typedef	struct	Range Range;
@@ -146,6 +149,8 @@ struct File
 	Text		**text;	/* list of associated texts */
 	int		ntext;
 	int		dumpid;	/* used in dumping zeroxed windows */
+	Fgspan	*fgspans;
+	Bgspan	*bgspans;
 };
 File*		fileaddtext(File*, Text*);
 void		fileclose(File*);
@@ -447,6 +452,8 @@ void		xfidwrite(Xfid*);
 void		xfidctlwrite(Xfid*, Window*);
 void		xfideventread(Xfid*, Window*);
 void		xfideventwrite(Xfid*, Window*);
+void		xfidmarkupwrite(Xfid*, Window*);
+void		xfidmarkupread(Xfid*, Window*);
 void		xfidindexread(Xfid*);
 void		xfidutfread(Xfid*, Text*, uint, int);
 int		xfidruneread(Xfid*, Text*, uint, uint);
