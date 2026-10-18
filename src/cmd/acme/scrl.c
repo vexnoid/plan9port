@@ -152,7 +152,7 @@ textscroll4(Text *t, int up)
 	if(my >= s.max.y)
 		my = s.max.y;
 	if(up)
-		p0 = textbacknl(t, t->org, (my-s.min.y)/t->fr.font->height);
+		p0 = textbacknl(t, t->org, frlineofy(&t->fr, t->fr.r.min.y+my-s.min.y));
 	else
 		p0 = t->org+frcharofpt(&t->fr, Pt(s.max.x, my));
 	textsetorigin(t, p0, TRUE);

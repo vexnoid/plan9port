@@ -79,6 +79,7 @@ fileinsert(File *f, uint p0, Rune *s, uint ns)
 	if(f->seq > 0)
 		fileuninsert(f, &f->delta, p0, ns);
 	bufinsert(&f->b, p0, s, ns);
+	filemarkupins(f, p0, ns);
 	if(ns)
 		f->mod = TRUE;
 }
@@ -125,6 +126,7 @@ filedelete(File *f, uint p0, uint p1)
 	if(f->seq > 0)
 		fileundelete(f, &f->delta, p0, p1);
 	bufdelete(&f->b, p0, p1);
+	filemarkupdel(f, p0, p1);
 	if(p1 > p0)
 		f->mod = TRUE;
 }
@@ -234,6 +236,7 @@ fileundo(File *f, int isundo, uint *q0p, uint *q1p)
 			fileundelete(f, epsilon, u.p0, u.p0+u.n);
 			f->mod = u.mod;
 			bufdelete(&f->b, u.p0, u.p0+u.n);
+			filemarkupdel(f, u.p0, u.p0+u.n);
 			for(j=0; j<f->ntext; j++)
 				textdelete(f->text[j], u.p0, u.p0+u.n, FALSE);
 			*q0p = u.p0;
@@ -251,6 +254,7 @@ fileundo(File *f, int isundo, uint *q0p, uint *q1p)
 					n = RBUFSIZE;
 				bufread(delta, up+i, buf, n);
 				bufinsert(&f->b, u.p0+i, buf, n);
+				filemarkupins(f, u.p0+i, n);
 				for(j=0; j<f->ntext; j++)
 					textinsert(f->text[j], u.p0+i, buf, n, FALSE);
 			}
@@ -286,6 +290,7 @@ fileclose(File *f)
 	bufclose(&f->b);
 	bufclose(&f->delta);
 	bufclose(&f->epsilon);
+	filemarkupfree(f);
 	elogclose(f);
 	free(f);
 }

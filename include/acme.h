@@ -32,6 +32,7 @@ struct Win
 	CFid *event;
 	CFid *data;
 	CFid *xdata;
+	CFid *markup;
 	Channel *c;	/* chan(Event) */
 	Win *next;
 	Win *prev;

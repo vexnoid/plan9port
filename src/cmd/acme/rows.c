@@ -837,7 +837,7 @@ rowload(Row *row, char *file, int initing)
 			textsetselect(&w->body, q0, q1);
 			textsetorigin(&w->body, org, TRUE);
 		}
-		w->maxlines = min(w->body.fr.nlines, max(w->maxlines, w->body.fr.maxlines));
+		w->maxlines = min(frtextlines(&w->body.fr), max(w->maxlines, w->body.fr.maxlines));
 		xfidlog(w, "new");
 		if(iseventwin){
 			l = rdline(b, &line);	/* directory */

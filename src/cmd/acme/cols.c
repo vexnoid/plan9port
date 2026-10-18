@@ -131,7 +131,7 @@ coladd(Column *c, Window *w, Window *clone, int y)
 			r1.max.y = y;
 		else{
 			y = min(y, ymax-(v->tag.fr.font->height*v->taglines+v->body.fr.font->height+Border+1));
-			r1.max.y = min(y, v->body.fr.r.min.y+v->body.fr.nlines*v->body.fr.font->height);
+			r1.max.y = min(y, v->body.fr.r.min.y+frtextlines(&v->body.fr)*v->body.fr.font->height);
 		}
 		r1.min.y = winresize(v, r1, FALSE, FALSE);
 		r1.max.y = r1.min.y+Border;
@@ -386,7 +386,7 @@ colpack(Column *c)
 			r.max.y = c->r.max.y;
 		else
 			/* shrink to what the window actually needs to show its content */
-			r.max.y = r.min.y+w->taglines*font->height+1+w->body.fr.nlines*w->body.fr.font->height+Border;
+			r.max.y = r.min.y+w->taglines*font->height+1+frtextlines(&w->body.fr)*w->body.fr.font->height+Border;
 		r1 = r;
 		r1.max.y = r1.min.y+Border;
 		draw(screen, r1, display->black, nil, ZP);
