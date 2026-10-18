@@ -162,6 +162,8 @@ struct File
 	Text		**text;	/* list of associated texts */
 	int		ntext;
 	int		dumpid;	/* used in dumping zeroxed windows */
+	char		*dumpstr;
+	char		*dumpdir;
 	Fgspan	*fgspans;
 	Bgspan	*bgspans;
 };
@@ -291,8 +293,6 @@ struct Window
 	Reffont	*reffont;
 	QLock	ctllock;
 	uint		ctlfid;
-	char		*dumpstr;
-	char		*dumpdir;
 	int		dumpid;
 	int		utflastqid;
 	int		utflastboff;
