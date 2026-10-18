@@ -60,6 +60,13 @@ void	get(Text*, Text*, Text*, int, Rune*, int);
 void	put(Text*, Text*, Text*, int, Rune*, int);
 void	putfile(File*, int, int, Rune*, int);
 void	fontx(Text*, Text*, Text*, int, Rune*, int);
+void	filemarkupins(File*, uint, uint);
+void	filemarkupdel(File*, uint, uint);
+Frmarkup*	filemarkupfgat(File*, uint, uint*);
+Image*	filemarkupbgat(File*, uint, uint*);
+void	filemarkupfree(File*);
+char*	filemarkupdump(File*, int*);
+char*	markupcmd(Window*, char*);
 #undef isalnum
 #define isalnum acmeisalnum
 int	isalnum(Rune);

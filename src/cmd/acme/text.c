@@ -17,6 +17,34 @@ Image	*tagcols[NCOL];
 Image	*textcols[NCOL];
 static Rune Ldot[] = { '.', 0 };
 
+/* reload already-marked-up file text into the frame, e.g. after a scroll */
+static void
+loadmarkup(Text *t, Rune *rp, uint n, ulong framepos, uint filepos)
+{
+	File *f;
+	uint p, e, next, nf, nb;
+	Frmarkup *fg;
+	Image *bg;
+
+	f = t->file;
+	p = filepos;
+	e = filepos+n;
+	while(p < e){
+		fg = filemarkupfgat(f, p, &nf);
+		bg = filemarkupbgat(f, p, &nb);
+		next = nf;
+		if(nb < next)
+			next = nb;
+		if(next > e)
+			next = e;
+		if(next <= p)	/* safety; never stall */
+			next = p+1;
+		frinsertmarkup(&t->fr, rp+(p-filepos), rp+(next-filepos),
+			framepos+(p-filepos), fg, bg);
+		p = next;
+	}
+}
+
 enum
 {
 	TABDIR = 3	/* width of tabs in directory windows */
@@ -318,7 +346,7 @@ textload(Text *t, uint q0, char *file, int setqid)
 		if(q < t->org)
 			t->org += n;
 		else if(q <= t->org+t->fr.nchars)
-			frinsert(&t->fr, rp, rp+n, q-t->org);
+			loadmarkup(t, rp, n, q-t->org, q);
 		if(t->fr.lastlinefull)
 			break;
 	}
@@ -480,7 +508,7 @@ textfill(Text *t)
 					break;
 			}
 		}
-		frinsert(&t->fr, rp, rp+i, t->fr.nchars);
+		loadmarkup(t, rp, i, t->fr.nchars, t->org+t->fr.nchars);
 	}while(t->fr.lastlinefull == FALSE);
 	fbuffree(rp);
 }
@@ -1444,7 +1472,7 @@ textsetorigin(Text *t, uint org, int exact)
 		n = t->org - org;
 		r = runemalloc(n);
 		bufread(&t->file->b, org, r, n);
-		frinsert(&t->fr, r, r+n, 0);
+		loadmarkup(t, r, n, 0, org);
 		free(r);
 	}else
 		frdelete(&t->fr, 0, t->fr.nchars);
@@ -1471,4 +1499,5 @@ textreset(Text *t)
 	t->nscredo = 0;
 	filereset(t->file);
 	bufreset(&t->file->b);
+	filemarkupfree(t->file);
 }

@@ -352,6 +352,10 @@ xfidread(Xfid *x)
 		xfideventread(x, w);
 		break;
 
+	case QWmarkup:
+		xfidmarkupread(x, w);
+		break;
+
 	case QWdata:
 		/* BUG: what should happen if q1 > q0? */
 		if(w->addr.q0 > w->body.file->b.nc){
@@ -600,6 +604,10 @@ xfidwrite(Xfid *x)
 
 	case QWevent:
 		xfideventwrite(x, w);
+		break;
+
+	case QWmarkup:
+		xfidmarkupwrite(x, w);
 		break;
 
 	case QWtag:
@@ -964,6 +972,55 @@ xfideventwrite(Xfid *x, Window *w)
     Rescue:
 	err = Ebadevent;
 	goto Out;
+}
+
+void
+xfidmarkupwrite(Xfid *x, Window *w)
+{
+	Fcall fc;
+	char *err, *p, *e, *nl;
+	int n;
+
+	err = nil;
+	wincommit(w, &w->body);
+	p = x->fcall.data;
+	e = p+x->fcall.count;
+	while(p < e){
+		nl = memchr(p, '\n', e-p);
+		if(nl == nil)
+			nl = e;
+		*nl = 0;
+		err = markupcmd(w, p);
+		if(err != nil)
+			break;
+		p = nl+1;
+	}
+	n = x->fcall.count;
+	if(err)
+		n = 0;
+	fc.count = n;
+	respond(x, &fc, err);
+}
+
+void
+xfidmarkupread(Xfid *x, Window *w)
+{
+	Fcall fc;
+	char *b;
+	int n;
+	uint off;
+
+	wincommit(w, &w->body);
+	b = filemarkupdump(w->body.file, &n);
+	off = x->fcall.offset;
+	if(off > n)
+		off = n;
+	if(off+x->fcall.count > n)
+		x->fcall.count = n-off;
+	fc.count = x->fcall.count;
+	fc.data = b+off;
+	respond(x, &fc, nil);
+	free(b);
 }
 
 void

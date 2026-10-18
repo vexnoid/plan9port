@@ -114,6 +114,10 @@ winclosefiles(Win *w)
 		fsclose(w->xdata);
 		w->xdata = nil;
 	}
+	if(w->markup){
+		fsclose(w->markup);
+		w->markup = nil;
+	}
 }
 
 void
@@ -169,6 +173,8 @@ wfid(Win *w, char *name)
 		fid = &w->data;
 	else if(strcmp(name, "xdata") == 0)
 		fid = &w->xdata;
+	else if(strcmp(name, "markup") == 0)
+		fid = &w->markup;
 	else{
 		fid = 0;
 		sysfatal("bad window file name %s", name);
