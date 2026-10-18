@@ -329,7 +329,7 @@ rowdump1(Row *row, Biobuf *b)
 	char *buf, *a, *fontname, *fontfmt, *fontnamelo, *fontnamehi;
 	Rune *r;
 	Column *c;
-	Window *w, *w1;
+	Window *w;
 	Text *t;
 	Rectangle wr;
 
@@ -374,15 +374,6 @@ rowdump1(Row *row, Biobuf *b)
 			wincommit(w, &w->body);
 			t = &w->body;
 			wr = c->zoomw==w? w->zoomr : w->r;
-			/* zeroxes of external windows are tossed */
-			if(t->file->ntext > 1)
-				for(n=0; n<t->file->ntext; n++){
-					w1 = t->file->text[n]->w;
-					if(w == w1)
-						continue;
-					if(w1->nopen[QWevent])
-						goto Continue2;
-				}
 			fontfmt = "%s";
 			fontnamelo = "";
 			fontnamehi = nil;
@@ -408,7 +399,7 @@ rowdump1(Row *row, Biobuf *b)
 			}else{
 				primary = TRUE;
 				t->file->dumpid = w->id;
-				if(w->dumpstr){
+				if(t->file->dumpstr){
 					dumped = TRUE;
 					Bprint(b, "e%11d %11d %11.7f %11d %11d %s\n", i, w->id,
 						100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
@@ -459,13 +450,12 @@ rowdump1(Row *row, Biobuf *b)
 					q0 += n;
 				}
 			}
-			if(primary && w->dumpstr){
-				if(w->dumpdir)
-					Bprint(b, "%s\n%s\n", w->dumpdir, w->dumpstr);
+			if(primary && t->file->dumpstr){
+				if(t->file->dumpdir)
+					Bprint(b, "%s\n%s\n", t->file->dumpdir, t->file->dumpstr);
 				else
-					Bprint(b, "\n%s\n", w->dumpstr);
+					Bprint(b, "\n%s\n", t->file->dumpstr);
 			}
-    Continue2:;
 		}
 	}
 	fbuffree(r);

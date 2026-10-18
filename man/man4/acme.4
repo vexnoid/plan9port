@@ -231,9 +231,16 @@ address.
 .TP
 .BI dump " command
 Set the command string to recreate the window from a dump file.
+The setting belongs to the file, not to a window, and is shared by every window on it (see
+.B Zerox
+in
+.MR acme 1 ).
 .TP
 .BI dumpdir " directory
 Set the directory in which to run the command to recreate the window from a dump file.
+Like
+.BR dump ,
+it belongs to the file and is shared by every window on it.
 .TP
 .B get
 Equivalent to the
