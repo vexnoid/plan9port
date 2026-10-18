@@ -17,6 +17,33 @@ Image	*tagcols[NCOL];
 Image	*textcols[NCOL];
 static Rune Ldot[] = { '.', 0 };
 
+static void
+loadmarkup(Text *t, Rune *rp, uint n, ulong framepos, uint filepos)
+{
+	File *f;
+	uint p, e, next, nf, nb;
+	Frmarkup *fg;
+	Image *bg;
+
+	f = t->file;
+	p = filepos;
+	e = filepos+n;
+	while(p < e){
+		fg = filemarkupfgat(f, p, &nf);
+		bg = filemarkupbgat(f, p, &nb);
+		next = nf;
+		if(nb < next)
+			next = nb;
+		if(next > e)
+			next = e;
+		if(next <= p)	/* safety; never stall */
+			next = p+1;
+		frinsertmarkup(&t->fr, rp+(p-filepos), rp+(next-filepos),
+			framepos+(p-filepos), fg, bg);
+		p = next;
+	}
+}
+
 enum
 {
 	TABDIR = 3	/* width of tabs in directory windows */
@@ -294,7 +321,7 @@ textload(Text *t, uint q0, char *file, int setqid)
 		if(q < t->org)
 			t->org += n;
 		else if(q <= t->org+t->fr.nchars)
-			frinsert(&t->fr, rp, rp+n, q-t->org);
+			loadmarkup(t, rp, n, q-t->org, q);
 		if(t->fr.lastlinefull)
 			break;
 	}
@@ -453,7 +480,7 @@ textfill(Text *t)
 					break;
 			}
 		}
-		frinsert(&t->fr, rp, rp+i, t->fr.nchars);
+		loadmarkup(t, rp, i, t->fr.nchars, t->org+t->fr.nchars);
 	}while(t->fr.lastlinefull == FALSE);
 	fbuffree(rp);
 }
@@ -945,7 +972,7 @@ textframescroll(Text *t, int dl)
 	}else{
 		if(t->org+t->fr.nchars == t->file->b.nc)
 			return;
-		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, t->fr.r.min.y+dl*t->fr.font->height));
+		q0 = t->org+frcharofpt(&t->fr, Pt(t->fr.r.min.x, frliney(&t->fr, dl)));
 		if(selectq > t->org+t->fr.p1)
 			textsetselect(t, t->org+t->fr.p1, selectq);
 		else
@@ -1092,7 +1119,7 @@ textshow(Text *t, uint q0, uint q1, int doselect)
 			tsd = TRUE;
 		else if(q0==qe && qe==nc){
 			if(textreadc(t, nc-1) == '\n'){
-				if(t->fr.nlines<t->fr.maxlines)
+				if(frliney(&t->fr, t->fr.nlines)+t->fr.font->height <= t->fr.r.max.y)
 					tsd = TRUE;
 			}else
 				tsd = TRUE;
@@ -1464,13 +1491,23 @@ enum
 	Maxback = 4*1024	/* longest line textbacknl lays out */
 };
 
+static int
+rowstep(Text *t, Point *pt, uint q, Frmarkup **fg, uint *next)
+{
+	if(q >= *next)
+		*fg = filemarkupfgat(t->file, q, next);
+	return frrunestep(&t->fr, pt, textreadc(t, q), *fg);
+}
+
 uint
 textbacknl(Text *t, uint p, uint n)
 {
-	uint q, q0, lim, nc, i, k;
+	uint q, q0, lim, nc, i, k, next;
 	Point pt;
+	Frmarkup *fg;
 
 	nc = t->file->b.nc+t->ncache;
+	fg = nil;
 	/* lay the line out forward from its start, as the frame would */
 	for(;;){
 		lim = p>Maxback? p-Maxback : 0;
@@ -1479,8 +1516,9 @@ textbacknl(Text *t, uint p, uint n)
 			q0--;
 		k = 0;	/* rows from q0 to p */
 		pt = Pt(t->fr.r.min.x, 0);
+		next = 0;
 		for(q=q0; q<=p && q<nc; q++)
-			k += frrunestep(&t->fr, &pt, textreadc(t, q), nil);
+			k += rowstep(t, &pt, q, &fg, &next);
 		if(n <= k)
 			break;
 		if(q0 <= lim)	/* start of file, or too far back */
@@ -1490,8 +1528,9 @@ textbacknl(Text *t, uint p, uint n)
 	}
 	i = k-n;
 	pt = Pt(t->fr.r.min.x, 0);
+	next = 0;
 	for(q=q0; i>0; q++)
-		if(frrunestep(&t->fr, &pt, textreadc(t, q), nil) && --i==0)
+		if(rowstep(t, &pt, q, &fg, &next) && --i==0)
 			return q;
 	return q0;
 }
@@ -1524,7 +1563,7 @@ textsetorigin(Text *t, uint org, int exact)
 		n = t->org - org;
 		r = runemalloc(n);
 		bufread(&t->file->b, org, r, n);
-		frinsert(&t->fr, r, r+n, 0);
+		loadmarkup(t, r, n, 0, org);
 		free(r);
 	}else
 		frdelete(&t->fr, 0, t->fr.nchars);
@@ -1549,4 +1588,5 @@ textreset(Text *t)
 	t->q1 = 0;
 	filereset(t->file);
 	bufreset(&t->file->b);
+	filemarkupfree(t->file);
 }

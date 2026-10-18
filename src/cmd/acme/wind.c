@@ -285,7 +285,7 @@ winresize(Window *w, Rectangle r, int safe, int keepextra)
 		r1.max.y = y+1;
 		windrawdivider(w, r1, y+1+w->body.fr.font->height <= r.max.y);
 	}
-	w->maxlines = min(w->body.fr.nlines, max(w->maxlines, w->body.fr.maxlines));
+	w->maxlines = min(frtextlines(&w->body.fr), max(w->maxlines, w->body.fr.maxlines));
 	return w->r.max.y;
 }
 
