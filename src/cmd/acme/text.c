@@ -394,6 +394,8 @@ textinsert(Text *t, uint q0, Rune *r, uint n, int tofile)
 		error("text.insert");
 	if(n == 0)
 		return;
+	if(t->what == Tag)
+		t->w->tagsafe = FALSE;
 	if(tofile){
 		fileinsert(t->file, q0, r, n);
 		if(t->what == Body){
@@ -490,6 +492,8 @@ textdelete(Text *t, uint q0, uint q1, int tofile)
 	n = q1-q0;
 	if(n == 0)
 		return;
+	if(t->what == Tag)
+		t->w->tagsafe = FALSE;
 	if(tofile){
 		filedelete(t->file, q0, q1);
 		if(t->what == Body){
