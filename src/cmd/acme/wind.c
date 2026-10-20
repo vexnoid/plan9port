@@ -479,7 +479,7 @@ parsetag(Window *w, int extra, int *len)
 void
 winsettag1(Window *w)
 {
-	int i, j, k, n, bar, dirty, resize;
+	int i, j, k, n, bar, dirty;
 	Rune *new, *old, *r;
 	uint q0, q1;
 	static Rune Ldelsnarf[] = { ' ', 'D', 'e', 'l', ' ',
@@ -536,9 +536,7 @@ winsettag1(Window *w)
 	new[i] = 0;
 
 	/* replace tag if the new one is different */
-	resize = 0;
 	if(runeeq(new, i, old, k) == FALSE){
-		resize = 1;
 		n = k;
 		if(n > i)
 			n = i;
@@ -570,10 +568,7 @@ winsettag1(Window *w)
 		w->tag.q1 = n;
 	textsetselect(&w->tag, w->tag.q0, w->tag.q1);
 	windrawbutton(w);
-	if(resize){
-		w->tagsafe = 0;
-		winresize(w, w->r, TRUE, TRUE);
-	}
+	winresize(w, w->r, TRUE, TRUE);
 }
 
 void
