@@ -313,6 +313,7 @@ plumbshow(Plumbmsg *m)
 	w->dirty = FALSE;
 	winsettag(w);
 	textscrdraw(&w->body);
+	textsetselect(&w->body, 0, 0);
 	textsetselect(&w->tag, w->tag.file->b.nc, w->tag.file->b.nc);
 	xfidlog(w, "new");
 }
