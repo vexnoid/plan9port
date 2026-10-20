@@ -316,6 +316,8 @@ void
 bufclose(Buffer *b)
 {
 	bufreset(b);
+	if(b->nbl > 0)
+		delblock(b, 0);
 	free(b->c);
 	b->c = nil;
 	b->cnc = 0;
