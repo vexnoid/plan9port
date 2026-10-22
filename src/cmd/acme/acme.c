@@ -623,12 +623,38 @@ shouldwarn(char *msg)
 	return 1;	/* killed by a signal/note */
 }
 
+static int
+findjob(Text *t, Rune *name, int n, uint *qp)
+{
+	Rune *r;
+	uint nc, q;
+	int ok;
+
+	nc = t->file->b.nc;
+	if(nc < n)
+		return FALSE;
+	r = runemalloc(nc);
+	bufread(&t->file->b, 0, r, nc);
+	ok = FALSE;
+	for(q=0; q+n<=nc; q++){
+		if(q>0 && r[q-1]!=' ' && r[q-1]!='\t' && r[q-1]!='\n')
+			continue;
+		if(runeeq(r+q, n, name, n) == TRUE){
+			*qp = q;
+			ok = TRUE;
+			break;
+		}
+	}
+	free(r);
+	return ok;
+}
+
 void
 waitthread(void *v)
 {
 	Waitmsg *w;
 	Command *c, *lc;
-	uint pid;
+	uint pid, q;
 	int found, ncmd;
 	Rune *cmd;
 	char *err;
@@ -705,11 +731,8 @@ waitthread(void *v)
 					pids = p;
 				}
 			}else{
-				t->q1 = 0;
-				if(search(t, c->name, c->nname)){
-					textdelete(t, t->q0, t->q1, TRUE);
-					textsetselect(t, t->file->b.nc, t->file->b.nc);
-				}
+				if(findjob(t, c->name, c->nname, &q))
+					textdelete(t, q, q+c->nname, TRUE);
 				if(shouldwarn(w->msg))
 					warning(c->md, "%.*S: exit %s\n", c->nname-1, c->name, w->msg);
 				flushimage(display, 1);
