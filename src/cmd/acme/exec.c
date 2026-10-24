@@ -295,7 +295,7 @@ getarg(Text *argt, int doaddr, int dofile, Rune **rp, int *nrp)
 		return nil;
 	a = nil;
 	textcommit(argt, TRUE);
-	if(expand(argt, argt->q0, argt->q1, &e)){
+	if(expand(argt, argt->q0, argt->q1, &e, TRUE)){
 		free(e.bname);
 		if(e.nname && dofile){
 			e.name = runerealloc(e.name, e.nname+1);
@@ -1038,24 +1038,30 @@ void
 look(Text *et, Text *t, Text *argt, int _0, Rune *arg, int narg)
 {
 	Rune *r;
-	int n;
+	int n, did;
+	uint o;
 
 	USED(_0);
 
 	if(et && et->w){
 		t = &et->w->body;
-		if(narg > 0){
-			search(t, arg, narg);
-			return;
+		o = t->org;
+		if(narg > 0)
+			did = search(t, arg, narg, FALSE, t->q1);
+		else{
+			getarg(argt, FALSE, FALSE, &r, &n);
+			if(r == nil){
+				n = t->q1-t->q0;
+				r = runemalloc(n);
+				bufread(&t->file->b, t->q0, r, n);
+			}
+			did = search(t, r, n, FALSE, t->q1);
+			free(r);
 		}
-		getarg(argt, FALSE, FALSE, &r, &n);
-		if(r == nil){
-			n = t->q1-t->q0;
-			r = runemalloc(n);
-			bufread(&t->file->b, t->q0, r, n);
+		if(did){
+			textscrollmark(t, o);
+			moveto(mousectl, addpt(frptofchar(&t->fr, t->fr.p0), Pt(4, t->fr.font->height-4)));
 		}
-		search(t, r, n);
-		free(r);
 	}
 }
 

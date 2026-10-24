@@ -21,6 +21,18 @@ Window*	openfile(Text*, Expand*);
 
 int	nuntitled;
 
+typedef struct Wheel Wheel;
+struct Wheel	/* last wheel search */
+{
+	Window	*w;
+	uint	msec;
+	uint	q0;
+	uint	q1;
+	uint	org;
+};
+
+static Wheel wheel;
+
 void
 plumbthread(void *v)
 {
@@ -79,10 +91,9 @@ startplumbing(void)
 }
 
 void
-look3(Text *t, uint q0, uint q1, int external)
+plumb3(Text *t, uint q0, uint q1, int external)
 {
 	int n, c, f, expanded;
-	Text *ct;
 	Expand e;
 	Rune *r;
 	uint p;
@@ -90,10 +101,7 @@ look3(Text *t, uint q0, uint q1, int external)
 	Runestr dir;
 	char buf[32];
 
-	ct = seltext;
-	if(ct == nil)
-		seltext = t;
-	expanded = expand(t, q0, q1, &e);
+	expanded = expand(t, q0, q1, &e, TRUE);
 	if(!external && t->w!=nil && t->w->nopen[QWevent]>0){
 		/* send alphanumeric expansion to external client */
 		if(expanded == FALSE){
@@ -113,9 +121,9 @@ look3(Text *t, uint q0, uint q1, int external)
 			f |= 2;	/* second (post-expand) message follows */
 		if(e.nname)
 			f |= 4;	/* it's a file name */
-		c = 'l';
+		c = 'p';
 		if(t->what == Body)
-			c = 'L';
+			c = 'P';
 		n = q1-q0;
 		if(n <= EVENTSIZE){
 			r = runemalloc(n);
@@ -204,27 +212,60 @@ look3(Text *t, uint q0, uint q1, int external)
 		return;
 	if(e.name || e.u.at)
 		openfile(t, &e);
-	else{
-		if(t->w == nil)
-			return;
-		ct = &t->w->body;
-		if(t->w != ct->w)
-			winlock(ct->w, 'M');
-		if(t == ct)
-			textsetselect(ct, e.q1, e.q1);
-		n = e.q1 - e.q0;
-		r = runemalloc(n);
-		bufread(&t->file->b, e.q0, r, n);
-		if(search(ct, r, n) && e.jump)
-			moveto(mousectl, addpt(frptofchar(&ct->fr, ct->fr.p0), Pt(4, ct->fr.font->height-4)));
-		if(t->w != ct->w)
-			winunlock(ct->w);
-		free(r);
-	}
 
    Return:
 	free(e.name);
 	free(e.bname);
+}
+
+void
+search4(Text *t, int up)
+{
+	int n, cont;
+	uint q, q0, q1, from, o;
+	Text *ct;
+	Expand e;
+	Rune *r;
+
+	if(t->w == nil)
+		return;
+	ct = &t->w->body;
+	/* continuing if nothing moved since last */
+	cont = t->w==wheel.w && ct->q0==wheel.q0 && ct->q1==wheel.q1 && ct->org==wheel.org;
+	q = t->org + frcharofpt(&t->fr, mouse->xy);
+	if(t==ct && t->w==wheel.w && mouse->msec-wheel.msec<50 && !(t->q1>t->q0 && t->q0<=q && q<=t->q1)){
+		/* same burst as last match; reuse it */
+		q0 = wheel.q0;
+		q1 = wheel.q1;
+	}else{
+		q0 = q;
+		q1 = q;
+	}
+	if(!expand(t, q0, q1, &e, FALSE)){
+		wheel.w = nil;
+		return;
+	}
+	n = e.q1 - e.q0;
+	r = runemalloc(n);
+	bufread(&t->file->b, e.q0, r, n);
+	if(t == ct)
+		from = up? e.q0 : e.q1;
+	else
+		from = up? ct->q0 : ct->q1;
+	o = ct->org;
+	if(search(ct, r, n, up, from)){
+		/* one scroll undo per run */
+		if(!cont)
+			textscrollmark(ct, o);
+		if(e.jump)
+			moveto(mousectl, addpt(frptofchar(&ct->fr, ct->fr.p0), Pt(4, ct->fr.font->height-4)));
+	}
+	wheel.w = t->w;
+	wheel.msec = mouse->msec;
+	wheel.q0 = ct->q0;
+	wheel.q1 = ct->q1;
+	wheel.org = ct->org;
+	free(r);
 }
 
 int
@@ -314,10 +355,24 @@ plumbshow(Plumbmsg *m)
 	xfidlog(w, "new");
 }
 
-int
-search(Text *ct, Rune *r, uint n)
+static void
+searchshow(Text *ct, uint q0, uint q1)
 {
-	uint nb, maxn, q, o;
+	if(ct->w){
+		textshow(ct, q0, q1, 1);
+		winsettag(ct->w);
+	}else{
+		ct->q0 = q0;
+		ct->q1 = q1;
+	}
+	seltext = ct;
+}
+
+/* search from from, wrapping; caller marks scroll undo */
+int
+search(Text *ct, Rune *r, uint n, int up, uint from)
+{
+	uint nb, maxn, q;
 	int around;
 	Rune *s, *b, *c;
 
@@ -333,57 +388,93 @@ search(Text *ct, Rune *r, uint n)
 	nb = 0;
 	b[nb] = 0;
 	around = 0;
-	q = ct->q1;
-	for(;;){
-		if(q >= ct->file->b.nc){
-			q = 0;
-			around = 1;
-			nb = 0;
-			b[nb] = 0;
-		}
-		if(nb > 0){
-			c = runestrchr(b, r[0]);
-			if(c == nil){
-				q += nb;
+	q = from;
+	if(up){
+		/* q is (past) end of text being searched */
+		for(;;){
+			if(q <= 0){
+				q = ct->file->b.nc;
+				around = 1;
 				nb = 0;
 				b[nb] = 0;
-				if(around && q>=ct->q1)
-					break;
-				continue;
 			}
-			q += (c-b);
-			nb -= (c-b);
-			b = c;
-		}
-		/* reload if buffer covers neither string nor rest of file */
-		if(nb<n && nb!=ct->file->b.nc-q){
-			nb = ct->file->b.nc-q;
-			if(nb >= maxn)
-				nb = maxn-1;
-			bufread(&ct->file->b, q, s, nb);
-			b = s;
-			b[nb] = '\0';
-		}
-		/* this runeeq is fishy but the null at b[nb] makes it safe */
-		if(runeeq(b, n, r, n)==TRUE){
-			if(ct->w){
-				o = ct->org;
-				textshow(ct, q, q+n, 1);
-				textscrollmark(ct, o);
-				winsettag(ct->w);
-			}else{
-				ct->q0 = q;
-				ct->q1 = q+n;
+			if(nb > 0){
+				for(c=b+nb; c>b; c--)
+					if(c[-1] == r[n-1])
+						break;
+				if(c == b){
+					q -= nb;
+					nb = 0;
+					b[nb] = 0;
+					if(around && q<=from)
+						break;
+					continue;
+				}
+				q -= nb - (c - b);
+				nb = c - b;
 			}
-			seltext = ct;
-			fbuffree(s);
-			return TRUE;
+			/* reload if buffer covers neither string nor beginning of file */
+			if(nb<n && nb!=q){
+				nb = q;
+				if(nb >= maxn)
+					nb = maxn-1;
+				bufread(&ct->file->b, q-nb, s, nb);
+				b = s;
+				b[nb] = '\0';
+			}
+			if(nb>=n && runeeq(b+nb-n, n, r, n)==TRUE){
+				searchshow(ct, q-n, q);
+				fbuffree(s);
+				return TRUE;
+			}
+			q--;
+			nb--;
+			if(around && q<=from)
+				break;
 		}
-		--nb;
-		b++;
-		q++;
-		if(around && q>=ct->q1)
-			break;
+	}else{
+		for(;;){
+			if(q >= ct->file->b.nc){
+				q = 0;
+				around = 1;
+				nb = 0;
+				b[nb] = 0;
+			}
+			if(nb > 0){
+				c = runestrchr(b, r[0]);
+				if(c == nil){
+					q += nb;
+					nb = 0;
+					b[nb] = 0;
+					if(around && q>=from)
+						break;
+					continue;
+				}
+				q += (c-b);
+				nb -= (c-b);
+				b = c;
+			}
+			/* reload if buffer covers neither string nor rest of file */
+			if(nb<n && nb!=ct->file->b.nc-q){
+				nb = ct->file->b.nc-q;
+				if(nb >= maxn)
+					nb = maxn-1;
+				bufread(&ct->file->b, q, s, nb);
+				b = s;
+				b[nb] = '\0';
+			}
+			/* this runeeq is fishy but the null at b[nb] makes it safe */
+			if(runeeq(b, n, r, n)==TRUE){
+				searchshow(ct, q, q+n);
+				fbuffree(s);
+				return TRUE;
+			}
+			--nb;
+			b++;
+			q++;
+			if(around && q>=from)
+				break;
+		}
 	}
 	fbuffree(s);
 	return FALSE;
@@ -531,7 +622,8 @@ expandfile(Text *t, uint q0, uint q1, Expand *e)
 	eval = FALSE;
 	/*
 	 * Note: address is repeated in openfile when
-	 * expandfile returns to expand returns to look3
+	 * expandfile returns to expand returns to
+	 * plumb3 and search4
 	 */
 	address(TRUE, nil, range(-1,-1), range(0,0), t, e->a0, amax, tgetc, &eval, (uint*)&e->a1);
 	return TRUE;
@@ -542,7 +634,7 @@ expandfile(Text *t, uint q0, uint q1, Expand *e)
 }
 
 int
-expand(Text *t, uint q0, uint q1, Expand *e)
+expand(Text *t, uint q0, uint q1, Expand *e, int dofile)
 {
 	memset(e, 0, sizeof *e);
 	e->agetc = tgetc;
@@ -555,7 +647,7 @@ expand(Text *t, uint q0, uint q1, Expand *e)
 			e->jump = FALSE;
 	}
 
-	if(expandfile(t, q0, q1, e))
+	if(dofile && expandfile(t, q0, q1, e))
 		return TRUE;
 
 	if(q0 == q1){

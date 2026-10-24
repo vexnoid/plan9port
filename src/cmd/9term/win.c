@@ -359,8 +359,8 @@ stdinproc(void *v)
 					sende(&e, fd0, 1);
 				break;
 
-			case 'l':
-			case 'L':
+			case 'p':
+			case 'P':
 				/* just send it back */
 				e.q0 = e.oq0;
 				e.q1 = e.oq1;

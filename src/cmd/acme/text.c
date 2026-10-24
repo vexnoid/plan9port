@@ -1247,7 +1247,7 @@ textselect3(Text *t, uint *q0, uint *q1)
 
 	buts = textselect23(t, q0, q1, but3col, 0);
 	if((buts&4) && (buts&(2|8|16))){	/* chord on selection or word under pointer */
-		expand(t, *q0, *q1, &e);
+		expand(t, *q0, *q1, &e, TRUE);
 		textsetselect(t, e.q0, e.q1);
 		free(e.name);
 		free(e.bname);

@@ -938,9 +938,9 @@ xfideventwrite(Xfid *x, Window *w)
 			if(matched)
 				evargclear(w);
 			break;
-		case 'l':
-		case 'L':
-			look3(t, q0, q1, TRUE);
+		case 'p':
+		case 'P':
+			plumb3(t, q0, q1, TRUE);
 			break;
 		default:
 			qunlock(&row.lk);

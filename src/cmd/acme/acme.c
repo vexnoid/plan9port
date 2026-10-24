@@ -563,9 +563,17 @@ mousethread(void *v)
 				}
 				goto Continue;
 			}
-			/* wheel over text does nothing */
-			if(m.buttons & (8|16))
+			/* wheel over text searches for the word under the pointer */
+			if(m.buttons & (8|16)){
+				if(w != nil){
+					winlock(w, 'M');
+					t->eq0 = ~0;
+					wincommit(w, t);
+					search4(t, m.buttons&8);
+					winunlock(w);
+				}
 				goto Continue;
+			}
 			if(m.buttons){
 				seq++;
 				if(w)
@@ -590,7 +598,7 @@ mousethread(void *v)
 						execute(t, q0, q1, FALSE, argt);
 				}else if(m.buttons & 4){
 					if(textselect3(t, &q0, &q1))
-						look3(t, q0, q1, FALSE);
+						plumb3(t, q0, q1, FALSE);
 				}else if(m.buttons & (128|256)){
 					undo(w, t, (m.buttons&128)!=0);
 					while(mousectl->m.buttons)
