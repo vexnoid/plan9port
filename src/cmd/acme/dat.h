@@ -273,6 +273,9 @@ struct Window
 	int		taglines;
 	Rectangle	tagtop;
 	QLock	editoutlk;
+	int		slotbase;	/* slot height to scale from */
+	int		colbase;	/* column height for slotbase */
+	int		slotnow;	/* slot height colresize left */
 };
 
 void	wininit(Window*, Window*, Rectangle);
