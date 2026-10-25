@@ -70,11 +70,6 @@ threadmain(int argc, char *argv[])
 
 	loadfile = nil;
 	ARGBEGIN{
-	case 'D':
-		{extern int _threaddebuglevel;
-		_threaddebuglevel = ~0;
-		}
-		break;
 	case 'a':
 		globalautoindent = TRUE;
 		break;
