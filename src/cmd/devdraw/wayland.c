@@ -39,6 +39,19 @@ struct WaylandClient {
 	int mouse_y;
 	int buttons;
 
+	// Serial of the last button press, needed to start a move or resize.
+	uint32_t button_serial;
+
+	// The width in pixels of the transparent margin around the window.
+	// It is 0 when maximized.
+	int margin;
+
+	// Whether the window is maximized, and its size in surface units
+	// when it is not.
+	int maximized;
+	int float_w;
+	int float_h;
+
 	// State for key repeat for keyboard keys.
 	int repeat_rune;
 	int repeat_start_ms;
@@ -107,15 +120,19 @@ int key_repeat_delay_ms = 500;
 // The number of ms between repeats of a repeating key.
 int key_repeat_ms = 100;
 
-// A pool of xrgb888 buffers used for drawing to the screen.
+// The width in surface units of the transparent strip around the window
+// that resizes it when pressed. It is outside the window geometry.
+#define FRAME_WIDTH 6
+
+// A pool of argb8888 buffers used for drawing to the screen.
 // When drawing, we give ownership of the buffer's memory to the compositor.
 // The compositor notifies us asynchronously when it is done reading the buffer.
 // In the case that we need to draw (rpc_flush) before the buffer is ready,
 // we will need to allocate a whole new buffer to draw to.
 // We use this pool to avoid the need to setup a new shared memory buffer
 // each time this happens.
-#define N_XRGB8888_BUFFERS 3
-struct WaylandBuffer *xrgb8888_buffers[N_XRGB8888_BUFFERS];
+#define N_ARGB8888_BUFFERS 3
+struct WaylandBuffer *argb8888_buffers[N_ARGB8888_BUFFERS];
 
 int wayland_debug = 0;
 
@@ -340,9 +357,9 @@ static void wl_buffer_release(void *data, struct wl_buffer *wl_buffer) {
 		wl_buffer_destroy(wl_buffer);
 		return;
 	}
-	for (int i = 0; i < N_XRGB8888_BUFFERS; i++) {
-		if (xrgb8888_buffers[i] == NULL) {
-			xrgb8888_buffers[i] = (WaylandBuffer*) data;
+	for (int i = 0; i < N_ARGB8888_BUFFERS; i++) {
+		if (argb8888_buffers[i] == NULL) {
+			argb8888_buffers[i] = (WaylandBuffer*) data;
 			return;
 		}
 	}
@@ -373,13 +390,31 @@ static const struct xdg_surface_listener xdg_surface_listener = {
 void xdg_toplevel_configure(void *data, struct xdg_toplevel *xdg_toplevel,
 	int32_t width, int32_t height, struct wl_array *states) {
 	DEBUG("xdg_toplevel_configure(width=%d, height=%d)\n", width, height);
-	if (width == 0 || height == 0) {
-		return;
-	}
 	Client* c = data;
 	WaylandClient *wl = (WaylandClient*) c->view;
 	qlock(&wayland_lock);
 
+	wl->maximized = 0;
+	uint32_t *state;
+	wl_array_for_each(state, states) {
+		if (*state == XDG_TOPLEVEL_STATE_MAXIMIZED) {
+			wl->maximized = 1;
+		}
+	}
+	if (width == 0 || height == 0) {
+		// The compositor lets us choose the size.
+		if (wl->maximized) {
+			qunlock(&wayland_lock);
+			return;
+		}
+		width = wl->float_w;
+		height = wl->float_h;
+	} else if (!wl->maximized) {
+		wl->float_w = width;
+		wl->float_h = height;
+	}
+
+	wl->margin = wl->maximized ? 0 : FRAME_WIDTH * wl_output_scale_factor;
 	width *= wl_output_scale_factor;
 	height *= wl_output_scale_factor;
 	Rectangle r = Rect(0, 0, width, height);
@@ -458,8 +493,8 @@ void wl_pointer_enter(void *data,struct wl_pointer *wl_pointer, uint32_t serial,
 	WaylandClient *wl = (WaylandClient*) c->view;
 	qlock(&wayland_lock);
 
-	wl->mouse_x = wl_fixed_to_int(surface_x) * wl_output_scale_factor;
-	wl->mouse_y = wl_fixed_to_int(surface_y) * wl_output_scale_factor;
+	wl->mouse_x = wl_fixed_to_int(surface_x) * wl_output_scale_factor - wl->margin;
+	wl->mouse_y = wl_fixed_to_int(surface_y) * wl_output_scale_factor - wl->margin;
 
 	wl_pointer_set_cursor(wl->wl_pointer, serial, wl->wl_surface_cursor, 0, 0);
 
@@ -484,14 +519,42 @@ void wl_pointer_motion(void *data, struct wl_pointer *wl_pointer, uint32_t time,
 	WaylandClient *wl = (WaylandClient*) c->view;
 	qlock(&wayland_lock);
 
-	wl->mouse_x = wl_fixed_to_int(surface_x) * wl_output_scale_factor;
-	wl->mouse_y = wl_fixed_to_int(surface_y) * wl_output_scale_factor;
+	wl->mouse_x = wl_fixed_to_int(surface_x) * wl_output_scale_factor - wl->margin;
+	wl->mouse_y = wl_fixed_to_int(surface_y) * wl_output_scale_factor - wl->margin;
 	int x = wl->mouse_x;
 	int y = wl->mouse_y;
 	int b = wl->buttons;
 
 	qunlock(&wayland_lock);
 	gfx_mousetrack(c, x, y, b, (uint) time);
+}
+
+// Returns the resize edge for a pointer at (x, y) in screen image
+// coordinates, or 0 if it is not on the border. Corners are longer than
+// the border is wide, so that they are easier to grab.
+static uint32_t border_edge(WaylandClient *wl, int x, int y) {
+	int m = wl->margin;
+	int c = 4 * m;
+	int w = Dx(wl->memimage->r) + 2*m;
+	int h = Dy(wl->memimage->r) + 2*m;
+	uint32_t edge = 0;
+
+	x += m;
+	y += m;
+	if (x >= m && x < w-m && y >= m && y < h-m) {
+		return 0;
+	}
+	if (y < c) {
+		edge |= XDG_TOPLEVEL_RESIZE_EDGE_TOP;
+	} else if (y >= h-c) {
+		edge |= XDG_TOPLEVEL_RESIZE_EDGE_BOTTOM;
+	}
+	if (x < c) {
+		edge |= XDG_TOPLEVEL_RESIZE_EDGE_LEFT;
+	} else if (x >= w-c) {
+		edge |= XDG_TOPLEVEL_RESIZE_EDGE_RIGHT;
+	}
+	return edge;
 }
 
 void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t serial,
@@ -531,8 +594,17 @@ void wl_pointer_button(void *data, struct wl_pointer *wl_pointer, uint32_t seria
 	}
 	DEBUG("wl_pointer_button: mask=%x\n", mask);
 
+	uint32_t edge = border_edge(wl, wl->mouse_x, wl->mouse_y);
 	switch (state) {
 	case WL_POINTER_BUTTON_STATE_PRESSED:
+		if (edge != 0) {
+			// The compositor grabs the pointer; don't pass this on.
+			xdg_toplevel_resize(wl->xdg_toplevel, wl_seat, serial, edge);
+			wl_display_flush(wl_display);
+			qunlock(&wayland_lock);
+			return;
+		}
+		wl->button_serial = serial;
 		wl->buttons |= mask;
 		break;
 	case WL_POINTER_BUTTON_STATE_RELEASED:
@@ -876,7 +948,7 @@ void wayland_set_cursor(WaylandClient *wl, Cursor *cursor) {
 	WaylandBuffer *b = new_buffer(16, 16, WL_SHM_FORMAT_ARGB8888);
 	memcpy(b->data, (char*) &data[0], b->size);
 
-	// We don't want to bother saving this buffer in xrgb8888_buffers.
+	// We don't want to bother saving this buffer in argb8888_buffers.
 	// Unmap and use NULL for it's listener data.
 	// This will cause it to be destroyed when it is released.
 	munmap(b->data, b->size);
@@ -928,14 +1000,14 @@ static void rpc_setmouse(Client *c, Point p) {
 	struct zwp_locked_pointer_v1 *lock = zwp_pointer_constraints_v1_lock_pointer(
 		pointer_constraints, wl->wl_surface, wl->wl_pointer, NULL,
 		ZWP_POINTER_CONSTRAINTS_V1_LIFETIME_PERSISTENT);
-	int x = wl_fixed_from_int(p.x / wl_output_scale_factor);
-	int y = wl_fixed_from_int(p.y / wl_output_scale_factor);
+	int x = wl_fixed_from_int((p.x + wl->margin) / wl_output_scale_factor);
+	int y = wl_fixed_from_int((p.y + wl->margin) / wl_output_scale_factor);
 	zwp_locked_pointer_v1_set_cursor_position_hint(lock, x, y);
 	wl_surface_commit(wl->wl_surface);
 	zwp_locked_pointer_v1_destroy(lock);
 
-	wl->mouse_x = wl_fixed_to_int(x) * wl_output_scale_factor;
-	wl->mouse_y = wl_fixed_to_int(y) * wl_output_scale_factor;
+	wl->mouse_x = wl_fixed_to_int(x) * wl_output_scale_factor - wl->margin;
+	wl->mouse_y = wl_fixed_to_int(y) * wl_output_scale_factor - wl->margin;
 
 	int mx = wl->mouse_x;
 	int my = wl->mouse_y;
@@ -954,22 +1026,22 @@ static void rpc_bouncemouse(Client*, Mouse) {
 }
 
 // Must be called with the lock held.
-WaylandBuffer *get_xrgb8888_buffer(int w, int h) {
-	for (int i = 0; i < N_XRGB8888_BUFFERS; i++) {
-		if (xrgb8888_buffers[i] == NULL) {
+WaylandBuffer *get_argb8888_buffer(int w, int h) {
+	for (int i = 0; i < N_ARGB8888_BUFFERS; i++) {
+		if (argb8888_buffers[i] == NULL) {
 			continue;
 		}
 		// Delete any cached buffers that are not the right size.
-		if (xrgb8888_buffers[i]->w != w || xrgb8888_buffers[i]->h != h) {
-			delete_buffer(xrgb8888_buffers[i]);
-			xrgb8888_buffers[i] = NULL;
+		if (argb8888_buffers[i]->w != w || argb8888_buffers[i]->h != h) {
+			delete_buffer(argb8888_buffers[i]);
+			argb8888_buffers[i] = NULL;
 			continue;
 		}
-		WaylandBuffer *b = xrgb8888_buffers[i];
-		xrgb8888_buffers[i] = NULL;
+		WaylandBuffer *b = argb8888_buffers[i];
+		argb8888_buffers[i] = NULL;
 		return b;
 	}
-	WaylandBuffer *b = new_buffer(w, h, WL_SHM_FORMAT_XRGB8888);
+	WaylandBuffer *b = new_buffer(w, h, WL_SHM_FORMAT_ARGB8888);
 	wl_buffer_add_listener(b->wl_buffer, &wl_buffer_listener, b);
 	return b;
 }
@@ -979,14 +1051,66 @@ static void rpc_flush(Client *c, Rectangle r) {
 	qlock(&wayland_lock);
 
 	if (wl->configured) {
+		int m = wl->margin;
 		int w = Dx(wl->memimage->r);
 		int h = Dy(wl->memimage->r);
-		WaylandBuffer *b = get_xrgb8888_buffer(w, h);
-		memcpy(b->data, (char*) wl->memimage->data->bdata, b->size);
+		WaylandBuffer *b = get_argb8888_buffer(w + 2*m, h + 2*m);
+		for (int y = 0; y < h; y++) {
+			uint32_t *src = (uint32_t*) wl->memimage->data->bdata + y * w;
+			uint32_t *dst = (uint32_t*) b->data + (y+m) * b->w + m;
+			// The margin stays transparent; the image itself is opaque.
+			for (int x = 0; x < w; x++) {
+				dst[x] = src[x] | 0xFF000000;
+			}
+		}
+		Rectangle box = rectaddpt(winboxrect(c), Pt(m, m));
+		for (int y = box.min.y; y < box.max.y; y++) {
+			uint32_t *dst = (uint32_t*) b->data + y * b->w;
+			for (int x = box.min.x; x < box.max.x; x++) {
+				dst[x] = 0xFF000000 | Boxcolor;
+			}
+		}
+		int s = wl_output_scale_factor;
+		xdg_surface_set_window_geometry(wl->xdg_surface, m/s, m/s, w/s, h/s);
 		wl_surface_attach(wl->wl_surface, b->wl_buffer, 0, 0);
-		wl_surface_damage_buffer(wl->wl_surface, r.min.x, r.min.y, Dx(r), Dy(r));
+		wl_surface_damage_buffer(wl->wl_surface, r.min.x+m, r.min.y+m, Dx(r), Dy(r));
 		wl_surface_commit(wl->wl_surface);
 		wl_display_flush(wl_display);
+	}
+
+	qunlock(&wayland_lock);
+	winboxwarp(c);
+}
+
+static void rpc_winctl(Client *c, int action) {
+	WaylandClient *wl = (WaylandClient*) c->view;
+	qlock(&wayland_lock);
+
+	switch (action) {
+	case Winctlmove:
+		xdg_toplevel_move(wl->xdg_toplevel, wl_seat, wl->button_serial);
+		wl_display_flush(wl_display);
+
+		// The compositor grabs the pointer, so the release never
+		// arrives. Send it ourselves.
+		wl->buttons = 0;
+		int x = wl->mouse_x;
+		int y = wl->mouse_y;
+		qunlock(&wayland_lock);
+		gfx_mousetrack(c, x, y, 0, nsec()/1000000);
+		return;
+	case Winctlmin:
+		xdg_toplevel_set_minimized(wl->xdg_toplevel);
+		wl_display_flush(wl_display);
+		break;
+	case Winctlmax:
+		if (wl->maximized) {
+			xdg_toplevel_unset_maximized(wl->xdg_toplevel);
+		} else {
+			xdg_toplevel_set_maximized(wl->xdg_toplevel);
+		}
+		wl_display_flush(wl_display);
+		break;
 	}
 
 	qunlock(&wayland_lock);
@@ -1000,7 +1124,8 @@ static ClientImpl wayland_impl = {
 	rpc_setmouse,
 	rpc_topwin,
 	rpc_bouncemouse,
-	rpc_flush
+	rpc_flush,
+	rpc_winctl
 };
 
 Memimage *rpc_attach(Client *c, char *label, char *winsize) {
@@ -1022,6 +1147,7 @@ Memimage *rpc_attach(Client *c, char *label, char *winsize) {
 	wl->xdg_toplevel = xdg_surface_get_toplevel(wl->xdg_surface);
 	xdg_toplevel_add_listener(wl->xdg_toplevel, &xdg_toplevel_listener, c);
 	xdg_toplevel_set_title(wl->xdg_toplevel, label);
+	xdg_toplevel_set_min_size(wl->xdg_toplevel, 64, 64);
 
 	wl->wl_pointer = wl_seat_get_pointer(wl_seat);
 	wl_pointer_add_listener(wl->wl_pointer, &pointer_listener, c);
@@ -1032,17 +1158,19 @@ Memimage *rpc_attach(Client *c, char *label, char *winsize) {
 	wl_keyboard_add_listener(wl->wl_keyboard, &keyboard_listener, c);
 	wl->xkb_context = xkb_context_new(XKB_CONTEXT_NO_FLAGS);
 
-	// If the xdg decorations extension is available,
-	// enable server-side decorations.
-	// Otherwise there will be no window decorations
-	// (title, resize, buttons, etc.).
+	// We draw our own border and controls,
+	// so ask for no server-side decorations.
 	if (decoration_manager != NULL) {
 		struct zxdg_toplevel_decoration_v1 *d =
 			zxdg_decoration_manager_v1_get_toplevel_decoration(
 				decoration_manager, wl->xdg_toplevel);
 		zxdg_toplevel_decoration_v1_set_mode(d,
-			ZXDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+			ZXDG_TOPLEVEL_DECORATION_V1_MODE_CLIENT_SIDE);
 	}
+
+	wl->margin = FRAME_WIDTH * wl_output_scale_factor;
+	wl->float_w = 640;
+	wl->float_h = 480;
 
 	// TODO: parse winsize.
 	int w = 640*wl_output_scale_factor;
