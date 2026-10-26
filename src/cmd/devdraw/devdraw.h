@@ -54,6 +54,21 @@ struct ClientImpl
 	void (*rpc_topwin)(Client*);
 	void (*rpc_bouncemouse)(Client*, Mouse);
 	void (*rpc_flush)(Client*, Rectangle);
+	void (*rpc_winctl)(Client*, int);
+};
+
+enum
+{
+	Winctlmove = 1,
+	Winctlmin,
+	Winctlmax,
+
+	Boxsize = 14,	// in pixels at 100 dpi
+	Boxcolor = 0x8888CC,
+
+	Boxidle = 0,
+	Boxpress,
+	Boxdrag,
 };
 
 extern QLock drawlk;
@@ -108,6 +123,9 @@ struct Client
 	Tagbuf kbdtags;
 	Tagbuf mousetags;
 	Rectangle mouserect;
+	int boxstate;
+	int boxbut;
+	int boxwarp;	// 1: maximize pending, 2: resized, warp at next flush
 };
 
 struct Refresh
@@ -232,5 +250,7 @@ void draw_initdisplaymemimage(Client*, Memimage*);
 int latin1(Rune*, int);
 int mouseswap(int);
 int parsewinsize(char*, Rectangle*, int*);
+Rectangle winboxrect(Client*);
+void winboxwarp(Client*);
 
 extern Client *client0; // set in single-client mode
