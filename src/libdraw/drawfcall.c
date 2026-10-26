@@ -59,6 +59,7 @@ sizeW2M(Wsysmsg *m)
 	case Ttop:
 	case Rtop:
 	case Rresize:
+	case Rbox:
 		return 4+1+1;
 	case Rrdmouse:
 		return 4+1+1+4+4+4+4+1;
@@ -95,6 +96,7 @@ sizeW2M(Wsysmsg *m)
 	case Rwrdraw:
 		return 4+1+1+4;
 	case Tresize:
+	case Tbox:
 		return 4+1+1+4*4;
 	}
 }
@@ -129,6 +131,7 @@ convW2M(Wsysmsg *m, uchar *p, uint n)
 	case Ttop:
 	case Rtop:
 	case Rresize:
+	case Rbox:
 		break;
 	case Rerror:
 		PUTSTRING(p+6, m->error);
@@ -198,6 +201,7 @@ convW2M(Wsysmsg *m, uchar *p, uint n)
 		PUT(p+6, m->count);
 		break;
 	case Tresize:
+	case Tbox:
 		PUT(p+6, m->rect.min.x);
 		PUT(p+10, m->rect.min.y);
 		PUT(p+14, m->rect.max.x);
@@ -237,6 +241,7 @@ convM2W(uchar *p, uint n, Wsysmsg *m)
 	case Ttop:
 	case Rtop:
 	case Rresize:
+	case Rbox:
 		break;
 	case Rerror:
 		GETSTRING(p+6, &m->error);
@@ -306,6 +311,7 @@ convM2W(uchar *p, uint n, Wsysmsg *m)
 		GET(p+6, m->count);
 		break;
 	case Tresize:
+	case Tbox:
 		GET(p+6, m->rect.min.x);
 		GET(p+10, m->rect.min.y);
 		GET(p+14, m->rect.max.x);
@@ -411,5 +417,9 @@ drawfcallfmt(Fmt *fmt)
 		return fmtprint(fmt, "Tresize %R", m->rect);
 	case Rresize:
 		return fmtprint(fmt, "Rresize");
+	case Tbox:
+		return fmtprint(fmt, "Tbox %R", m->rect);
+	case Rbox:
+		return fmtprint(fmt, "Rbox");
 	}
 }
