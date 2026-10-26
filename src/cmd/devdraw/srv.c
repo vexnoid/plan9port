@@ -323,6 +323,13 @@ runmsg(Client *c, Wsysmsg *m)
 		c->impl->rpc_resizewindow(c, m->rect);
 		replymsg(c, m);
 		break;
+
+	case Tbox:
+		qlock(&c->eventlk);
+		c->winbox = m->rect;
+		qunlock(&c->eventlk);
+		replymsg(c, m);
+		break;
 	}
 }
 
@@ -413,12 +420,17 @@ matchmouse(Client *c)
 	}
 }
 
-// winboxrect returns the window box, in the top right of the screen image.
+// winboxrect returns the window box: the one set with Tbox,
+// else a square in the top right of the screen image.
 Rectangle
 winboxrect(Client *c)
 {
 	int n;
+	Rectangle r;
 
+	r = c->winbox;
+	if(rectclip(&r, c->mouserect) && Dx(r) > 0 && Dy(r) > 0)
+		return r;
 	n = Boxsize*c->displaydpi/100;
 	return Rect(c->mouserect.max.x-n, c->mouserect.min.y, c->mouserect.max.x, c->mouserect.min.y+n);
 }
