@@ -413,9 +413,86 @@ matchmouse(Client *c)
 	}
 }
 
+// winboxrect returns the window box, in the top right of the screen image.
+Rectangle
+winboxrect(Client *c)
+{
+	int n;
+
+	n = Boxsize*c->displaydpi/100;
+	return Rect(c->mouserect.max.x-n, c->mouserect.min.y, c->mouserect.max.x, c->mouserect.min.y+n);
+}
+
+// winboxwarp moves the pointer to the box
+// after the resize caused by a maximize.
+void
+winboxwarp(Client *c)
+{
+	Rectangle r;
+
+	qlock(&c->eventlk);
+	if(c->boxwarp != 2){
+		qunlock(&c->eventlk);
+		return;
+	}
+	c->boxwarp = 0;
+	qunlock(&c->eventlk);
+	r = winboxrect(c);
+	c->impl->rpc_setmouse(c, divpt(addpt(r.min, r.max), 2));
+}
+
+// boxtrack handles mouse events in the window box.
+// Button 1 moves the window,
+// and a tap of button 2 or 3 minimizes or maximizes it.
+// It returns whether it consumed the event
+// and sets *act to the action to perform, if any.
+// It must be called with c->eventlk held.
+static int
+boxtrack(Client *c, int x, int y, int b, int *act)
+{
+	int n;
+
+	switch(c->boxstate){
+	case Boxidle:
+		n = b & 7;
+		if(n == 0 || c->mouse.last.buttons != 0 || !ptinrect(Pt(x, y), winboxrect(c)))
+			return 0;
+		c->boxwarp = 0;
+		c->boxbut = n & -n;
+		if(c->boxbut == 1){
+			c->boxstate = Boxdrag;
+			*act = Winctlmove;
+		}else
+			c->boxstate = Boxpress;
+		return 1;
+	case Boxpress:
+		if(b == 0){
+			c->boxstate = Boxidle;
+			if(!ptinrect(Pt(x, y), winboxrect(c)))
+				return 1;
+			if(c->boxbut == 2)
+				*act = Winctlmin;
+			else if(c->boxbut == 4){
+				*act = Winctlmax;
+				c->boxwarp = 1;
+			}
+		}
+		return 1;
+	case Boxdrag:
+		if(b == 0)
+			c->boxstate = Boxidle;
+		return 1;
+	}
+	return 0;
+}
+
 void
 gfx_mouseresized(Client *c)
 {
+	qlock(&c->eventlk);
+	if(c->boxwarp == 1)
+		c->boxwarp = 2;
+	qunlock(&c->eventlk);
 	gfx_mousetrack(c, -1, -1, -1, -1);
 }
 
@@ -423,8 +500,10 @@ void
 gfx_mousetrack(Client *c, int x, int y, int b, uint ms)
 {
 	Mouse *m;
+	int act, repeat;
 
 	qlock(&c->eventlk);
+	repeat = 0;
 	if(x == -1 && y == -1 && b == -1 && ms == -1) {
 		Mouse *copy;
 		// repeat last mouse event for resize
@@ -437,6 +516,7 @@ gfx_mousetrack(Client *c, int x, int y, int b, uint ms)
 		b = copy->buttons;
 		ms = copy->msec;
 		c->mouse.resized = 1;
+		repeat = 1;
 	}
 	if(x < c->mouserect.min.x)
 		x = c->mouserect.min.x;
@@ -446,6 +526,14 @@ gfx_mousetrack(Client *c, int x, int y, int b, uint ms)
 		y = c->mouserect.min.y;
 	if(y > c->mouserect.max.y)
 		y = c->mouserect.max.y;
+
+	act = 0;
+	if(!repeat && c->impl->rpc_winctl != nil && boxtrack(c, x, y, b, &act)){
+		qunlock(&c->eventlk);
+		if(act != 0)
+			c->impl->rpc_winctl(c, act);
+		return;
+	}
 
 	// If reader has stopped reading, don't bother.
 	// If reader is completely caught up, definitely queue.

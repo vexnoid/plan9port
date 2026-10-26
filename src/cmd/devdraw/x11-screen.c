@@ -38,6 +38,8 @@ static void	_xexpose(Xwin *w, XEvent *e);
 static int _xreplacescreenimage(Client *client);
 static int _xtoplan9mouse(Xwin *w, XEvent *e, Mouse *m);
 static void _xmovewindow(Xwin *w, Rectangle r);
+static int _xdrag(Xwin *w, XEvent *e);
+static void	_xdrawbox(Xwin *w);
 static int _xtoplan9kbd(XEvent *e);
 static int _xselect(XEvent *e);
 static void _xsetcursor(Xwin *w, Cursor *c);
@@ -50,6 +52,7 @@ static void	rpc_setmouse(Client*, Point);
 static void	rpc_topwin(Client*);
 static void	rpc_bouncemouse(Client*, Mouse);
 static void	rpc_flush(Client*, Rectangle);
+static void	rpc_winctl(Client*, int);
 
 static ClientImpl x11impl = {
 	rpc_resizeimg,
@@ -59,7 +62,8 @@ static ClientImpl x11impl = {
 	rpc_setmouse,
 	rpc_topwin,
 	rpc_bouncemouse,
-	rpc_flush
+	rpc_flush,
+	rpc_winctl
 };
 
 static Xwin*
@@ -315,6 +319,18 @@ xloop(void)
 }
 
 /*
+ * Window move in progress, requested by the window box.
+ * Positions are in root coordinates, so that moving the window
+ * cannot feed back into the next position.
+ */
+static struct
+{
+	Xwin	*w;		/* nil when no move is in progress */
+	int	rx, ry;		/* pointer at the start */
+	int	wx, wy;		/* window origin at the start */
+} drag;
+
+/*
  * Handle an incoming X event.
  */
 static void
@@ -386,6 +402,7 @@ runxevent(XEvent *xev)
 			if(w->screenpm){
 				XCopyArea(_x.display, w->screenpm, w->drawable, _x.gccopy,
 					0, 0, Dx(w->screenr), Dy(w->screenr), 0, 0);
+				_xdrawbox(w);
 			}
 			/*
 			 * If this was a real Expose event, we still let standard handling
@@ -410,9 +427,14 @@ runxevent(XEvent *xev)
 		_x.altdown = 0;
 		// fall through
 	case MotionNotify:
+		if(drag.w == w && _xdrag(w, xev))
+			break;
 		if(_xtoplan9mouse(w, xev, &m) < 0)
 			return;
+		/* gfx_mousetrack can call rpc_winctl, which takes xlock. */
+		xunlock();
 		gfx_mousetrack(w->client, m.xy.x, m.xy.y, m.buttons, m.msec);
+		xlock();
 		break;
 
 	case KeyRelease:
@@ -478,7 +500,8 @@ xattach(Client *client, char *label, char *winsize)
 	XWindow xrootwin;
 	XWindowAttributes wattr;
 	XWMHints hint;
-	Atom atoms[2];
+	Atom atoms[2], mwm;
+	ulong mwmhints[5] = { 2, 0, 6 };	/* decorations: border and resize handles, no title */
 	Xwin *w;
 
 	USED(client);
@@ -660,6 +683,10 @@ xattach(Client *client, char *label, char *winsize)
 		_x.losefocus = XInternAtom(_x.display, "_9WM_LOSE_FOCUS", False);
 		_x.wmprotos = XInternAtom(_x.display, "WM_PROTOCOLS", False);
 	}
+
+	mwm = XInternAtom(_x.display, "_MOTIF_WM_HINTS", False);
+	XChangeProperty(_x.display, w->drawable, mwm, mwm, 32,
+		PropModeReplace, (uchar*)mwmhints, 5);
 
 	atoms[0] = _x.takefocus;
 	atoms[1] = _x.losefocus;
@@ -970,6 +997,7 @@ rpc_flush(Client *client, Rectangle r)
 
 	XCopyArea(_x.display, w->screenpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
 		Dx(r), Dy(r), r.min.x, r.min.y);
+	_xdrawbox(w);
 	XFlush(_x.display);
 	xunlock();
 }
@@ -989,6 +1017,7 @@ _xexpose(Xwin *w, XEvent *e)
 	r.max.y = xe->y+xe->height;
 	XCopyArea(_x.display, w->screenpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
 		Dx(r), Dy(r), r.min.x, r.min.y);
+	_xdrawbox(w);
 	XSync(_x.display, False);
 }
 
@@ -1050,6 +1079,7 @@ _xreplacescreenimage(Client *client)
 	client->mouserect = r;
 	xunlock();
 	gfx_replacescreenimage(client, m);
+	winboxwarp(client);
 	xlock();
 	return 1;
 }
@@ -1753,6 +1783,78 @@ rpc_bouncemouse(Client *c, Mouse m)
 	e.time = CurrentTime;
 	XUngrabPointer(_x.display, m.msec);
 	XSendEvent(_x.display, e.root, True, ButtonPressMask, (XEvent*)&e);
+	XFlush(_x.display);
+	xunlock();
+}
+
+/*
+ * Called for pointer events on the window while it is being moved.
+ * Returns 1 if the event was consumed.
+ */
+static int
+_xdrag(Xwin *w, XEvent *e)
+{
+	if(e->type == MotionNotify && (e->xmotion.state & (Button1Mask|Button2Mask|Button3Mask))){
+		XMoveWindow(_x.display, w->drawable,
+			drag.wx + e->xmotion.x_root - drag.rx,
+			drag.wy + e->xmotion.y_root - drag.ry);
+		return 1;
+	}
+	drag.w = nil;
+	return 0;
+}
+
+static void
+_xdrawbox(Xwin *w)
+{
+	static XGC gc;
+	static ulong fill;
+	XColor c;
+	Rectangle r;
+
+	if(gc == nil){
+		c.red = (Boxcolor>>16 & 0xFF) * 0x101;
+		c.green = (Boxcolor>>8 & 0xFF) * 0x101;
+		c.blue = (Boxcolor & 0xFF) * 0x101;
+		c.flags = DoRed|DoGreen|DoBlue;
+		XAllocColor(_x.display, _x.cmap, &c);
+		fill = c.pixel;
+		gc = XCreateGC(_x.display, w->drawable, 0, nil);
+	}
+	r = winboxrect(w->client);
+	XSetForeground(_x.display, gc, fill);
+	XFillRectangle(_x.display, w->drawable, gc, r.min.x, r.min.y, Dx(r), Dy(r));
+}
+
+static void
+rpc_winctl(Client *c, int action)
+{
+	Xwin *w = (Xwin*)c->view;
+	XWindow root, child;
+	int rx, ry, wx, wy;
+	unsigned int mask;
+
+	xlock();
+	switch(action){
+	case Winctlmove:
+		if(!w->fullscreen
+		&& XQueryPointer(_x.display, w->drawable, &root, &child, &rx, &ry, &wx, &wy, &mask)
+		&& (mask & (Button1Mask|Button2Mask|Button3Mask))){
+			drag.w = w;
+			drag.rx = rx;
+			drag.ry = ry;
+			drag.wx = rx-wx;
+			drag.wy = ry-wy;
+		}
+		break;
+	case Winctlmin:
+		XIconifyWindow(_x.display, w->drawable, DefaultScreen(_x.display));
+		break;
+	case Winctlmax:
+		w->fullscreen = !w->fullscreen;
+		_xmovewindow(w, w->fullscreen ? w->screenrect : w->windowrect);
+		break;
+	}
 	XFlush(_x.display);
 	xunlock();
 }
