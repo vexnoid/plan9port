@@ -27,3 +27,9 @@ drawresizewindow(Rectangle r)
 {
 	_displayresize(display, r);
 }
+
+int
+drawsetwinbox(Rectangle r)
+{
+	return _displaywinbox(display, r);
+}

@@ -126,6 +126,7 @@ struct Client
 	int boxstate;
 	int boxbut;
 	int boxwarp;	// 1: maximize pending, 2: resized, warp at next flush
+	Rectangle winbox;	// from Tbox; empty if none
 };
 
 struct Refresh

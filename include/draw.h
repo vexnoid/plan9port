@@ -552,6 +552,7 @@ void putsnarf(char*);
 
 void drawtopwindow(void);
 void drawresizewindow(Rectangle);
+int drawsetwinbox(Rectangle);
 extern char *winsize;
 
 int	mousescrollsize(int);
@@ -577,6 +578,7 @@ int		_displaywrdraw(Display *d, void *v, int n);
 int		_displaywrsnarf(Display *d, char *snarf);
 int		_displaytop(Display *d);
 int		_displayresize(Display *d, Rectangle rect);
+int		_displaywinbox(Display *d, Rectangle rect);
 
 #if defined(__cplusplus)
 }
