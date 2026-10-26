@@ -1013,6 +1013,11 @@ iconinit(void)
 		textcols[HTEXT] = display->black;
 	}
 
+	/* devdraw's window box goes in the empty cell left of the row tag */
+	r = Rect(screen->clipr.min.x, screen->clipr.min.y,
+		screen->clipr.min.x+Scrollwid, screen->clipr.min.y+font->height);
+	drawsetwinbox(r);
+
 	r = Rect(0, 0, Scrollwid, font->height+1);
 	if(button && eqrect(r, button->r))
 		return;
