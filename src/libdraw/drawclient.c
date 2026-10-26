@@ -469,6 +469,16 @@ _displayresize(Display *d, Rectangle r)
 	return displayrpc(d, &tx, &rx, nil);
 }
 
+int
+_displaywinbox(Display *d, Rectangle r)
+{
+	Wsysmsg tx, rx;
+
+	tx.type = Tbox;
+	tx.rect = r;
+	return displayrpc(d, &tx, &rx, nil);
+}
+
 static int
 canreadfd(int fd)
 {

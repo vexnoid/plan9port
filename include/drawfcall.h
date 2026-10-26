@@ -51,6 +51,9 @@ tag[1] Rtop
 
 tag[1] Tresize rect[4*4]
 tag[1] Rresize
+
+tag[1] Tbox rect[4*4]
+tag[1] Rbox
 */
 
 
@@ -104,6 +107,8 @@ enum {
 	Rctxt,
 	Trdkbd4 = 32,
 	Rrdkbd4,
+	Tbox = 34,
+	Rbox,
 	Tmax,
 };
 
