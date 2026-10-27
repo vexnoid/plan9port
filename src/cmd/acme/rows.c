@@ -601,6 +601,7 @@ rowload(Row *row, char *file, int initing)
 		warning(nil, "can't chdir %s\n", l);
 		goto Rescue2;
 	}
+	getwd(wdir, sizeof wdir);
 	/* global fonts */
 	for(i=0; i<2; i++){
 		l = rdline(b, &line);
