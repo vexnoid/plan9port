@@ -251,7 +251,7 @@ threadmain(int argc, char *argv[])
 		if(ncol == 0)
 			ncol = 2;
 		for(i=0; i<ncol; i++){
-			c = rowadd(&row, nil, -1);
+			c = rowadd(&row, nil, row.r.min.x+i*Dx(row.r)/ncol);
 			if(c==nil && i==0)
 				error("initializing columns");
 		}
