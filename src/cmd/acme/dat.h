@@ -554,7 +554,7 @@ extern char			*acmeshell;
 extern char			*fontnames[2];
 extern Image		*tagcols[NCOL];
 extern Image		*textcols[NCOL];
-extern char		wdir[]; /* must use extern because no dimension given */
+extern char		wdir[512];
 extern int			editing;
 extern int			erroutfd;
 extern int			messagesize;		/* negotiated in 9P version setup */
