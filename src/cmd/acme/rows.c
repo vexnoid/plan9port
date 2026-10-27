@@ -103,12 +103,11 @@ rowadd(Row *row, Column *c, int x)
 void
 rowresize(Row *row, Rectangle r)
 {
-	int i, deltax;
+	int i;
 	Rectangle or, r1, r2;
 	Column *c;
 
 	or = row->r;
-	deltax = r.min.x - or.min.x;
 	row->r = r;
 	r1 = r;
 	r1.max.y = r1.min.y + font->height;
@@ -126,7 +125,7 @@ rowresize(Row *row, Rectangle r)
 		if(i == row->ncol-1)
 			r1.max.x = r.max.x;
 		else
-			r1.max.x = (c->r.max.x-or.min.x)*Dx(r)/Dx(or) + deltax;
+			r1.max.x = r.min.x + (c->r.max.x-or.min.x)*Dx(r)/Dx(or);
 		if(i > 0){
 			r2 = r1;
 			r2.max.x = r2.min.x+Border;
