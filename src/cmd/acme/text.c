@@ -125,8 +125,6 @@ textclose(Text *t)
 		seltext = nil;
 	if(mousetext == t)
 		mousetext = nil;
-	if(barttext == t)
-		barttext = nil;
 }
 
 int

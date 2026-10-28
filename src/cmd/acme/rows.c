@@ -285,10 +285,7 @@ rowtype(Row *row, Rune r, Point p)
 
 	clearmouse();
 	qlock(&row->lk);
-	if(bartflag)
-		t = barttext;
-	else
-		t = rowwhich(row, p);
+	t = rowwhich(row, p);
 	if(t!=nil && !(t->what==Tag && ptinrect(p, t->scrollr))){
 		w = t->w;
 		if(w == nil)
