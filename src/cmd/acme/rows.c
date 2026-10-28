@@ -124,8 +124,17 @@ rowresize(Row *row, Rectangle r)
 		/* the test should not be necessary, but guarantee we don't lose a pixel */
 		if(i == row->ncol-1)
 			r1.max.x = r.max.x;
-		else
-			r1.max.x = r.min.x + (c->r.max.x-or.min.x)*Dx(r)/Dx(or);
+		else{
+			/* scale from the original edge; rebase if moved */
+			if(c->xbase <= 0 || c->rowbase <= 0 || c->r.max.x != c->xnow){
+				c->xbase = c->r.max.x - or.min.x;
+				c->rowbase = Dx(or);
+			}
+			if(c->rowbase > 0)
+				r1.max.x = r.min.x + c->xbase*Dx(r)/c->rowbase;
+			else
+				r1.max.x = r1.min.x;
+		}
 		if(i > 0){
 			r2 = r1;
 			r2.max.x = r2.min.x+Border;
@@ -133,6 +142,7 @@ rowresize(Row *row, Rectangle r)
 			r1.min.x = r2.max.x;
 		}
 		colresize(c, r1);
+		c->xnow = c->r.max.x;
 	}
 }
 
