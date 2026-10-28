@@ -153,7 +153,6 @@ coladd(Column *c, Window *w, Window *clone, int y)
 	if(!mousectl->m.buttons)
 		moveto(mousectl, addpt(w->tag.scrollr.max, Pt(3, 3)));
 
-	barttext = &w->body;
 	return w;
 }
 
