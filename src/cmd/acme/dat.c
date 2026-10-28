@@ -31,8 +31,6 @@ Text			*seltext;
 Text			*argtext;
 Text			*mousetext;	/* global because Text.close needs to clear it */
 Text			*typetext;		/* global because Text.close needs to clear it */
-Text			*barttext;		/* shared between mousetask and keyboardthread */
-int			bartflag;
 Window		*activewin;
 Column		*activecol;
 Rectangle		nullrect;
