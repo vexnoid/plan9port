@@ -538,8 +538,6 @@ extern Text			*seltext;
 extern Text			*argtext;
 extern Text			*mousetext;	/* global because Text.close needs to clear it */
 extern Text			*typetext;		/* global because Text.close needs to clear it */
-extern Text			*barttext;		/* shared between mousetask and keyboardthread */
-extern int			bartflag;
 extern int			swapscrollbuttons;
 extern Window		*activewin;
 extern Column		*activecol;

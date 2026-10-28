@@ -73,9 +73,6 @@ threadmain(int argc, char *argv[])
 	case 'a':
 		globalautoindent = TRUE;
 		break;
-	case 'b':
-		bartflag = TRUE;
-		break;
 	case 'c':
 		p = ARGF();
 		if(p == nil)
@@ -528,7 +525,6 @@ mousethread(void *v)
 				but = 2;
 			else if(m.buttons == 4)
 				but = 3;
-			barttext = t;
 			if(t->what==Body && ptinrect(m.xy, t->scrollr)){
 				if(but){
 					if(swapscrollbuttons){
@@ -560,11 +556,8 @@ mousethread(void *v)
 				if(but){
 					if(t->what == Columntag)
 						rowdragcol(&row, t->col, but);
-					else if(t->what == Tag){
+					else if(t->what == Tag)
 						coldragwin(t->col, t->w, but);
-						if(t->w)
-							barttext = &t->w->body;
-					}
 					if(t->col)
 						activecol = t->col;
 				}
