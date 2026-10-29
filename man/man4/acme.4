@@ -137,10 +137,11 @@ and use the interface described below.
 Each
 .I acme
 window has associated a directory numbered by its ID.
-Window IDs are chosen sequentially and may be discovered by the
-.B ID
-command, by
-reading the
+Window IDs are chosen sequentially and may be discovered from the
+.B $winid
+environment variable of a command run in the window (see
+.MR acme 1 ),
+by reading the
 .B ctl
 file, or
 indirectly through the
