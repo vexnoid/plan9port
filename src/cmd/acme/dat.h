@@ -332,6 +332,7 @@ struct Column
 	Row		*row;
 	Window	**w;
 	Window	*zoomw;	/* full-sized window, if any */
+	Text	*seltext;
 	int		nw;
 	int		safe;
 	int		xbase;	/* right edge to scale from */

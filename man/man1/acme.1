@@ -478,6 +478,16 @@ and
 set to the window's id number
 (see
 .MR acme 4 ).
+A command run from a column tag has no window of its own;
+its
+.B $winid
+is that of the window in the column that most recently had
+selected text, so the command acts on a window of that column
+and not on one in another column.
+If the column has no such window, no window id is given.
+In the row tag,
+.B $winid
+is that of the window most recently clicked in.
 .PP
 The environment variable
 .B $acmeshell

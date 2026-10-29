@@ -175,7 +175,7 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 	Rune *r, *s;
 	char *b, *a, *aa;
 	Exectab *e;
-	int c, n, f;
+	int c, n, f, selid;
 	Runestr dir;
 
 	q0 = aq0;
@@ -269,7 +269,13 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 	aa = getbytearg(argt, TRUE, TRUE, &a);
 	if(t->w)
 		incref(&t->w->ref);
-	run(t->w, b, dir.r, dir.nr, TRUE, aa, a, FALSE);
+	selid = -1;
+	if(t->what == Columntag){
+		selid = 0;
+		if(t->col->seltext != nil)
+			selid = t->col->seltext->w->id;
+	}
+	run(t->w, b, dir.r, dir.nr, TRUE, aa, a, FALSE, selid);
 }
 
 char*
@@ -1452,6 +1458,7 @@ runproc(void *argvp)
 		Command *c;
 		Channel *cpid;
 		int iseditcmd;
+		int selid;
 	/* end of args */
 	char *e, *t, *name, *filename, *dir, **av, *news;
 	Rune r, **incl;
@@ -1479,6 +1486,7 @@ runproc(void *argvp)
 	c = argv[7];
 	cpid = argv[8];
 	iseditcmd = (uintptr)argv[9];
+	selid = (int)(uintptr)argv[10];
 	free(argv);
 
 	qlock(&runprocenvlk);	/* until child forks, below */
@@ -1527,7 +1535,9 @@ runproc(void *argvp)
 		}else{
 			filename = nil;
 			winid = 0;
-			if(activewin)
+			if(selid >= 0)
+				winid = selid;
+			else if(activewin)
 				winid = activewin->id;
 		}
 		rfork(RFNAMEG|RFENVG|RFFDG|RFNOTEG);
@@ -1754,7 +1764,7 @@ runwaittask(void *v)
 }
 
 void
-run(Window *win, char *s, Rune *rdir, int ndir, int newns, char *argaddr, char *xarg, int iseditcmd)
+run(Window *win, char *s, Rune *rdir, int ndir, int newns, char *argaddr, char *xarg, int iseditcmd, int selid)
 {
 	void **arg;
 	Command *c;
@@ -1763,7 +1773,7 @@ run(Window *win, char *s, Rune *rdir, int ndir, int newns, char *argaddr, char *
 	if(s == nil)
 		return;
 
-	arg = emalloc(10*sizeof(void*));
+	arg = emalloc(11*sizeof(void*));
 	c = emalloc(sizeof *c);
 	c->fromdump = win!=nil && win->fromdump;
 	cpid = chancreate(sizeof(ulong), 0);
@@ -1778,6 +1788,7 @@ run(Window *win, char *s, Rune *rdir, int ndir, int newns, char *argaddr, char *
 	arg[7] = c;
 	arg[8] = cpid;
 	arg[9] = (void*)(uintptr)iseditcmd;
+	arg[10] = (void*)(uintptr)selid;
 	threadcreate(runproc, arg, STACK);
 	/* mustn't block here because must be ready to answer mount() call in run() */
 	arg = emalloc(2*sizeof(void*));

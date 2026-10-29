@@ -564,7 +564,7 @@ mousethread(void *v)
 					if(w)
 						winsettag(w);
 					argtext = t;
-					seltext = t;
+					setseltext(t);
 					if(t->col)
 						activecol = t->col;	/* button 1 only */
 					if(t->w!=nil && t==&t->w->body)

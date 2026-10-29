@@ -710,7 +710,7 @@ openfile(Text *t, Expand *e)
 		textscrollmark(t, o);
 	}
 	winsettag(t->w);
-	seltext = t;
+	setseltext(t);
 	if(e->jump){
 		if(eval)
 			moveto(mousectl, addpt(frptofchar(&t->fr, t->fr.p0), Pt(4, font->height-4)));

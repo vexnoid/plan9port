@@ -839,7 +839,7 @@ rowload(Row *row, char *file, int initing)
 			memmove(et, l, Blinelen(b));
 			incref(&w->ref);
 			w->fromdump = TRUE;
-			run(w, et, er, enr, TRUE, nil, nil, FALSE);
+			run(w, et, er, enr, TRUE, nil, nil, FALSE, -1);
 			/* er is freed in run() */
 		}
 Nextline:

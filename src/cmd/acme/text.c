@@ -1000,6 +1000,14 @@ textframescroll(Text *t, int dl)
 }
 
 void
+setseltext(Text *t)
+{
+	seltext = t;
+	if(t!=nil && t->w!=nil && t->col!=nil)
+		t->col->seltext = t;
+}
+
+void
 textselect(Text *t)
 {
 	uint q0, q1;

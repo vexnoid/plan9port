@@ -56,6 +56,7 @@ colinit(Column *c, Rectangle r)
 	textinsert(t, 0, Lheader, 42, TRUE);
 	textsetselect(t, t->file->b.nc, t->file->b.nc);
 	c->zoomw = nil;
+	c->seltext = nil;
 	coldrawbutton(c);
 	c->safe = TRUE;
 }
@@ -191,6 +192,8 @@ colclose(Column *c, Window *w, int dofree)
 	error("can't find window");
   Found:
 	r = w->r;
+	if(c->seltext != nil && c->seltext->w == w)
+		c->seltext = nil;
 	w->tag.col = nil;
 	w->body.col = nil;
 	w->col = nil;

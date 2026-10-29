@@ -624,7 +624,7 @@ runpipe(Text *t, int cmd, Rune *cr, int ncr, int state)
 	editing = state;
 	if(t!=nil && t->w!=nil)
 		incref(&t->w->ref);	/* run will decref */
-	run(w, runetobyte(s, n), dir.r, dir.nr, TRUE, nil, nil, TRUE);
+	run(w, runetobyte(s, n), dir.r, dir.nr, TRUE, nil, nil, TRUE, -1);
 	free(s);
 	if(t!=nil && t->w!=nil)
 		winunlock(t->w);
