@@ -557,40 +557,49 @@ getname(Text *t, Text *argt, Rune *arg, int narg, int isput)
 }
 
 void
-zeroxx(Text *et, Text *t, Text *_1, int _2, int _3, Rune *_4, int _5)
+zeroxx(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 {
-	Window *nw;
-	int c, locked;
+	Text *t;
+	Window *w, *nw;
+	int locked;
 
+	USED(_0);
 	USED(_1);
 	USED(_2);
 	USED(_3);
 	USED(_4);
 	USED(_5);
 
-	locked = FALSE;
-	if(t!=nil && t->w!=nil && t->w!=et->w){
-		locked = TRUE;
-		c = 'M';
-		if(et->w)
-			c = et->w->owner;
-		winlock(t->w, c);
-	}
-	if(t == nil)
+	switch(et->what){
+	case Columntag:
+		t = et->col->seltext;
+		break;
+	case Rowtag:
+		t = seltext;
+		break;
+	default:
 		t = et;
+		break;
+	}
 	if(t==nil || t->w==nil)
 		return;
-	t = &t->w->body;
-	if(t->w->isdir)
-		warning(nil, "%.*S is a directory; Zerox illegal\n", t->file->nname, t->file->name);
-	else{
-		nw = coladd(t->w->col, nil, t->w, -1);
-		/* ugly: fix locks so w->unlock works */
-		winlock1(nw, t->w->owner);
-		xfidlog(nw, "zerox");
+	w = t->w;
+
+	locked = w != et->w;
+	if(locked)
+		winlock(w, et->w ? et->w->owner : 'M');
+	if(w->col != nil){	/* not deleted while we waited */
+		if(w->isdir)
+			warning(nil, "%.*S is a directory; Zerox illegal\n", w->body.file->nname, w->body.file->name);
+		else{
+			nw = coladd(w->col, nil, w, -1);
+			/* ugly: fix locks so w->unlock works */
+			winlock1(nw, w->owner);
+			xfidlog(nw, "zerox");
+		}
 	}
 	if(locked)
-		winunlock(t->w);
+		winunlock(w);
 }
 
 typedef struct TextAddr TextAddr;
