@@ -39,7 +39,6 @@ void	edit(Text*, Text*, Text*, int, int, Rune*, int);
 void	xexit(Text*, Text*, Text*, int, int, Rune*, int);
 void	fontx(Text*, Text*, Text*, int, int, Rune*, int);
 void	get(Text*, Text*, Text*, int, int, Rune*, int);
-void	id(Text*, Text*, Text*, int, int, Rune*, int);
 void	indent(Text*, Text*, Text*, int, int, Rune*, int);
 void	xkill(Text*, Text*, Text*, int, int, Rune*, int);
 void	local(Text*, Text*, Text*, int, int, Rune*, int);
@@ -72,7 +71,6 @@ static Rune LEdit[] = { 'E', 'd', 'i', 't', 0 };
 static Rune LExit[] = { 'E', 'x', 'i', 't', 0 };
 static Rune LFont[] = { 'F', 'o', 'n', 't', 0 };
 static Rune LGet[] = { 'G', 'e', 't', 0 };
-static Rune LID[] = { 'I', 'D', 0 };
 static Rune LIndent[] = { 'I', 'n', 'd', 'e', 'n', 't', 0 };
 static Rune LKill[] = { 'K', 'i', 'l', 'l', 0 };
 static Rune LLoad[] = { 'L', 'o', 'a', 'd', 0 };
@@ -101,7 +99,6 @@ Exectab exectab[] = {
 	{ LExit,		xexit,	FALSE,	XXX,		XXX		},
 	{ LFont,		fontx,	FALSE,	XXX,		XXX		},
 	{ LGet,		get,		FALSE,	TRUE,	XXX		},
-	{ LID,		id,		FALSE,	XXX,		XXX		},
 	{ LIndent,		indent,	FALSE,	XXX,		XXX		},
 	{ LKill,		xkill,		FALSE,	XXX,		XXX		},
 	{ LLoad,		dump,	FALSE,	FALSE,	XXX		},
@@ -1176,21 +1173,6 @@ putall(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 			free(a);
 		}
 	}
-}
-
-
-void
-id(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
-{
-	USED(_0);
-	USED(_1);
-	USED(_2);
-	USED(_3);
-	USED(_4);
-	USED(_5);
-
-	if(et && et->w)
-		warning(nil, "/mnt/acme/%d/\n", et->w->id);
 }
 
 void
