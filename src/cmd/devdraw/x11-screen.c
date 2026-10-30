@@ -397,10 +397,10 @@ runxevent(XEvent *xev)
 	case FocusIn:    
 	case Expose:     /* Handle standard Expose here too for consistency */
 			/*
-			 * Force a copy from backing store (screenpm) to the window.
+			 * Force a copy from backing store (showpm) to the window.
 			 */
 			if(w->screenpm){
-				XCopyArea(_x.display, w->screenpm, w->drawable, _x.gccopy,
+				XCopyArea(_x.display, w->showpm, w->drawable, _x.gccopy,
 					0, 0, Dx(w->screenr), Dy(w->screenr), 0, 0);
 				_xdrawbox(w);
 			}
@@ -722,6 +722,7 @@ xattach(Client *client, char *label, char *winsize)
 	w->screenr = r;
 	w->screenpm = XCreatePixmap(_x.display, w->drawable, Dx(r), Dy(r), _x.depth);
 	w->nextscreenpm = w->screenpm;
+	w->showpm = XCreatePixmap(_x.display, w->drawable, Dx(r), Dy(r), _x.depth);
 	w->screenimage = _xallocmemimage(r, _x.chan, w->screenpm);
 	client->mouserect = r;
 
@@ -1007,7 +1008,10 @@ rpc_flush(Client *client, Rectangle r)
 	if(w->nextscreenpm != w->screenpm){
 		XSync(_x.display, False);
 		XFreePixmap(_x.display, w->screenpm);
+		XFreePixmap(_x.display, w->showpm);
 		w->screenpm = w->nextscreenpm;
+		r = w->screenr;	/* showpm is new: copy all of it */
+		w->showpm = XCreatePixmap(_x.display, w->drawable, Dx(r), Dy(r), _x.depth);
 		if(w->resizelater)
 			_xresizelater(w);
 	}
@@ -1017,7 +1021,9 @@ rpc_flush(Client *client, Rectangle r)
 		return;
 	}
 
-	XCopyArea(_x.display, w->screenpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
+	XCopyArea(_x.display, w->screenpm, w->showpm, _x.gccopy, r.min.x, r.min.y,
+		Dx(r), Dy(r), r.min.x, r.min.y);
+	XCopyArea(_x.display, w->showpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
 		Dx(r), Dy(r), r.min.x, r.min.y);
 	_xdrawbox(w);
 	XFlush(_x.display);
@@ -1030,14 +1036,12 @@ _xexpose(Xwin *w, XEvent *e)
 	XExposeEvent *xe;
 	Rectangle r;
 
-	if(w->screenpm != w->nextscreenpm)
-		return;
 	xe = (XExposeEvent*)e;
 	r.min.x = xe->x;
 	r.min.y = xe->y;
 	r.max.x = xe->x+xe->width;
 	r.max.y = xe->y+xe->height;
-	XCopyArea(_x.display, w->screenpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
+	XCopyArea(_x.display, w->showpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
 		Dx(r), Dy(r), r.min.x, r.min.y);
 	_xdrawbox(w);
 	XSync(_x.display, False);
@@ -1074,7 +1078,7 @@ _xconfigure(Xwin *w, XEvent *e)
 	r = Rect(0, 0, xe->width, xe->height);
 
 	if(w->screenpm != w->nextscreenpm){
-		XCopyArea(_x.display, w->screenpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
+		XCopyArea(_x.display, w->showpm, w->drawable, _x.gccopy, r.min.x, r.min.y,
 			Dx(r), Dy(r), r.min.x, r.min.y);
 		XSync(_x.display, False);
 	}
