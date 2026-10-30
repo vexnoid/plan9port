@@ -418,8 +418,12 @@ runxevent(XEvent *xev)
 		break;
 
 	case ConfigureNotify:
-		if(_xconfigure(w, xev))
+		if(!_xconfigure(w, xev))
+			w->resizelater = 0;
+		else if(w->screenpm == w->nextscreenpm)
 			_xreplacescreenimage(w->client);
+		else
+			w->resizelater = 1;	/* one at a time; rpc_flush asks for the next */
 		break;
 
 	case ButtonPress:
@@ -979,6 +983,21 @@ rpc_shutdown(void)
 {
 }
 
+static void
+_xresizelater(Xwin *w)
+{
+	XEvent ev;
+
+	w->resizelater = 0;
+	memset(&ev, 0, sizeof ev);
+	ev.xconfigure.type = ConfigureNotify;
+	ev.xconfigure.event = w->drawable;
+	ev.xconfigure.window = w->drawable;
+	ev.xconfigure.width = Dx(w->newscreenr);
+	ev.xconfigure.height = Dy(w->newscreenr);
+	XSendEvent(_x.display, w->drawable, False, StructureNotifyMask, &ev);
+}
+
 void
 rpc_flush(Client *client, Rectangle r)
 {
@@ -989,6 +1008,8 @@ rpc_flush(Client *client, Rectangle r)
 		XSync(_x.display, False);
 		XFreePixmap(_x.display, w->screenpm);
 		w->screenpm = w->nextscreenpm;
+		if(w->resizelater)
+			_xresizelater(w);
 	}
 
 	if(r.min.x >= r.max.x || r.min.y >= r.max.y) {

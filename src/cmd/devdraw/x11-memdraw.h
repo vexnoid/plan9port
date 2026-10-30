@@ -77,6 +77,7 @@ struct Xwin
 	struct Client*	client;
 	
 	Rectangle	newscreenr;
+	int		resizelater;	/* newscreenr is newer than nextscreenpm */
 	Memimage*	screenimage;
 	XDrawable	screenpm;
 	XDrawable	nextscreenpm;
