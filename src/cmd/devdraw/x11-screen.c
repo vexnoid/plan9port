@@ -581,6 +581,7 @@ xattach(Client *client, char *label, char *winsize)
 	attr.colormap = _x.cmap;
 	attr.background_pixel = ~0;
 	attr.border_pixel = 0;
+	attr.bit_gravity = NorthWestGravity;	/* don't clear the window on resize */
 	w->drawable = XCreateWindow(
 		_x.display,	/* display */
 		xrootwin,	/* parent */
@@ -593,7 +594,7 @@ xattach(Client *client, char *label, char *winsize)
 		InputOutput,	/* class */
 		_x.vis,		/* visual */
 				/* valuemask */
-		CWBackPixel|CWBorderPixel|CWColormap,
+		CWBackPixel|CWBorderPixel|CWColormap|CWBitGravity,
 		&attr		/* attributes (the above aren't?!) */
 	);
 	XSelectInput(_x.display, w->drawable, StructureNotifyMask | PropertyChangeMask);
