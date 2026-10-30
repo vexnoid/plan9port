@@ -14,6 +14,7 @@ enum
 struct Xmem
 {
 	int		pixmap;	/* pixmap id */
+	int		extpixmap;	/* pixmap belongs to the window */
 	XImage		*xi;	/* local image */
 	int		dirty;	/* is the X server ahead of us?  */
 	Rectangle	dirtyr;	/* which pixels? */

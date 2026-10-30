@@ -46,9 +46,10 @@ _xallocmemimage(Rectangle r, u32int chan, int pixmap)
 		d = 1;
 	else
 		d = _x.depth;
-	if(pixmap != PMundef)
+	if(pixmap != PMundef){
 		xm->pixmap = pixmap;
-	else
+		xm->extpixmap = 1;
+	}else
 		xm->pixmap = XCreatePixmap(_x.display, _x.windows->drawable, Dx(r), Dy(r), d);
 
 	/*
@@ -115,7 +116,8 @@ freememimage(Memimage *m)
 			xm->xi->data = nil;
 			XFree(xm->xi);
 		}
-		XFreePixmap(_x.display, xm->pixmap);
+		if(!xm->extpixmap)
+			XFreePixmap(_x.display, xm->pixmap);
 		free(xm);
 		m->X = nil;
 	}
