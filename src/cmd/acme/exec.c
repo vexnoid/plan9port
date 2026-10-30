@@ -988,13 +988,15 @@ cut(Text *et, Text *t, Text *_0, int dosnarf, int docut, Rune *_2, int _3)
 	USED(_2);
 	USED(_3);
 
+	if(et!=nil && et!=t && et->what==Columntag && et->col!=nil)
+		t = et->col->seltext;
 	/*
 	 * if not executing a mouse chord (et != t) and snarfing (dosnarf)
 	 * and executed Cut or Copy in window tag (et->w != nil),
 	 * then use the window body selection or the tag selection
 	 * or do nothing at all.
 	 */
-	if(et!=t && dosnarf && et->w!=nil){
+	else if(et!=t && dosnarf && et->w!=nil){
 		if(et->w->body.q1>et->w->body.q0)
 			t = &et->w->body;
 		else if(et->w->tag.q1>et->w->tag.q0)
@@ -1062,8 +1064,10 @@ paste(Text *et, Text *t, Text *_0, int selectall, int tobody, Rune *_1, int _2)
 	USED(_1);
 	USED(_2);
 
+	if(et!=nil && et!=t && et->what==Columntag && et->col!=nil)
+		t = et->col->seltext;
 	/* if(tobody), use body of executing window  (Paste or Send command) */
-	if(tobody && et!=nil && et->w!=nil)
+	else if(tobody && et!=nil && et->w!=nil)
 		t = &et->w->body;
 	if(t == nil)
 		return;
