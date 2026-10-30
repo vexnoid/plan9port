@@ -81,6 +81,7 @@ struct Xwin
 	Memimage*	screenimage;
 	XDrawable	screenpm;
 	XDrawable	nextscreenpm;
+	XDrawable	showpm;		/* what the window shows; only rpc_flush changes it */
 	Rectangle	screenr;
 	Rectangle	screenrect;
 	Rectangle	windowrect;
