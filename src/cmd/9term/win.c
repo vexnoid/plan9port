@@ -173,7 +173,7 @@ threadmain(int argc, char **argv)
 	putenv("winid", buf);
 	getwd(buf1, sizeof buf1);
 	winname(win, "%s/-%s", buf1, name);
-	wincmds(win, " Del Snarf Look Send ");
+	wincmds(win, " Del Copy Look Send ");
 	winctl(win, "scratch");
 	winctl(win, "dumpdir %s/\n", buf1);
 	winctl(win, "dump %s\n", dump);
