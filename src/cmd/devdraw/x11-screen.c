@@ -1068,10 +1068,22 @@ _xreplacescreenimage(Client *client)
 	XDrawable pixmap;
 	Rectangle r;
 	Xwin *w;
+	int dx, dy;
 
 	w = (Xwin*)client->view;
 	r = w->newscreenr;
 	pixmap = XCreatePixmap(_x.display, w->drawable, Dx(r), Dy(r), _x.depth);
+
+	/* pixmap contents are undefined: start from the old image */
+	if(_x.gcfillcolor != ~0){
+		XSetForeground(_x.display, _x.gcfill, ~0);
+		_x.gcfillcolor = ~0;
+	}
+	XFillRectangle(_x.display, pixmap, _x.gcfill, 0, 0, Dx(r), Dy(r));
+	dx = Dx(r) < Dx(w->screenr) ? Dx(r) : Dx(w->screenr);
+	dy = Dy(r) < Dy(w->screenr) ? Dy(r) : Dy(w->screenr);
+	XCopyArea(_x.display, w->nextscreenpm, pixmap, _x.gccopy, 0, 0, dx, dy, 0, 0);
+
 	m = _xallocmemimage(r, _x.chan, pixmap);
 	if(w->nextscreenpm != w->screenpm)
 		XFreePixmap(_x.display, w->nextscreenpm);
