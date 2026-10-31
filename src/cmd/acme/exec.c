@@ -358,6 +358,8 @@ newcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 	if(c){
 		w = coladd(c, nil, nil, -1);
 		winsettag(w);
+		seltext = &w->body;
+		activewin = w;
 		xfidlog(w, "new");
 	}
 }
