@@ -969,7 +969,8 @@ textselect(Text *t)
 		selectq = q0;
 	}
 	if(mouse->buttons == b){
-		t->fr.scroll = framescroll;
+		if(t->what == Body)
+			t->fr.scroll = framescroll;
 		frselect(&t->fr, mousectl);
 		/* horrible botch: while asleep, may have lost selection altogether */
 		if(selectq > t->file->b.nc)
