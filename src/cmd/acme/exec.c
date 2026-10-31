@@ -364,6 +364,8 @@ newcol(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 	if(c){
 		w = coladd(c, nil, nil, -1);
 		winsettag(w);
+		setseltext(&w->body);
+		activewin = w;
 		xfidlog(w, "new");
 	}
 }
@@ -595,6 +597,8 @@ zeroxx(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
 			nw = coladd(w->col, nil, w, -1);
 			/* ugly: fix locks so w->unlock works */
 			winlock1(nw, w->owner);
+			setseltext(&nw->body);
+			activewin = nw;
 			xfidlog(nw, "zerox");
 		}
 	}
