@@ -1195,14 +1195,51 @@ enum
 	MINMOVE = 4
 };
 
-uint
-xselect(Frame *f, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is down */
+static int
+xclamp(Text *t, uint q)
 {
-	uint p0, p1, q, tmp;
+	if(q < t->org)
+		return 0;
+	return min(q-t->org, t->fr.nchars);
+}
+
+static int
+xscroll(Text *t, Point p)
+{
+	Frame *f;
+	int dl;
+	uint q0;
+
+	f = &t->fr;
+	if(t->what != Body)
+		return 0;
+	if(p.y < f->r.min.y)
+		dl = -(f->r.min.y-p.y)/(int)f->font->height-1;
+	else if(p.y > f->r.max.y)
+		dl = (p.y-f->r.max.y)/(int)f->font->height+1;
+	else
+		return 0;
+	if(dl < 0)
+		q0 = textbacknl(t, t->org, -dl);
+	else{
+		if(t->org+f->nchars == t->file->b.nc)
+			return 1;
+		q0 = t->org+frcharofpt(f, Pt(f->r.min.x, f->r.min.y+dl*f->font->height));
+	}
+	textsetorigin(t, q0, TRUE);
+	return 1;
+}
+
+uint
+xselect(Text *t, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is down */
+{
+	Frame *f;
+	uint a, p0, p1, q, qc;
 	ulong msec;
 	Point mp, pt0, pt1, qt;
-	int reg, b;
+	int reg, b, scrled;
 
+	f = &t->fr;
 	mp = mc->m.xy;
 	b = mc->m.buttons;
 	msec = mc->m.msec;
@@ -1211,11 +1248,22 @@ xselect(Frame *f, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 0);
 	p0 = p1 = frcharofpt(f, mp);
+	a = t->org+p0;
 	pt0 = frptofchar(f, p0);
 	pt1 = frptofchar(f, p1);
 	reg = 0;
 	frtick(f, pt0, 1);
 	do{
+		scrled = xscroll(t, mc->m.xy);
+		if(scrled){
+			/* start the sweep over from the anchor */
+			if(f->p0 == f->p1)
+				frtick(f, frptofchar(f, f->p0), 0);
+			selrestore(f, frptofchar(f, 0), 0, f->nchars);
+			p0 = p1 = xclamp(t, a);
+			pt0 = pt1 = frptofchar(f, p0);
+			reg = 0;
+		}
 		q = frcharofpt(f, mc->m.xy);
 		if(p1 != q){
 			if(p0 == p1)
@@ -1250,7 +1298,10 @@ xselect(Frame *f, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is
 		if(p0 == p1)
 			frtick(f, pt0, 1);
 		flushimage(f->display, 1);
-		readmouse(mc);
+		if(scrled)
+			scrsleep(100);
+		else
+			readmouse(mc);
 	}while(mc->m.buttons == b);
 	if(mc->m.msec-msec < DELAY && p0!=p1
 	&& abs(mp.x-mc->m.xy.x)<MINMOVE
@@ -1261,11 +1312,9 @@ xselect(Frame *f, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is
 			selrestore(f, pt1, p1, p0);
 		p1 = p0;
 	}
-	if(p1 < p0){
-		tmp = p0;
-		p0 = p1;
-		p1 = tmp;
-	}
+	qc = t->org+p1;
+	p0 = xclamp(t, min(a, qc));
+	p1 = xclamp(t, max(a, qc));
 	pt0 = frptofchar(f, p0);
 	if(p0 == p1)
 		frtick(f, pt0, 0);
@@ -1274,8 +1323,8 @@ xselect(Frame *f, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is
 	if(f->p0 == f->p1)
 		frtick(f, frptofchar(f, f->p0), 1);
 	flushimage(f->display, 1);
-	*p1p = p1;
-	return p0;
+	*p1p = max(a, qc);
+	return min(a, qc);
 }
 
 int
@@ -1284,11 +1333,11 @@ textselect23(Text *t, uint *q0, uint *q1, Image *high, int mask)
 	uint p0, p1;
 	int buts;
 
-	p0 = xselect(&t->fr, mousectl, high, &p1);
+	p0 = xselect(t, mousectl, high, &p1);
 	buts = mousectl->m.buttons;
 	if((buts & mask) == 0){
-		*q0 = p0+t->org;
-		*q1 = p1+t->org;
+		*q0 = p0;
+		*q1 = p1;
 	}
 
 	while(mousectl->m.buttons)
