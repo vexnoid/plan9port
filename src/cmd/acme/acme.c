@@ -831,6 +831,8 @@ newwindowthread(void *v)
 		w = makenewwindow(nil);
 		wininittag(w);
 		winsettag(w);
+		seltext = &w->body;
+		activewin = w;
 		xfidlog(w, "new");
 		sendp(cnewwindow, w);
 	}

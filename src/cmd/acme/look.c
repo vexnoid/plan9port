@@ -311,6 +311,8 @@ plumbshow(Plumbmsg *m)
 	textscrdraw(&w->body);
 	textsetselect(&w->body, 0, 0);
 	textsetselect(&w->tag, w->tag.file->b.nc, w->tag.file->b.nc);
+	seltext = &w->body;
+	activewin = w;
 	xfidlog(w, "new");
 }
 
@@ -703,6 +705,7 @@ openfile(Text *t, Expand *e)
 	textshow(t, r.q0, r.q1, 1);
 	winsettag(t->w);
 	seltext = t;
+	activewin = w;
 	if(e->jump)
 		moveto(mousectl, addpt(frptofchar(&t->fr, t->fr.p0), Pt(4, font->height-4)));
 	return w;
@@ -734,6 +737,8 @@ new(Text *et, Text *t, Text *argt, int flag1, int flag2, Rune *arg, int narg)
 				else
 					w = coladd(et->col, nil, nil, -1);
 				winsettag(w);
+				seltext = &w->body;
+				activewin = w;
 				xfidlog(w, "new");
 			}
 			break;
