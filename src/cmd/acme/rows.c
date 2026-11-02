@@ -351,20 +351,22 @@ rowdump1(Row *row, Biobuf *b)
 		for(j=0; j<c->nw; j++)
 			c->w[j]->body.file->dumpid = 0;
 	}
+	textcommit(&row->tag, TRUE);
 	m = min(RBUFSIZE, row->tag.file->b.nc);
 	bufread(&row->tag.file->b, 0, r, m);
 	n = 0;
 	while(n<m && r[n]!='\n')
 		n++;
-	Bprint(b, "w %.*S\n", n, r);
+	Bprint(b, "w%11d %11d %.*S\n", row->tag.q0, row->tag.q1, n, r);
 	for(i=0; i<row->ncol; i++){
 		c = row->col[i];
+		textcommit(&c->tag, TRUE);
 		m = min(RBUFSIZE, c->tag.file->b.nc);
 		bufread(&c->tag.file->b, 0, r, m);
 		n = 0;
 		while(n<m && r[n]!='\n')
 			n++;
-		Bprint(b, "c%11d %.*S\n", i, n, r);
+		Bprint(b, "c%11d %11d %11d %.*S\n", i, c->tag.q0, c->tag.q1, n, r);
 	}
 	for(i=0; i<row->ncol; i++){
 		c = row->col[i];
@@ -419,7 +421,7 @@ rowdump1(Row *row, Biobuf *b)
 			free(a);
 			winctlprint(w, buf, 0);
 			Bwrite(b, buf, strlen(buf));
-			Bprint(b, "%11d ", w->tagexpand);
+			Bprint(b, "%11d %11d %11d ", w->tagexpand, w->tag.q0, w->tag.q1);
 			m = min(RBUFSIZE, w->tag.file->b.nc);
 			bufread(&w->tag.file->b, 0, r, m);
 			n = 0;
@@ -561,9 +563,10 @@ rowload(Row *row, char *file, int initing)
 	Rune *r, *fontr, *er;
 	int rune;
 	Column *c, *c1, *c2;
-	uint q0, q1;
+	uint q0, q1, tq0, tq1, *tsel;
 	Rectangle r1, r2;
 	Window *w;
+	Text *tt;
 
 	loadingdump = TRUE;
 	buf = fbufalloc();
@@ -645,24 +648,27 @@ rowload(Row *row, char *file, int initing)
 		case 'c':
 			l[Blinelen(b)-1] = 0;
 			i = atoi(l+1+0*12);
-			r = bytetorune(l+1*12, &nr);
-			for(n=0; n<nr; n++)
-				if(r[n] == ' ')
-					break;
-			textdelete(&row->col[i]->tag, 0, row->col[i]->tag.file->b.nc, TRUE);
-			textinsert(&row->col[i]->tag, 0, r+n+1, nr-(n+1), TRUE);
-			textsetselect(&row->col[i]->tag, row->col[i]->tag.file->b.nc, row->col[i]->tag.file->b.nc);
+			tq0 = atoi(l+1+1*12);
+			tq1 = atoi(l+1+2*12);
+			r = bytetorune(l+1+3*12, &nr);
+			tt = &row->col[i]->tag;
+			textdelete(tt, 0, tt->file->b.nc, TRUE);
+			textinsert(tt, 0, r, nr, TRUE);
+			if(tq0 > tq1 || tq1 > tt->file->b.nc)
+				tq0 = tq1 = tt->file->b.nc;
+			textsetselect(tt, tq0, tq1);
 			free(r);
 			break;
 		case 'w':
 			l[Blinelen(b)-1] = 0;
-			r = bytetorune(l+2, &nr);
-			for(n=0; n<nr; n++)
-				if(r[n] == ' ')
-					break;
+			tq0 = atoi(l+1+0*12);
+			tq1 = atoi(l+1+1*12);
+			r = bytetorune(l+1+2*12, &nr);
 			textdelete(&row->tag, 0, row->tag.file->b.nc, TRUE);
 			textinsert(&row->tag, 0, r, nr, TRUE);
-			textsetselect(&row->tag, row->tag.file->b.nc, row->tag.file->b.nc);
+			if(tq0 > tq1 || tq1 > row->tag.file->b.nc)
+				tq0 = tq1 = row->tag.file->b.nc;
+			textsetselect(&row->tag, tq0, tq1);
 			free(r);
 			break;
 		default:
@@ -745,7 +751,9 @@ rowload(Row *row, char *file, int initing)
 		w->isscratch = atoi(l+5*12);
 		/* l+6*12 is fromdump from winctlprint */
 		w->tagexpand = atoi(l+7*12);
-		r = bytetorune(l+8*12, &nr);
+		tq0 = atoi(l+8*12);
+		tq1 = atoi(l+9*12);
+		r = bytetorune(l+10*12, &nr);
 		n = -1;
 		for(x=0; x<nr; x++){
 			if(n < 0 && r[x] == ' ')
@@ -759,10 +767,22 @@ rowload(Row *row, char *file, int initing)
 			n = nr;
 		if(dumpid == 0)
 			winsetname(w, r, n);
+		/* rewriting the shared tag resets clones' selections */
+		tsel = emalloc(2*w->tag.file->ntext*sizeof(uint));
+		for(n=0; n<w->tag.file->ntext; n++){
+			tsel[2*n] = w->tag.file->text[n]->q0;
+			tsel[2*n+1] = w->tag.file->text[n]->q1;
+		}
 		textdelete(&w->tag, 0, w->tag.file->b.nc, TRUE);
 		textinsert(&w->tag, 0, r, nr, TRUE);
-		for(n=0; n<w->tag.file->ntext; n++)
-			textsetselect(w->tag.file->text[n], w->tag.file->b.nc, w->tag.file->b.nc);
+		for(n=0; n<w->tag.file->ntext; n++){
+			tt = w->tag.file->text[n];
+			if(tt == &w->tag)
+				textsetselect(tt, tt->file->b.nc, tt->file->b.nc);
+			else
+				textsetselect(tt, min(tsel[2*n], tt->file->b.nc), min(tsel[2*n+1], tt->file->b.nc));
+		}
+		free(tsel);
 		if(ndumped >= 0){
 			/* simplest thing is to put it in a file and load that */
 			sprint(buf, "/tmp/d%d.%.4sacme", getpid(), getuser());
@@ -822,6 +842,8 @@ rowload(Row *row, char *file, int initing)
 			textsetselect(&w->body, q0, q1);
 			textsetorigin(&w->body, org, TRUE);
 		}
+		if(tq0 <= tq1 && tq1 <= w->tag.file->b.nc)
+			textsetselect(&w->tag, tq0, tq1);
 		w->maxlines = min(w->body.fr.nlines, max(w->maxlines, w->body.fr.maxlines));
 		xfidlog(w, "new");
 		if(iseventwin){
