@@ -648,7 +648,7 @@ waitthread(void *v)
 {
 	Waitmsg *w;
 	Command *c, *lc;
-	uint pid, q;
+	uint pid, q, q0, q1;
 	int found, ncmd;
 	Rune *cmd;
 	char *err;
@@ -765,8 +765,10 @@ waitthread(void *v)
 				qlock(&row.lk);
 				t = &row.tag;
 				textcommit(t, TRUE);
+				q0 = t->q0;
+				q1 = t->q1;
 				textinsert(t, 0, c->name, c->nname, TRUE);
-				textsetselect(t, t->file->b.nc, t->file->b.nc);
+				textsetselect(t, q0+c->nname, q1+c->nname);
 				flushimage(display, 1);
 				qunlock(&row.lk);
 			}
