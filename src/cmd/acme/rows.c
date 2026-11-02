@@ -400,28 +400,20 @@ rowdump1(Row *row, Biobuf *b)
 			}else{
 				primary = TRUE;
 				t->file->dumpid = w->id;
-				if(t->file->dumpstr){
-					dumped = TRUE;
-					Bprint(b, "e%11d %11d %11d %11d %11.7f %11d %11d %s\n", i, w->id,
+				clean = (w->dirty==FALSE && access(a, 0)==0) || w->isdir;
+				dumped = !clean;
+				if(clean)
+					Bprint(b, "%c%11d %11d %11d %11d %11.7f %11d %s\n",
+						t->file->dumpstr? 'e' : 'f', i, w->id,
 						w->body.q0, w->body.q1,
 						100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
-						w->body.file->b.nc, (int)w->body.org,
-						fontname);
-				}else if((clean = (w->dirty==FALSE && access(a, 0)==0) || w->isdir)){
-					dumped = FALSE;
-					Bprint(b, "f%11d %11d %11d %11d %11.7f %11d %s\n", i, w->id,
+						(int)w->body.org, fontname);
+				else
+					Bprint(b, "%c%11d %11d %11d %11d %11.7f %11d %11d %s\n",
+						t->file->dumpstr? 'E' : 'F', i, w->id,
 						w->body.q0, w->body.q1,
 						100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
-						(int)w->body.org,
-						fontname);
-				}else{
-					dumped = TRUE;
-					Bprint(b, "F%11d %11d %11d %11d %11.7f %11d %11d %s\n", i, w->id,
-						w->body.q0, w->body.q1,
-						100.0*(wr.min.y-c->r.min.y)/Dy(c->r),
-						w->body.file->b.nc, (int)w->body.org,
-						fontname);
-				}
+						w->body.file->b.nc, (int)w->body.org, fontname);
 			}
 			free(fontname);
 			free(a);
@@ -688,19 +680,22 @@ rowload(Row *row, char *file, int initing)
 		case 'e':
 			iseventwin = TRUE;
 			/* fall through */
-		case 'F':
-			if(Blinelen(b) < 1+7*12+1)
-				goto Rescue2;
-			fontname = l+1+7*12;
-			ndumped = atoi(l+1+5*12);
-			org = atoi(l+1+6*12);
-			break;
 		case 'f':
 			if(Blinelen(b) < 1+6*12+1)
 				goto Rescue2;
 			fontname = l+1+6*12;
 			ndumped = -1;
 			org = atoi(l+1+5*12);
+			break;
+		case 'E':
+			iseventwin = TRUE;
+			/* fall through */
+		case 'F':
+			if(Blinelen(b) < 1+7*12+1)
+				goto Rescue2;
+			fontname = l+1+7*12;
+			ndumped = atoi(l+1+5*12);
+			org = atoi(l+1+6*12);
 			break;
 		case 'x':
 			if(Blinelen(b) < 1+6*12+1)
