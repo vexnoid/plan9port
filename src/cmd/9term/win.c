@@ -175,7 +175,7 @@ threadmain(int argc, char **argv)
 	getwd(buf1, sizeof buf1);
 	if(!win->fromdump){
 		winname(win, "%s/-%s", buf1, name);
-		wincmds(win, " Del Copy Send Look ");
+		wincmds(win, " Del Zerox Send Look ");
 		winctl(win, "scratch");
 	}
 	winctl(win, "dumpdir %s/\n", buf1);
