@@ -90,10 +90,9 @@ startplumbing(void)
 }
 
 void
-look3(Text *t, uint q0, uint q1, int external)
+plumb3(Text *t, uint q0, uint q1, int external)
 {
 	int n, c, f, expanded;
-	Text *ct;
 	Expand e;
 	Rune *r;
 	uint p;
@@ -101,9 +100,6 @@ look3(Text *t, uint q0, uint q1, int external)
 	Runestr dir;
 	char buf[32];
 
-	ct = seltext;
-	if(ct == nil)
-		seltext = t;
 	expanded = expand(t, q0, q1, &e, TRUE);
 	if(!external && t->w!=nil && t->w->nopen[QWevent]>0){
 		/* send alphanumeric expansion to external client */
@@ -124,9 +120,9 @@ look3(Text *t, uint q0, uint q1, int external)
 			f |= 2;	/* second (post-expand) message follows */
 		if(e.nname)
 			f |= 4;	/* it's a file name */
-		c = 'l';
+		c = 'p';
 		if(t->what == Body)
-			c = 'L';
+			c = 'P';
 		n = q1-q0;
 		if(n <= EVENTSIZE){
 			r = runemalloc(n);
@@ -215,23 +211,6 @@ look3(Text *t, uint q0, uint q1, int external)
 		return;
 	if(e.name || e.u.at)
 		openfile(t, &e);
-	else{
-		if(t->w == nil)
-			return;
-		ct = &t->w->body;
-		if(t->w != ct->w)
-			winlock(ct->w, 'M');
-		if(t == ct)
-			textsetselect(ct, e.q1, e.q1);
-		n = e.q1 - e.q0;
-		r = runemalloc(n);
-		bufread(&t->file->b, e.q0, r, n);
-		if(search(ct, r, n, FALSE, ct->q1) && e.jump)
-			moveto(mousectl, addpt(frptofchar(&ct->fr, ct->fr.p0), Pt(4, ct->fr.font->height-4)));
-		if(t->w != ct->w)
-			winunlock(ct->w);
-		free(r);
-	}
 
    Return:
 	free(e.name);
@@ -636,7 +615,7 @@ expandfile(Text *t, uint q0, uint q1, Expand *e)
 	/*
 	 * Note: address is repeated in openfile when
 	 * expandfile returns to expand returns to
-	 * look3 and search4
+	 * plumb3 and search4
 	 */
 	address(TRUE, nil, range(-1,-1), range(0,0), t, e->a0, amax, tgetc, &eval, (uint*)&e->a1);
 	return TRUE;

@@ -490,7 +490,7 @@ shell is used by default.
 .SS "Mouse button 3
 Pointing at text with button 3 instructs
 .I acme
-to locate or acquire the file, string, etc. described by the indicated text and
+to locate or acquire the file, address, etc. described by the indicated text and
 its context.
 This description follows the actions taken when
 button 3 is released after sweeping out some text.
@@ -521,7 +521,9 @@ not just
 .B /regexp
 or
 .BR 127 .
-(There is an easier way to locate literal text; see below.)
+(There is an easier way to locate literal text; see
+.I Scroll wheel
+below.)
 .PP
 If the text is a file name followed by a colon and an address,
 .I acme
@@ -534,14 +536,6 @@ select line
 27, and put the mouse at the beginning of the line.  The rules about Error
 files, directories, and so on all combine to make this an efficient way to
 investigate errors from compilers, etc.
-.PP
-If the text is not an address or file, it is taken to
-be literal text, which is then searched for in the body of the window
-in which button 3 was clicked.  If a match is found, it is selected and the mouse is
-moved there.  Thus, to search for occurrences of a word in a file,
-just click button 3 on the word.  Because of the rule of using the
-selection as the button 3 action, subsequent clicks will find subsequent
-occurrences without moving the mouse.
 .PP
 In all these actions, the mouse motion is not done if the text is a null string
 within a non-null selected string in the tag, so that (for example) complex regular expressions

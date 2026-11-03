@@ -581,7 +581,7 @@ mousethread(void *v)
 						execute(t, q0, q1, FALSE, argt);
 				}else if(m.buttons & 4){
 					if(textselect3(t, &q0, &q1))
-						look3(t, q0, q1, FALSE);
+						plumb3(t, q0, q1, FALSE);
 				}else if(m.buttons & (128|256)){
 					undo(w, t, m.buttons&128);
 					while(mousectl->m.buttons)

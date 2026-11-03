@@ -28,7 +28,7 @@ fn event {
 	case Mx MX	# button 2 in tag or body
 		winwriteevent $*
 
-	case Ml ML	# button 3 in tag or body
+	case Mp MP	# button 3 in tag or body
 		{
 			if(~ $dict NONE)
 				dictwin /adict/$9/ $9
