@@ -1105,17 +1105,20 @@ look(Text *et, Text *t, Text *argt, int _0, int _1, Rune *arg, int narg)
 	if(et && et->w){
 		t = &et->w->body;
 		if(narg > 0){
-			search(t, arg, narg, FALSE, t->q1);
-			return;
+			r = arg;
+			n = narg;
+		}else{
+			getarg(argt, FALSE, FALSE, &r, &n);
+			if(r == nil){
+				n = t->q1-t->q0;
+				r = runemalloc(n);
+				bufread(&t->file->b, t->q0, r, n);
+			}
 		}
-		getarg(argt, FALSE, FALSE, &r, &n);
-		if(r == nil){
-			n = t->q1-t->q0;
-			r = runemalloc(n);
-			bufread(&t->file->b, t->q0, r, n);
-		}
-		search(t, r, n, FALSE, t->q1);
-		free(r);
+		if(search(t, r, n, FALSE, t->q1))
+			moveto(mousectl, addpt(frptofchar(&t->fr, t->fr.p0), Pt(4, t->fr.font->height-4)));
+		if(narg <= 0)
+			free(r);
 	}
 }
 
