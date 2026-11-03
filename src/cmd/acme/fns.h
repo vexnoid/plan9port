@@ -71,8 +71,9 @@ char*	markupcmd(Window*, char*);
 #define isalnum acmeisalnum
 int	isalnum(Rune);
 void	execute(Text*, uint, uint, int, Text*);
-int	search(Text*, Rune*, uint);
+int	search(Text*, Rune*, uint, int, uint);
 void	look3(Text*, uint, uint, int);
+void	search4(Text*, int);
 void	editcmd(Text*, Rune*, uint);
 uint	min(uint, uint);
 uint	max(uint, uint);
@@ -97,7 +98,7 @@ Range		address(uint, Text*, Range, Range, void*, uint, uint, int (*)(void*, uint
 int		rxexecute(Text*, Rune*, uint, uint, uint, Rangeset*);
 int		rxbexecute(Text*, uint, Rangeset*);
 Window*	makenewwindow(Text *t);
-int	expand(Text*, uint, uint, Expand*);
+int	expand(Text*, uint, uint, Expand*, int);
 Rune*	skipbl(Rune*, int, int*);
 Rune*	findbl(Rune*, int, int*);
 char*	edittext(Window*, int, Rune*, int);

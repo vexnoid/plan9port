@@ -120,6 +120,9 @@ Turning the scroll wheel over the scroll bar scrolls the window.
 For example, to scroll slowly through a file,
 turn the wheel near the top of the scroll bar.  Turning it
 further down scrolls in larger increments.
+Over the text, the wheel searches instead; see
+.I Scroll wheel
+below.
 .SS Layout
 .I Acme
 windows are arranged in columns.  By default, it creates two columns when starting;
@@ -597,6 +600,12 @@ with button 2, clicking button 3 while 2 is held down.
 The snarf buffer has no address, so
 .B $acmeaddr
 is not set.
+.SS "Scroll wheel
+The scroll wheel searches for the word under the pointer.
+Scrolling down looks for the next occurrence in the body,
+scrolling up looks for the previous occurrence.
+If a match is found, it is selected and the mouse is moved there.
+Because of that, subsequent scrolls will find subsequent occurrences without moving the mouse.
 .SS "Support programs
 .I Win
 creates a new

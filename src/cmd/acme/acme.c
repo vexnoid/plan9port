@@ -547,8 +547,16 @@ mousethread(void *v)
 					wintagexpand(w, (m.buttons&16)!=0);
 				goto Continue;
 			}
-			if(wheel)
+			if(wheel){
+				if(w != nil){
+					winlock(w, 'M');
+					t->eq0 = ~0;
+					wincommit(w, t);
+					search4(t, m.buttons&8);
+					winunlock(w);
+				}
 				goto Continue;
+			}
 			if(m.buttons){
 				seq++;
 				if(w)
