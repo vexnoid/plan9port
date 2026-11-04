@@ -729,7 +729,10 @@ new(Text *et, Text *t, Text *argt, int flag1, int flag2, Rune *arg, int narg)
 		a = findbl(arg, narg, &na);
 		if(a == arg){
 			if(ndone==0 && et->col!=nil){
-				w = coladd(et->col, nil, nil, -1);
+				if(et->w != nil)
+					w = makenewwindow(et);
+				else
+					w = coladd(et->col, nil, nil, -1);
 				winsettag(w);
 				xfidlog(w, "new");
 			}
