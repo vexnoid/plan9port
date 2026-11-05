@@ -58,6 +58,8 @@ enum
 #define	LMARGIN	Scrollgap
 #define	RMARGIN	(Scrollgap/2)
 
+static int	dirlayout(Text*, Dirlist**, int, int*);
+
 void
 textinit(Text *t, File *f, Rectangle r, Reffont *rf, Image *cols[NCOL])
 {
@@ -101,7 +103,7 @@ textredraw(Text *t, Rectangle r, Font *f, Image *b, int odx)
 			maxt = t->tabstop;
 	}
 	t->fr.maxtab = maxt*stringwidth(f, "0");
-	if(t->what==Body && t->w->isdir && odx!=Dx(t->all)){
+	if(t->what==Body && t->w->isdir && odx!=Dx(t->all) && dirlayout(t, t->w->dlp, t->w->ndl, nil)!=t->w->dircols){
 		if(t->fr.maxlines > 0){
 			textreset(t);
 			textcolumnate(t, t->w->dlp,  t->w->ndl);
@@ -182,20 +184,13 @@ dircmp(const void *a, const void *b)
 	return da->nr - db->nr;
 }
 
-void
-textcolumnate(Text *t, Dirlist **dlp, int ndl)
+static int
+dirlayout(Text *t, Dirlist **dlp, int ndl, int *colwp)
 {
-	int i, j, w, colw, mint, maxt, ncol, nrow;
+	int i, w, colw, mint, maxt, ncol;
 	Dirlist *dl;
-	uint q1;
-	static Rune Lnl[] = { '\n', 0 };
-	static Rune Ltab[] = { '\t', 0 };
 
-	if(t->file->ntext > 1)
-		return;
 	mint = stringwidth(t->fr.font, "0");
-	/* go for narrower tabs if set more than 3 wide */
-	t->fr.maxtab = min(maxtab, TABDIR)*mint;
 	maxt = t->fr.maxtab;
 	colw = 0;
 	for(i=0; i<ndl; i++){
@@ -212,6 +207,28 @@ textcolumnate(Text *t, Dirlist **dlp, int ndl)
 		ncol = 1;
 	else
 		ncol = max(1, Dx(t->fr.r)/colw);
+	if(colwp)
+		*colwp = colw;
+	return ncol;
+}
+
+void
+textcolumnate(Text *t, Dirlist **dlp, int ndl)
+{
+	int i, j, w, colw, mint, maxt, ncol, nrow;
+	Dirlist *dl;
+	uint q1;
+	static Rune Lnl[] = { '\n', 0 };
+	static Rune Ltab[] = { '\t', 0 };
+
+	if(t->file->ntext > 1)
+		return;
+	mint = stringwidth(t->fr.font, "0");
+	/* go for narrower tabs if set more than 3 wide */
+	t->fr.maxtab = min(maxtab, TABDIR)*mint;
+	maxt = t->fr.maxtab;
+	ncol = dirlayout(t, dlp, ndl, &colw);
+	t->w->dircols = ncol;
 	nrow = (ndl+ncol-1)/ncol;
 
 	q1 = 0;
