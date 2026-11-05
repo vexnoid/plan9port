@@ -293,6 +293,7 @@ struct Window
 	int		colbase;	/* column height for slotbase */
 	int		slotnow;	/* slot height colresize left */
 	Rectangle	zoomr;	/* saved geometry */
+	int		dircols;	/* columns in directory layout */
 };
 
 void	wininit(Window*, Window*, Rectangle);
