@@ -708,48 +708,46 @@ openfile(Text *t, Expand *e)
 	return w;
 }
 
-void
-new(Text *et, Text *t, Text *argt, int flag1, int flag2, Rune *arg, int narg)
+static void
+prefilldir(Window *w, Text *et)
 {
-	int ndone;
-	Rune *a, *f;
-	int na, nf;
-	Expand e;
 	Runestr rs;
+	int n;
+
+	rs = dirname(et, nil, 0);
+	if(rs.r == nil)
+		return;
+	n = rs.nr;
+	rs.r = runerealloc(rs.r, n+1);
+	if(rs.r[n-1] != '/')	/* cleanname strips it */
+		rs.r[n++] = '/';
+	winsetname(w, rs.r, n);
+	w->body.file->mod = FALSE;
+	w->dirty = FALSE;
+	wininittag(w);
+	textsetselect(&w->tag, n, n);
+	free(rs.r);
+}
+
+void
+new(Text *et, Text *_0, Text *_1, int _2, int _3, Rune *_4, int _5)
+{
 	Window *w;
 
-	getarg(argt, FALSE, TRUE, &a, &na);
-	if(a){
-		new(et, t, nil, flag1, flag2, a, na);
-		if(narg == 0)
-			return;
-	}
-	/* loop condition: *arg is not a blank */
-	for(ndone=0; ; ndone++){
-		a = findbl(arg, narg, &na);
-		if(a == arg){
-			if(ndone==0 && et->col!=nil){
-				if(et->w != nil)
-					w = makenewwindow(et);
-				else
-					w = coladd(et->col, nil, nil, -1);
-				winsettag(w);
-				xfidlog(w, "new");
-			}
-			break;
-		}
-		nf = narg-na;
-		f = runemalloc(nf);
-		runemove(f, arg, nf);
-		rs = dirname(et, f, nf);
-		memset(&e, 0, sizeof e);
-		e.name = rs.r;
-		e.nname = rs.nr;
-		e.bname = runetobyte(rs.r, rs.nr);
-		e.jump = TRUE;
-		openfile(et, &e);
-		free(e.name);
-		free(e.bname);
-		arg = skipbl(a, na, &narg);
-	}
+	USED(_0);
+	USED(_1);
+	USED(_2);
+	USED(_3);
+	USED(_4);
+	USED(_5);
+
+	if(et->col == nil)
+		return;
+	if(et->w != nil){
+		w = makenewwindow(et);
+		prefilldir(w, et);
+	}else
+		w = coladd(et->col, nil, nil, -1);
+	winsettag(w);
+	xfidlog(w, "new");
 }
