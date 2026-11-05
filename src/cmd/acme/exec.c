@@ -825,6 +825,7 @@ putfile(File *f, int q0, int q1, Rune *namer, int nname)
 			f->mtime = d->mtime;
 			sha1(nil, 0, f->sha1, h);
 			h = nil;
+			fileorigclear(f);
 			f->mod = FALSE;
 			w->dirty = FALSE;
 			f->unread = FALSE;

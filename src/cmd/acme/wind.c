@@ -405,7 +405,7 @@ windelete(Window *w)
 void
 winundo(Window *w, Text *t, int isundo)
 {
-	int i;
+	int i, clean;
 	File *f;
 	Window *v;
 
@@ -414,14 +414,20 @@ winundo(Window *w, Text *t, int isundo)
 		return;
 	if(t->what == Body){
 		f = t->file;
+		clean = TRUE;
 		for(i=0; i<f->ntext; i++){
 			v = f->text[i]->w;
-			v->dirty = (f->seq != v->putseq);
+			v->dirty = f->seq!=v->putseq || f->orig.name!=nil;
+			if(v->dirty)
+				clean = FALSE;
 			if(v != w){
 				v->body.q0 = v->body.fr.p0+v->body.org;
 				v->body.q1 = v->body.fr.p1+v->body.org;
 			}
 		}
+		/* undo restored the mod the rename forced on */
+		if(clean)
+			f->mod = FALSE;
 	}else
 		t->file->mod = TRUE;
 	winsettag(w);
@@ -438,6 +444,7 @@ winsetname(Window *w, Rune *name, int n)
 	t = &w->body;
 	if(runeeq(t->file->name, t->file->nname, name, n) == TRUE)
 		return;
+	fileorigclear(t->file);
 	filesetname(t->file, name, n);
 	for(i=0; i<t->file->ntext; i++){
 		v = t->file->text[i]->w;
@@ -598,6 +605,7 @@ wincommit(Window *w, Text *t)
 	Rune *r;
 	int i;
 	File *f;
+	Orig o;
 
 	textcommit(t, TRUE);
 	f = t->file;
@@ -607,11 +615,40 @@ wincommit(Window *w, Text *t)
 	if(t->what == Body)
 		return;
 	r = parsetag(w, 0, &i);
-	if(runeeq(r, i, w->body.file->name, w->body.file->nname) == FALSE){
-		w->body.file->mod = TRUE;
-		w->dirty = TRUE;
-		w->isscratch = FALSE;
-		winsetname(w, r, i);
+	f = w->body.file;
+	if(runeeq(r, i, f->name, f->nname) == FALSE){
+		/* save the state, so renaming back can restore it */
+		o = f->orig;
+		memset(&f->orig, 0, sizeof f->orig);
+		if(o.name == nil){
+			o.name = runemalloc(f->nname+1);
+			runemove(o.name, f->name, f->nname);
+			o.nname = f->nname;
+			o.mod = f->mod;
+			o.unread = f->unread;
+			o.dirty = w->dirty;
+			o.isscratch = w->isscratch;
+			o.seq = f->seq;
+		}
+		if(runeeq(r, i, o.name, o.nname)){
+			if(f->seq == o.seq){	/* body not changed meanwhile */
+				f->mod = o.mod;
+				w->dirty = o.dirty;
+			}else{
+				w->dirty = f->seq != w->putseq;
+				f->mod = w->dirty;
+			}
+			w->isscratch = o.isscratch;
+			winsetname(w, r, i);
+			f->unread = o.unread;
+			free(o.name);
+		}else{
+			f->mod = TRUE;
+			w->dirty = TRUE;
+			w->isscratch = FALSE;
+			winsetname(w, r, i);
+			f->orig = o;
+		}
 		winsettag(w);
 	}
 	free(r);

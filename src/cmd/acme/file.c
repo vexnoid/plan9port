@@ -159,8 +159,11 @@ void
 filesetname(File *f, Rune *name, int n)
 {
 	free(f->name);
-	f->name = runemalloc(n);
-	runemove(f->name, name, n);
+	f->name = nil;
+	if(n > 0){
+		f->name = runemalloc(n);
+		runemove(f->name, name, n);
+	}
 	f->nname = n;
 	f->unread = TRUE;
 }
@@ -267,8 +270,16 @@ fileundo(File *f, int isundo, uint *q0p, uint *q1p)
 }
 
 void
+fileorigclear(File *f)
+{
+	free(f->orig.name);
+	memset(&f->orig, 0, sizeof f->orig);
+}
+
+void
 filereset(File *f)
 {
+	fileorigclear(f);
 	bufreset(&f->delta);
 	bufreset(&f->epsilon);
 	f->seq = 0;
@@ -280,6 +291,7 @@ fileclose(File *f)
 	free(f->name);
 	f->nname = 0;
 	f->name = nil;
+	fileorigclear(f);
 	free(f->text);
 	f->ntext = 0;
 	f->text = nil;

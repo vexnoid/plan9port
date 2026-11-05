@@ -46,6 +46,7 @@ typedef	struct	Fid Fid;
 typedef	struct	File File;
 typedef	struct	Elog Elog;
 typedef	struct	Mntdir Mntdir;
+typedef	struct	Orig Orig;
 typedef	struct	Range Range;
 typedef	struct	Rangeset Rangeset;
 typedef	struct	Reffont Reffont;
@@ -124,6 +125,17 @@ void	elogdelete(File*, int, int);
 void	elogreplace(File*, int, int, Rune*, int);
 void	elogapply(File*);
 
+struct Orig
+{
+	Rune		*name;	/* name before the tag renamed the file */
+	int		nname;
+	int		mod;		/* state it had */
+	int		unread;
+	int		dirty;
+	int		isscratch;
+	int		seq;		/* of the body when renamed */
+};
+
 struct File
 {
 	Buffer	b;			/* the data */
@@ -139,6 +151,7 @@ struct File
 	uchar	sha1[20];	/* of file when read */
 	int		unread;	/* file has not been read from disk */
 	int		editclean;	/* mark clean after edit command */
+	Orig		orig;		/* name to go back to; see wincommit */
 
 	int		seq;		/* if seq==0, File acts like Buffer */
 	int		mod;
@@ -154,6 +167,7 @@ void		filedeltext(File*, Text*);
 void		fileinsert(File*, uint, Rune*, uint);
 uint		fileload(File*, uint, int, int*, DigestState*);
 void		filemark(File*);
+void		fileorigclear(File*);
 void		filereset(File*);
 void		filesetname(File*, Rune*, int);
 void		fileundelete(File*, Buffer*, uint, uint);
