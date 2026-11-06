@@ -37,6 +37,11 @@ fn windel {
 		winctl del
 }
 
+fn wincmds {
+	winctl cleartag
+	echo -n $* | winwrite tag
+}
+
 fn wineventloop {
 	. <{winread event >[2]/dev/null | acmeevent}
 }
