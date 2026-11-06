@@ -9,6 +9,7 @@ pipewinto,
 sysrun,
 winaddr,
 winclosefiles,
+wincmds,
 winctl,
 windel,
 windeleteall,
@@ -82,6 +83,9 @@ int	winaddr(Win *w, char *fmt, ...)
 .PP
 .B
 void	winclosefiles(Win *w)
+.PP
+.B
+int	wincmds(Win *w, char *fmt, ...)
 .PP
 .B
 int	winctl(Win *w, char *fmt, ...)
@@ -259,6 +263,30 @@ closes all the open file descriptors associated with the window.
 cached across calls to 
 .IR winctl ,
 .IR etc .)
+.PP
+.I Wincmds
+replaces the text of the window's tag to the right of the bar
+with
+.I fmt\fR, \fP...\|.
+It first writes
+.B cleartag
+to the window's
+.B ctl
+file and then writes the formatted text to the
+.B tag
+file.
+The commands in a window's tag are ordinary text;
+a program that wants particular commands there
+(or wants to omit a default one, such as
+.BR Put )
+sets them with
+.IR wincmds .
+Since
+.I wincmds
+discards whatever was to the right of the bar,
+including text the program wrote earlier,
+it should be called once to set the tag, not to append to it.
+The window name to the left of the bar is unchanged.
 .PP
 .I Winctl
 writes
