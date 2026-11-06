@@ -116,12 +116,7 @@ xfidopen(Xfid *x)
 			w->nopen[q]++;
 			break;
 		case QWevent:
-			if(w->nopen[q]++ == 0){
-				if(!w->isdir && w->col!=nil){
-					w->filemenu = FALSE;
-					winsettag(w);
-				}
-			}
+			w->nopen[q]++;
 			break;
 		case QWrdsel:
 			/*
@@ -246,10 +241,6 @@ xfidclose(Xfid *x)
 			if(--w->nopen[q] == 0){
 				if(q == QWdata || q == QWxdata)
 					w->nomark = FALSE;
-				if(q==QWevent && !w->isdir && w->col!=nil){
-					w->filemenu = TRUE;
-					winsettag(w);
-				}
 				if(q == QWevent){
 					free(w->dumpstr);
 					free(w->dumpdir);
@@ -700,7 +691,6 @@ xfidctlwrite(Xfid *x, Window *w)
 		}else
 		if(strncmp(p, "dirty", 5) == 0){	/* mark window 'dirty' */
 			t = &w->body;
-			/* doesn't change sequence number, so "Put" won't appear.  it shouldn't. */
 			t->file->mod = TRUE;
 			w->dirty = TRUE;
 			settag = TRUE;
@@ -739,6 +729,7 @@ xfidctlwrite(Xfid *x, Window *w)
 out:
 			seq++;
 			filemark(w->body.file);
+			filemark(w->tag.file);
 			winsetname(w, r, nr);
 			m += (q+1) - pp;
 		}else
@@ -844,16 +835,6 @@ out:
 		if(strncmp(p, "mark", 4) == 0){	/* mark file */
 			seq++;
 			filemark(w->body.file);
-			settag = TRUE;
-			m = 4;
-		}else
-		if(strncmp(p, "nomenu", 6) == 0){	/* turn off automatic menu */
-			w->filemenu = FALSE;
-			settag = TRUE;
-			m = 6;
-		}else
-		if(strncmp(p, "menu", 4) == 0){	/* enable automatic menu */
-			w->filemenu = TRUE;
 			settag = TRUE;
 			m = 4;
 		}else

@@ -96,9 +96,10 @@ errorwin1(Rune *dir, int ndir, Rune **incl, int nincl)
 			if(rowadd(&row, nil, -1) == nil)
 				error("can't create column to make error window");
 		w = coladd(row.col[row.ncol-1], nil, nil, -1);
-		w->filemenu = FALSE;
+		w->filecmds = FALSE;
 		w->isscratch = TRUE;
 		winsetname(w, r, n);
+		wininittag(w);
 		xfidlog(w, "new");
 	}
 	free(r);
