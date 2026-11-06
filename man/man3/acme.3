@@ -1,6 +1,6 @@
 .TH ACME 3
 .SH NAME
-Event, Win,
+Event, Win, Winstat,
 acmefsys,
 eventfmt,
 newwin,
@@ -25,6 +25,7 @@ winread,
 winreadaddr,
 winreadevent,
 winseek,
+winstat,
 winwrite,
 winwriteevent \- acme client library
 .SH SYNOPSIS
@@ -54,6 +55,18 @@ struct Event
 	char	*text;
 	char	*arg;
 	char	*loc;
+};
+.PP
+.ta +\w'\fLxxxx'u +\w'\fLxxxxx'u
+.nf
+struct Winstat
+{
+	int	id;
+	int	tagnc;
+	int	bodync;
+	int	isdir;
+	int	dirty;
+	int	isscratch;
 };
 .PP
 .ta +\w'\fLxxxxxxxxxx'u
@@ -128,6 +141,9 @@ int	winreadevent(Win *w, Event *e)
 .PP
 .B
 int	winseek(Win *w, char *file, int off, int type)
+.PP
+.B
+void	winstat(char *buf, Winstat *st)
 .PP
 .B
 int	winwrite(Win *w, char *file, void *a, int n)
@@ -358,6 +374,43 @@ relative to
 .I type
 (see
 .MR seek 3 ).
+.PP
+.I Winstat
+parses
+.IR buf ,
+which must hold the contents read from a window's
+.B ctl
+file,
+into the
+.B Winstat
+that
+.I st
+points to.
+The fields are the window's
+.BR id ;
+the number of characters in its tag
+.RB ( tagnc )
+and body
+.RB ( bodync );
+and whether it holds a directory
+.RB ( isdir ),
+has been modified
+.RB ( dirty ),
+or has been marked scratch
+.RB ( isscratch ).
+The last three are 0 or 1.
+A program can use these to decide what to put in the tag with
+.IR wincmds .
+Any program may read the
+.B ctl
+file of any window, not only those it created,
+so the buffer may come from another window's
+.B ctl
+file.
+.I Winstat
+does no I/O and cannot fail;
+.I buf
+must hold all the fields.
 .PP
 .I Winwrite
 writes the
