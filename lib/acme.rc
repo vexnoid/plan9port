@@ -42,6 +42,15 @@ fn wincmds {
 	echo -n $* | winwrite tag
 }
 
+fn winstat {
+	winid=$1
+	tagnc=$2
+	bodync=$3
+	isdir=$4
+	dirty=$5
+	isscratch=$6
+}
+
 fn wineventloop {
 	. <{winread event >[2]/dev/null | acmeevent}
 }
