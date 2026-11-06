@@ -322,6 +322,24 @@ windel(Win *w, int sure)
 }
 
 int
+wincmds(Win *w, char *fmt, ...)
+{
+	char *s;
+	va_list arg;
+	int n;
+
+	winctl(w, "cleartag\n");
+
+	va_start(arg, fmt);
+	s = evsmprint(fmt, arg);
+	va_end(arg);
+
+	n = fswrite(wfid(w, "tag"), s, strlen(s));
+	free(s);
+	return n;
+}
+
+int
 winfd(Win *w, char *name, int mode)
 {
 	char buf[100];
