@@ -56,6 +56,7 @@ char *sysrun(char*, ...);
 int winaddr(Win *w, char *fmt, ...);
 int winctl(Win *w, char *fmt, ...);
 int windel(Win *w, int sure);
+int wincmds(Win *w, char *fmt, ...);
 int winfd(Win *w, char *name, int);
 char *winmread(Win *w, char *file);
 int winname(Win *w, char *fmt, ...);
