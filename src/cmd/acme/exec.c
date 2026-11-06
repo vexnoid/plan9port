@@ -591,7 +591,7 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 {
 	char *name;
 	Rune *r;
-	int i, n, dirty, samename, isdir;
+	int i, n, fd, dirty, samename, isdir;
 	TextAddr *addr, *a;
 	Window *w;
 	Text *u;
@@ -612,6 +612,13 @@ get(Text *et, Text *t, Text *argt, int flag1, int _0, Rune *arg, int narg)
 		warning(nil, "no file name\n");
 		return;
 	}
+	fd = open(name, OREAD);
+	if(fd < 0){
+		warning(nil, "can't open %s: %r\n", name);
+		free(name);
+		return;
+	}
+	close(fd);
 	if(t->file->ntext>1){
 		d = dirstat(name);
 		isdir = (d!=nil && (d->qid.type & QTDIR));
