@@ -26,6 +26,7 @@ The function is one of the following letters:
 .TP
 .B  c
 Create a new archive with the given files as contents.
+Names are stored as given on the command line.
 .TP
 .B  r
 The named files
@@ -63,6 +64,9 @@ and
 Use the next (numeric) argument as the group id for files in
 the output archive.
 .TP
+.B i
+Ignore I/O errors where possible, substituting zeroes for unreadable data.
+.TP
 .B k
 (keep)
 Modifies the behavior of
@@ -86,8 +90,16 @@ with older versions of tar.
 Do not generate the POSIX ustar format.
 .TP
 .B R
-When extracting, ignore leading slash on file names,
-i.e., extract all files relative to the current directory.
+When extracting, do not make names relative.
+By default a leading slash is replaced by
+.BR ./ ,
+so that files are extracted relative to the current directory.
+With
+.BR R ,
+absolute names are extracted at their absolute locations.
+.TP
+.B s
+When reading, skip past headers with bad checksums.
 .TP
 .B T
 Modifies the behavior of
@@ -148,6 +160,14 @@ can be used to copy hierarchies thus:
 .EX
 @{cd fromdir && tar cp .} | @{cd todir && tar xT}
 .EE
+.PP
+To archive files under names relative to a directory,
+and restore them into another:
+.IP
+.EX
+@{cd $home && tar c bug doc} >backup.tar
+@{cd /tmp/restore && tar xT} <backup.tar
+.EE
 .SH SOURCE
 .B \*9/src/cmd/tar.c
 .SH SEE ALSO
@@ -164,4 +184,5 @@ File path names are limited to
 (256 when using ustar format).
 .PP
 The tar format allows specification of links and symbolic links,
-concepts foreign to Plan 9: they are ignored.
+concepts foreign to Plan 9: they are ignored when extracting
+and followed when creating.
