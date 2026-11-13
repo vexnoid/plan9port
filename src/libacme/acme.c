@@ -546,9 +546,9 @@ sysrun(char *fmt, ...)
 	while((n = read(p[0], buf+tot, sizeof buf-tot)) > 0)
 		tot += n;
 	close(p[0]);
+	free(cmd);
 	if(n < 0)
 		return nil;
-	free(cmd);
 	if(tot == sizeof buf)
 		tot--;
 	buf[tot] = 0;
