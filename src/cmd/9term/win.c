@@ -699,27 +699,8 @@ deltype(uint p0, uint p1)
 void
 type(Event *e, int fd0)
 {
-	int m, n, nr;
-	char buf[128];
-
 	if(e->nr > 0)
 		addtype(e->c1, e->q0-q.p, e->text, e->nb, e->nr);
-	else{
-		m = e->q0;
-		while(m < e->q1){
-			winaddr(win, "#%d", m);
-			n = winread(win, "data", buf, sizeof buf);
-			nr = nrunes(buf, n);
-			while(m+nr > e->q1){
-				do; while(n>0 && (buf[--n]&0xC0)==0x80);
-				--nr;
-			}
-			if(n == 0)
-				break;
-			addtype(e->c1, m-q.p, buf, n, nr);
-			m += nr;
-		}
-	}
 	if(israw(fd0)) {
 		winaddr(win, "#%d,#%d", e->q0, e->q1);
 		winwrite(win, "data", "", 0);
@@ -733,35 +714,14 @@ type(Event *e, int fd0)
 void
 sende(Event *e, int fd0, int donl)
 {
-	int m, n, nr, lastc, end;
-	char buf[128];
+	int lastc;
 
-	end = q.p+ntyper;
-	winaddr(win, "#%d", end);
+	winaddr(win, "#%d", q.p+ntyper);
+	lastc = 0;
 	if(e->nr > 0){
 		winwrite(win, "data", e->text, e->nb);
 		addtype(e->c1, ntyper, e->text, e->nb, e->nr);
 		lastc = e->text[e->nb-1];
-	}else{
-		m = e->q0;
-		lastc = 0;
-		while(m < e->q1){
-			winaddr(win, "#%d", m);
-			n = winread(win, "data", buf, sizeof buf);
-			nr = nrunes(buf, n);
-			while(m+nr > e->q1){
-				do; while(n>0 && (buf[--n]&0xC0)==0x80);
-				--nr;
-			}
-			if(n == 0)
-				break;
-			winaddr(win, "#%d", end);
-			winwrite(win, "data", buf, n);
-			addtype(e->c1, ntyper, buf, n, nr);
-			lastc = buf[n-1];
-			m += nr;
-			end += nr;
-		}
 	}
 	if(donl && lastc!='\n'){
 		winwrite(win, "data", "\n", 1);
