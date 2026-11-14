@@ -180,17 +180,11 @@ execute(Text *t, uint aq0, uint aq1, int external, Text *argt)
 		if(t->what == Body)
 			c = 'X';
 		n = aq1-aq0;
-		if(n <= EVENTSIZE)
-			winevent(t->w, "%c%d %d %d %d %.*S\n", c, aq0, aq1, f, n, n, r);
-		else
-			winevent(t->w, "%c%d %d %d 0 \n", c, aq0, aq1, f);
+		winevent(t->w, "%c%d %d %d %d %.*S\n", c, aq0, aq1, f, n, n, r);
 		if(q0!=aq0 || q1!=aq1){
 			n = q1-q0;
 			bufread(&t->file->b, q0, r, n);
-			if(n <= EVENTSIZE)
-				winevent(t->w, "%c%d %d 0 %d %.*S\n", c, q0, q1, n, n, r);
-			else
-				winevent(t->w, "%c%d %d 0 0 \n", c, q0, q1);
+			winevent(t->w, "%c%d %d 0 %d %.*S\n", c, q0, q1, n, n, r);
 		}
 		if(a){
 			winevent(t->w, "%c0 0 0 %d %s\n", c, utflen(a), a);

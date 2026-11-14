@@ -404,10 +404,7 @@ textinsert(Text *t, uint q0, Rune *r, uint n, int tofile)
 		c = 'i';
 		if(t->what == Body)
 			c = 'I';
-		if(n <= EVENTSIZE)
-			winevent(t->w, "%c%d %d 0 %d %.*S\n", c, q0, q0+n, n, n, r);
-		else
-			winevent(t->w, "%c%d %d 0 0 \n", c, q0, q0+n, n);
+		winevent(t->w, "%c%d %d 0 %d %.*S\n", c, q0, q0+n, n, n, r);
 	}
 }
 

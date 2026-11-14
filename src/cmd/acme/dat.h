@@ -474,7 +474,6 @@ enum
 	/* fbufalloc() guarantees room off end of BUFSIZE */
 	BUFSIZE = Maxblock+IOHDRSZ,	/* size from fbufalloc() */
 	RBUFSIZE = BUFSIZE/sizeof(Rune),
-	EVENTSIZE = 256,
 };
 
 #define Scrollwid scalesize(display, 12)
