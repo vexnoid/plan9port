@@ -1266,7 +1266,7 @@ xselect(Frame *f, Mousectl *mc, Image *col, uint *p1p)	/* when called, button is
 }
 
 int
-textselect23(Text *t, uint *q0, uint *q1, Image *high, int mask)
+textselect23(Text *t, uint *q0, uint *q1, Image *high, int mask, int *seen)
 {
 	uint p0, p1;
 	int buts;
@@ -1278,19 +1278,24 @@ textselect23(Text *t, uint *q0, uint *q1, Image *high, int mask)
 		*q1 = p1+t->org;
 	}
 
-	while(mousectl->m.buttons)
+	*seen = 0;
+	while(mousectl->m.buttons){
+		*seen |= mousectl->m.buttons;
 		readmouse(mousectl);
+	}
 	return buts;
 }
 
 int
 textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 {
-	int buts;
+	int buts, seen;
 
 	*tp = nil;
-	buts = textselect23(t, q0, q1, but2col, 8|16|128|256);
+	buts = textselect23(t, q0, q1, but2col, 8|16|128|256, &seen);
 	if(buts & (8|16|128|256))
+		return 0;
+	if((seen&7) == 7)	/* cancel */
 		return 0;
 	if(buts & 1){	/* pick up argument */
 		*tp = argtext;
@@ -1309,9 +1314,9 @@ textselect2(Text *t, uint *q0, uint *q1, Text **tp)
 int
 textselect3(Text *t, uint *q0, uint *q1)
 {
-	int h;
+	int h, seen;
 
-	h = (textselect23(t, q0, q1, but3col, 1|2|8|16|128|256) == 0);
+	h = (textselect23(t, q0, q1, but3col, 1|2|8|16|128|256, &seen) == 0);
 	return h;
 }
 

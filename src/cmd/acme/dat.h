@@ -220,7 +220,7 @@ void		textscroll(Text*);
 void		textscroll4(Text*, int);
 void		textselect(Text*);
 int		textselect2(Text*, uint*, uint*, Text**);
-int		textselect23(Text*, uint*, uint*, Image*, int);
+int		textselect23(Text*, uint*, uint*, Image*, int, int*);
 int		textselect3(Text*, uint*, uint*);
 void		textsetorigin(Text*, uint, int);
 void		textsetselect(Text*, uint, uint);
