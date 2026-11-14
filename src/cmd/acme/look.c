@@ -117,13 +117,10 @@ look3(Text *t, uint q0, uint q1, int external)
 		if(t->what == Body)
 			c = 'L';
 		n = q1-q0;
-		if(n <= EVENTSIZE){
-			r = runemalloc(n);
-			bufread(&t->file->b, q0, r, n);
-			winevent(t->w, "%c%d %d %d %d %.*S\n", c, q0, q1, f, n, n, r);
-			free(r);
-		}else
-			winevent(t->w, "%c%d %d %d 0 \n", c, q0, q1, f, n);
+		r = runemalloc(n);
+		bufread(&t->file->b, q0, r, n);
+		winevent(t->w, "%c%d %d %d %d %.*S\n", c, q0, q1, f, n, n, r);
+		free(r);
 		if(q0==e.q0 && q1==e.q1)
 			goto Return;
 		if(e.nname){
@@ -142,10 +139,7 @@ look3(Text *t, uint q0, uint q1, int external)
 			bufread(&t->file->b, e.q0, r, n);
 		}
 		f &= ~2;
-		if(n <= EVENTSIZE)
-			winevent(t->w, "%c%d %d %d %d %.*S\n", c, e.q0, e.q1, f, n, n, r);
-		else
-			winevent(t->w, "%c%d %d %d 0 \n", c, e.q0, e.q1, f, n);
+		winevent(t->w, "%c%d %d %d %d %.*S\n", c, e.q0, e.q1, f, n, n, r);
 		free(r);
 		goto Return;
 	}
