@@ -421,10 +421,13 @@ undo(Window *w, Text *t, int isundo)
 			winundo(w, t, isundo);
 		else
 			textundo(t, isundo);
+		seltext = t;
 		return;
 	}
 	if(w == nil)
 		return;
+	seltext = &w->body;
+	activewin = w;
 	seq = seqof(w, isundo);
 	if(seq == 0){
 		/* nothing to undo */
