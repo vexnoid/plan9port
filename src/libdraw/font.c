@@ -284,6 +284,8 @@ loadchar(Font *f, Rune r, Cacheinfo *c, int h, int noflush, char **subfontname)
 			return -1;
 		if(f->width < wid)
 			f->width = wid;
+		if(f->width == 0)
+			f->width = 1;	/* first glyph has no ink, e.g. space */
 		if(f->maxdepth < subf->f->bits->depth)
 			f->maxdepth = subf->f->bits->depth;
 		i = fontresize(f, f->width, f->ncache, f->maxdepth);
