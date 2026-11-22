@@ -435,7 +435,7 @@ void
 mousethread(void *v)
 {
 	Text *t, *argt;
-	int but, wheel;
+	int but, wheel, gone;
 	uint q0, q1;
 	Window *w;
 	Plumbmsg *pm;
@@ -561,13 +561,13 @@ mousethread(void *v)
 					textcommit(t, TRUE);
 				if(m.buttons & 1){
 					textselect(t);
-					if(w)
+					if(w!=nil && w->col!=nil)	/* chord may delete w */
 						winsettag(w);
 					argtext = t;
 					seltext = t;
 					if(t->col)
 						activecol = t->col;	/* button 1 only */
-					if(t->w!=nil && t==&t->w->body)
+					if(t->w!=nil && t->w->col!=nil && t==&t->w->body)
 						activewin = t->w;
 				}else if(m.buttons & 2){
 					if(textselect2(t, &q0, &q1, &argt))
@@ -577,6 +577,9 @@ mousethread(void *v)
 						look3(t, q0, q1, FALSE);
 				}else if(m.buttons & (128|256)){
 					undo(w, t, m.buttons&128);
+					gone = 0;
+					while(!gone && mousectl->m.buttons)
+						gone = chordwait(t, mousectl->m.buttons);
 					while(mousectl->m.buttons)
 						readmouse(mousectl);
 				}

@@ -205,6 +205,7 @@ struct Text
 uint		textbacknl(Text*, uint, uint);
 uint		textbsinsert(Text*, uint, Rune*, uint, int, int*);
 int		textbswidth(Text*, Rune);
+int		chordwait(Text*, int);
 int		textclickmatch(Text*, int, int, int, uint*);
 void		textclose(Text*);
 void		textcolumnate(Text*, Dirlist**, int);

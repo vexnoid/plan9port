@@ -990,13 +990,35 @@ chordundo(Text *t)
 		textundo(t, TRUE);
 }
 
+/* drop locks until buttons change; true if w deleted, locks held */
+int
+chordwait(Text *t, int b)
+{
+	Window *w;
+
+	w = t->w;
+	if(w != nil){
+		incref(&w->ref);	/* w may be deleted */
+		winunlock(w);
+		qunlock(&row.lk);
+	}
+	while(mouse->buttons == b)
+		readmouse(mousectl);
+	if(w == nil)
+		return 0;
+	qlock(&row.lk);
+	winlock(w, 'M');
+	winclose(w);
+	return w->col == nil;
+}
+
 void
 textselect(Text *t)
 {
 	uint q0, q1;
 	int b, x, y;
 	int state;
-	uint seq0;
+	uint seq0, seqn, nc, nd;
 	enum { None, Cut, Paste };
 
 	selecttext = t;
@@ -1085,9 +1107,18 @@ textselect(Text *t)
 			clearmouse();
 		}
 		flushimage(display, 1);
-		while(mouse->buttons == b)
-			readmouse(mousectl);
 		clicktext = nil;
+		seqn = t->file->seq;
+		nc = t->file->b.nc;
+		nd = t->file->delta.nc;
+		if(chordwait(t, b)){
+			while(mouse->buttons)
+				readmouse(mousectl);
+			return;
+		}
+		/* client edited: undo would not be ours */
+		if(t->file->seq != seqn || t->file->b.nc != nc || t->file->delta.nc != nd)
+			state = None;
 	}
 }
 
